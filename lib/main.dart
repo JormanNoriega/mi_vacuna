@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'app/controllers/auth_controller.dart';
 import 'app/modules/auth/login.dart';
 
 void main() {
+  // Inicializar controladores
+  Get.put(AuthController());
+
   runApp(const MyApp());
 }
 
@@ -10,7 +15,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Mi Vacuna',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

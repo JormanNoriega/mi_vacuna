@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import '../../controllers/auth_controller.dart';
 import '../../widgets/InputField.dart';
 import '../../widgets/PasswordField.dart';
 import '../../widgets/DropdownField.dart';
 import '../../theme/colors.dart';
+import '../home/home_page.dart';
 
 class RegisterNursePage extends StatefulWidget {
   const RegisterNursePage({Key? key}) : super(key: key);
@@ -13,6 +16,7 @@ class RegisterNursePage extends StatefulWidget {
 }
 
 class _RegisterNursePageState extends State<RegisterNursePage> {
+  final AuthController authController = Get.find();
   final TextEditingController idController = TextEditingController();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
@@ -195,34 +199,204 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                 label: 'Confirmar contraseña',
                 hintText: 'Repite tu contraseña',
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              // Mensaje de error
+              Obx(() {
+                if (authController.errorMessage.value.isNotEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authController.errorMessage.value,
+                            style: TextStyle(color: Colors.red.shade700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              const SizedBox(height: 8),
               // Register button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
                     ),
-                    elevation: 4,
-                  ),
-                  onPressed: () {},
-                  child: const Text(
-                    'REGISTRARME',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
+                    onPressed: authController.isLoading.value
+                        ? null
+                        : () async {
+                            authController.clearError();
+
+                            // Validaciones
+                            if (selectedIdType == null ||
+                                selectedIdType == '') {
+                              Get.snackbar(
+                                'Error',
+                                'Selecciona un tipo de identificación',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (idController.text.trim().isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Ingresa tu número de identificación',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (firstNameController.text.trim().isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Ingresa tu nombre',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (lastNameController.text.trim().isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Ingresa tu apellido',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (!emailController.text.contains('@')) {
+                              Get.snackbar(
+                                'Error',
+                                'Ingresa un correo válido',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (phoneController.text.length != 10) {
+                              Get.snackbar(
+                                'Error',
+                                'El teléfono debe tener 10 dígitos',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (institutionController.text.trim().isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Ingresa tu institución de salud',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (passwordController.text.length < 6) {
+                              Get.snackbar(
+                                'Error',
+                                'La contraseña debe tener al menos 6 caracteres',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            if (passwordController.text !=
+                                confirmPasswordController.text) {
+                              Get.snackbar(
+                                'Error',
+                                'Las contraseñas no coinciden',
+                                backgroundColor: Colors.red.shade100,
+                                colorText: Colors.red.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            // Registrar
+                            final success = await authController.register(
+                              idType: selectedIdType!,
+                              idNumber: idController.text.trim(),
+                              firstName: firstNameController.text.trim(),
+                              lastName: lastNameController.text.trim(),
+                              email: emailController.text.trim(),
+                              phone: phoneController.text.trim(),
+                              institution: institutionController.text.trim(),
+                              password: passwordController.text,
+                            );
+
+                            if (success) {
+                              Get.snackbar(
+                                'Éxito',
+                                'Cuenta creada exitosamente. Bienvenido ${authController.currentNurse.value!.fullName}',
+                                backgroundColor: Colors.green.shade100,
+                                colorText: Colors.green.shade900,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              Get.offAll(() => const HomePage());
+                            }
+                          },
+                    child: authController.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'REGISTRARME',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.back();
+                  },
                   child: const Text.rich(
                     TextSpan(
                       text: '¿Ya tienes cuenta? ',

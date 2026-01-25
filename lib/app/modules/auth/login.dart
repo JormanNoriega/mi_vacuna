@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../controllers/auth_controller.dart';
 import '../../widgets/InputField.dart';
 import '../../widgets/PasswordField.dart';
 import '../../theme/colors.dart';
+import '../home/home_page.dart';
 import 'register_nurse.dart';
 
 class LoginPage extends StatelessWidget {
@@ -9,6 +12,10 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.find();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
@@ -67,6 +74,7 @@ class LoginPage extends StatelessWidget {
                   child: Column(
                     children: [
                       InputField(
+                        controller: emailController,
                         label: 'Correo electrónico o ID',
                         hint: 'ejemplo@salud.org',
                         icon: Icons.person,
@@ -74,7 +82,7 @@ class LoginPage extends StatelessWidget {
 
                       const SizedBox(height: 16),
 
-                      PasswordField(),
+                      PasswordField(controller: passwordController),
 
                       const SizedBox(height: 8),
 
@@ -95,27 +103,92 @@ class LoginPage extends StatelessWidget {
 
                       const SizedBox(height: 16),
 
-                      /// BOTON LOGIN
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.login),
-                          label: const Text(
-                            'INICIAR SESIÓN',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
+                      // Mensaje de error
+                      Obx(() {
+                        if (authController.errorMessage.value.isNotEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 6,
-                            shadowColor: primaryColor.withOpacity(0.3),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red.shade700,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    authController.errorMessage.value,
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+
+                      /// BOTON LOGIN
+                      Obx(
+                        () => SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            onPressed: authController.isLoading.value
+                                ? null
+                                : () async {
+                                    authController.clearError();
+                                    final success = await authController.login(
+                                      emailOrId: emailController.text.trim(),
+                                      password: passwordController.text,
+                                    );
+
+                                    if (success) {
+                                      Get.snackbar(
+                                        'Éxito',
+                                        'Bienvenido ${authController.currentNurse.value!.fullName}',
+                                        backgroundColor: Colors.green.shade100,
+                                        colorText: Colors.green.shade900,
+                                        snackPosition: SnackPosition.BOTTOM,
+                                      );
+                                      Get.offAll(() => const HomePage());
+                                    }
+                                  },
+                            icon: authController.isLoading.value
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.login),
+                            label: Text(
+                              authController.isLoading.value
+                                  ? 'INGRESANDO...'
+                                  : 'INICIAR SESIÓN',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              elevation: 6,
+                              shadowColor: primaryColor.withOpacity(0.3),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -129,11 +202,7 @@ class LoginPage extends StatelessWidget {
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => RegisterNursePage(),
-                              ),
-                            );
+                            Get.to(() => const RegisterNursePage());
                           },
                           child: const Text.rich(
                             TextSpan(
