@@ -1,6 +1,26 @@
 import '../domain/vaccine_type.dart';
 import '../domain/dose_config.dart';
 
+/// Tipos de carnet de vacunación
+enum CarnetType { infantil, adultos, internacional, tuvAdultos, tuvNinos }
+
+extension CarnetTypeExtension on CarnetType {
+  String get displayName {
+    switch (this) {
+      case CarnetType.infantil:
+        return 'CARNE DE VACUNACIÓN INFANTIL';
+      case CarnetType.adultos:
+        return 'CARNE/CERTIFICADO DE VACUNACIÓN DE ADULTOS';
+      case CarnetType.internacional:
+        return 'CARNE/CERTIFICADO INTERNACIONAL DE VACUNACIÓN';
+      case CarnetType.tuvAdultos:
+        return 'TARJETAS UNIFICADAS DE VACUNACION -TUV ADULTOS';
+      case CarnetType.tuvNinos:
+        return 'TARJETAS UNIFICADAS DE VACUNACION -TUV NIÑOS';
+    }
+  }
+}
+
 /// Modelo de dosis aplicada a un paciente
 class AppliedDose {
   final int? id;
@@ -8,6 +28,7 @@ class AppliedDose {
   final int nurseId; // FK a nurses (enfermera que aplicó)
   final VaccineType vaccineType; // Tipo de vacuna del catálogo
   final int doseNumber; // Número de dosis (1, 2, 3...)
+  final CarnetType carnetType; // Tipo de carnet de vacunación
 
   // Datos de aplicación
   final DateTime applicationDate;
@@ -35,6 +56,7 @@ class AppliedDose {
     required this.nurseId,
     required this.vaccineType,
     required this.doseNumber,
+    required this.carnetType,
     required this.applicationDate,
     required this.lotNumber,
     this.syringeLot,
@@ -57,6 +79,7 @@ class AppliedDose {
       'nurse_id': nurseId,
       'vaccine_type': vaccineType.name,
       'dose_number': doseNumber,
+      'carnet_type': carnetType.name,
       'application_date': applicationDate.toIso8601String(),
       'lot_number': lotNumber,
       'syringe_lot': syringeLot,
@@ -82,6 +105,9 @@ class AppliedDose {
         (e) => e.name == map['vaccine_type'],
       ),
       doseNumber: map['dose_number'],
+      carnetType: CarnetType.values.firstWhere(
+        (e) => e.name == map['carnet_type'],
+      ),
       applicationDate: DateTime.parse(map['application_date']),
       lotNumber: map['lot_number'],
       syringeLot: map['syringe_lot'],
@@ -110,6 +136,7 @@ class AppliedDose {
     int? nurseId,
     VaccineType? vaccineType,
     int? doseNumber,
+    CarnetType? carnetType,
     DateTime? applicationDate,
     String? lotNumber,
     String? syringeLot,
@@ -130,6 +157,7 @@ class AppliedDose {
       nurseId: nurseId ?? this.nurseId,
       vaccineType: vaccineType ?? this.vaccineType,
       doseNumber: doseNumber ?? this.doseNumber,
+      carnetType: carnetType ?? this.carnetType,
       applicationDate: applicationDate ?? this.applicationDate,
       lotNumber: lotNumber ?? this.lotNumber,
       syringeLot: syringeLot ?? this.syringeLot,

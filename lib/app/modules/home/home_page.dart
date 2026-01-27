@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../theme/colors.dart';
 import '../auth/login.dart';
+import '../vaccination_record/new_patient_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -121,6 +122,26 @@ class HomePage extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF111318),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Get.to(() => const NewPatientPage());
+                },
+                icon: const Icon(Icons.person_add),
+                label: const Text('Nuevo Paciente'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF135BEC),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
                 ),
               ),
               const SizedBox(height: 16),
