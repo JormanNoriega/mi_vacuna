@@ -80,6 +80,7 @@ class MedicalHistory {
 /// Modelo de paciente
 class Patient {
   final int? id;
+  final int nurseId; // ID de la enfermera que registró al paciente
   final DateTime attentionDate;
   final String idType;
   final String idNumber;
@@ -127,6 +128,7 @@ class Patient {
 
   Patient({
     this.id,
+    required this.nurseId,
     required this.attentionDate,
     required this.idType,
     required this.idNumber,
@@ -222,6 +224,7 @@ class Patient {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'nurse_id': nurseId,
       'attention_date': attentionDate.toIso8601String(),
       'id_type': idType,
       'id_number': idNumber,
@@ -272,6 +275,7 @@ class Patient {
   factory Patient.fromMap(Map<String, dynamic> map) {
     return Patient(
       id: map['id'],
+      nurseId: map['nurse_id'],
       attentionDate: DateTime.parse(map['attention_date']),
       idType: map['id_type'],
       idNumber: map['id_number'],
@@ -335,6 +339,7 @@ class Patient {
 
   Patient copyWith({
     int? id,
+    int? nurseId,
     DateTime? attentionDate,
     String? idType,
     String? idNumber,
@@ -382,6 +387,7 @@ class Patient {
   }) {
     return Patient(
       id: id ?? this.id,
+      nurseId: nurseId ?? this.nurseId,
       attentionDate: attentionDate ?? this.attentionDate,
       idType: idType ?? this.idType,
       idNumber: idNumber ?? this.idNumber,

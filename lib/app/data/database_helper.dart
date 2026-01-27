@@ -51,6 +51,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE patients (
         id $idType,
+        nurse_id $intType,
         attention_date $textType,
         id_type $textType,
         id_number $textType,
@@ -95,7 +96,8 @@ class DatabaseHelper {
         previous_pregnancies $intTypeNull,
         created_at $textType,
         updated_at $textTypeNull,
-        UNIQUE(id_number)
+        UNIQUE(id_number),
+        FOREIGN KEY (nurse_id) REFERENCES nurses (id) ON DELETE RESTRICT
       )
     ''');
 
@@ -135,6 +137,32 @@ class DatabaseHelper {
         description $textType,
         special_observations $textTypeNull,
         FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Tabla de dosis aplicadas
+    await db.execute('''
+      CREATE TABLE applied_doses (
+        id $idType,
+        patient_id $intType,
+        nurse_id $intType,
+        vaccine_type $textType,
+        dose_number $intType,
+        application_date $textType,
+        lot_number $textType,
+        syringe_lot $textTypeNull,
+        diluent_lot $textTypeNull,
+        device $textType,
+        laboratory $textTypeNull,
+        observation $textTypeNull,
+        adverse_reaction $textTypeNull,
+        pneumococcal_type $textTypeNull,
+        vial_count $intTypeNull,
+        next_dose_date $textTypeNull,
+        created_at $textType,
+        updated_at $textTypeNull,
+        FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE,
+        FOREIGN KEY (nurse_id) REFERENCES nurses (id) ON DELETE RESTRICT
       )
     ''');
   }

@@ -1,5 +1,5 @@
-import '../models/vaccine_type.dart';
-import '../models/dose_config.dart';
+import 'vaccine_type.dart';
+import 'dose_config.dart';
 
 /// Configuración estática de una vacuna del catálogo
 class VaccineConfig {

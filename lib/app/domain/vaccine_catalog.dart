@@ -1,6 +1,7 @@
-import '../models/vaccine_type.dart';
-import '../models/dose_config.dart';
+import 'vaccine_type.dart';
+import 'dose_config.dart';
 import 'vaccine_config.dart';
+
 /// Catálogo completo de vacunas del PAI Colombia
 class VaccineCatalog {
   static const Map<VaccineType, VaccineConfig> vaccines = {
@@ -84,9 +85,24 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'RECIEN NACIDO', ageMonthsMin: 0, ageMonthsMax: 0),
-        DoseConfig(doseNumber: 2, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 3, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 18),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'RECIEN NACIDO',
+          ageMonthsMin: 0,
+          ageMonthsMax: 0,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 18,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Adicional', ageMonthsMin: 0),
       ],
     ),
@@ -104,11 +120,38 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 4, doseName: 'Primer Refuerzo', ageMonthsMin: 18, ageMonthsMax: 24),
-        DoseConfig(doseNumber: 5, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 4,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // Polio Oral
@@ -120,7 +163,12 @@ class VaccineCatalog {
       hasSyringeLot: false,
       allowedDevices: [ApplicationDevice.goteroDesechado],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // Pentavalente
@@ -137,11 +185,38 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 4, doseName: 'Primer Refuerzo', ageMonthsMin: 18, ageMonthsMax: 24),
-        DoseConfig(doseNumber: 5, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 4,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // Hexavalente
@@ -156,9 +231,26 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
       ],
     ),
     // DPT
@@ -173,11 +265,38 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 4, doseName: 'Primer Refuerzo', ageMonthsMin: 18, ageMonthsMax: 24),
-        DoseConfig(doseNumber: 5, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 4,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // DTPa Pediátrico
@@ -192,11 +311,38 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 4, doseName: 'Primer Refuerzo', ageMonthsMin: 18, ageMonthsMax: 24),
-        DoseConfig(doseNumber: 5, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 4,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // TD Pediátrico
@@ -211,11 +357,38 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, ageMonthsMax: 18, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 4, doseName: 'Primer Refuerzo', ageMonthsMin: 18, ageMonthsMax: 24),
-        DoseConfig(doseNumber: 5, doseName: 'Segundo Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          ageMonthsMax: 18,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 4,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // Rotavirus
@@ -227,8 +400,19 @@ class VaccineCatalog {
       hasSyringeLot: false,
       allowedDevices: [ApplicationDevice.goteroDesechado],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
       ],
     ),
     // Neumococo
@@ -244,9 +428,25 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2, ageMonthsMax: 4),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, ageMonthsMax: 6, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Primer Refuerzo', ageMonthsMin: 12, ageMonthsMax: 18),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 2,
+          ageMonthsMax: 4,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          ageMonthsMax: 6,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 12,
+          ageMonthsMax: 18,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Única', ageMonthsMin: 12),
       ],
     ),
@@ -263,8 +463,18 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable25GCincoOctavosConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 12, ageMonthsMax: 18),
-        DoseConfig(doseNumber: 2, doseName: 'Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 12,
+          ageMonthsMax: 18,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // Sarampión-Rubéola SR
@@ -281,7 +491,12 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 12),
-        DoseConfig(doseNumber: 2, doseName: 'Cero', ageMonthsMin: 0, ageMonthsMax: 11),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Cero',
+          ageMonthsMin: 0,
+          ageMonthsMax: 11,
+        ),
       ],
     ),
     // Fiebre Amarilla
@@ -297,7 +512,12 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable25GCincoOctavosConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 18, ageMonthsMax: 24),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Única',
+          ageMonthsMin: 18,
+          ageMonthsMax: 24,
+        ),
       ],
     ),
     // Hepatitis A Pediátrica
@@ -312,7 +532,12 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 12, ageMonthsMax: 24),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Única',
+          ageMonthsMin: 12,
+          ageMonthsMax: 24,
+        ),
       ],
     ),
     // Varicela
@@ -328,8 +553,18 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable25GCincoOctavosConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 12, ageMonthsMax: 18),
-        DoseConfig(doseNumber: 2, doseName: 'Refuerzo', ageMonthsMin: 60, ageMonthsMax: 72),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 12,
+          ageMonthsMax: 18,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Refuerzo',
+          ageMonthsMin: 60,
+          ageMonthsMax: 72,
+        ),
       ],
     ),
     // TD Adulto
@@ -345,14 +580,40 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 120, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 120, daysFromPrevious: 180),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 120,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 120,
+          daysFromPrevious: 180,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Cuarta dosis', ageMonthsMin: 120),
         DoseConfig(doseNumber: 5, doseName: 'Quinta dosis', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 6, doseName: 'Primer Refuerzo', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 7, doseName: 'Segundo Refuerzo', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 8, doseName: 'Tercer Refuerzo', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 9, doseName: 'Cuarto Refuerzo', ageMonthsMin: 120),
+        DoseConfig(
+          doseNumber: 6,
+          doseName: 'Primer Refuerzo',
+          ageMonthsMin: 120,
+        ),
+        DoseConfig(
+          doseNumber: 7,
+          doseName: 'Segundo Refuerzo',
+          ageMonthsMin: 120,
+        ),
+        DoseConfig(
+          doseNumber: 8,
+          doseName: 'Tercer Refuerzo',
+          ageMonthsMin: 120,
+        ),
+        DoseConfig(
+          doseNumber: 9,
+          doseName: 'Cuarto Refuerzo',
+          ageMonthsMin: 120,
+        ),
       ],
     ),
     // dTpa Adulto
@@ -368,8 +629,18 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 120),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 120, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 120, daysFromPrevious: 180),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 120,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 120,
+          daysFromPrevious: 180,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Cuarta dosis', ageMonthsMin: 120),
         DoseConfig(doseNumber: 5, doseName: 'Quinta dosis', ageMonthsMin: 120),
         DoseConfig(doseNumber: 6, doseName: 'Única', ageMonthsMin: 120),
@@ -396,8 +667,18 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 6),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 6, daysFromPrevious: 30),
-        DoseConfig(doseNumber: 3, doseName: 'Única 0,25', ageMonthsMin: 6, ageMonthsMax: 35),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 6,
+          daysFromPrevious: 30,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Única 0,25',
+          ageMonthsMin: 6,
+          ageMonthsMax: 35,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Única 0,5', ageMonthsMin: 36),
       ],
     ),
@@ -415,9 +696,25 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
       doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 108, ageMonthsMax: 204),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 108, ageMonthsMax: 210, daysFromPrevious: 180),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 108, ageMonthsMax: 210),
+        DoseConfig(
+          doseNumber: 1,
+          doseName: 'Primera dosis',
+          ageMonthsMin: 108,
+          ageMonthsMax: 204,
+        ),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 108,
+          ageMonthsMax: 210,
+          daysFromPrevious: 180,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 108,
+          ageMonthsMax: 210,
+        ),
       ],
     ),
     // Antirrábica Humana (Vacuna)
@@ -440,10 +737,18 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 0),
-        DoseConfig(doseNumber: 2, doseName: 'Primera dosis y Segunda dosis', ageMonthsMin: 0),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Primera dosis y Segunda dosis',
+          ageMonthsMin: 0,
+        ),
         DoseConfig(doseNumber: 3, doseName: 'Segunda dosis', ageMonthsMin: 0),
         DoseConfig(doseNumber: 4, doseName: 'Tercera dosis', ageMonthsMin: 0),
-        DoseConfig(doseNumber: 5, doseName: 'Tercera dosis y Cuarta dosis', ageMonthsMin: 0),
+        DoseConfig(
+          doseNumber: 5,
+          doseName: 'Tercera dosis y Cuarta dosis',
+          ageMonthsMin: 0,
+        ),
         DoseConfig(doseNumber: 6, doseName: 'Cuarta dosis', ageMonthsMin: 0),
       ],
     ),
@@ -456,9 +761,7 @@ class VaccineCatalog {
       hasSyringeLot: false,
       usesVialCount: true,
       allowedDevices: [],
-      doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0),
-      ],
+      doses: [DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0)],
     ),
     // Hepatitis B (Inmunoglobulina)
     VaccineType.hepatitisBInmunoglobulina: VaccineConfig(
@@ -480,9 +783,7 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable23G1PulgAD,
         ApplicationDevice.jeringaDesechable23G1PulgConvencional,
       ],
-      doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0),
-      ],
+      doses: [DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0)],
     ),
     // Inmunoglobulina Anti Tetánica
     VaccineType.inmunoglobulinaAntiTetanica: VaccineConfig(
@@ -503,9 +804,7 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable26GTresOctavosConvencional,
         ApplicationDevice.jeringaDesechable27GTresOctavos,
       ],
-      doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0),
-      ],
+      doses: [DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0)],
     ),
     // Anti Toxina Tetánica
     VaccineType.antiToxinaTetanica: VaccineConfig(
@@ -526,9 +825,7 @@ class VaccineCatalog {
         ApplicationDevice.jeringaDesechable26GTresOctavosConvencional,
         ApplicationDevice.jeringaDesechable27GTresOctavos,
       ],
-      doses: [
-        DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0),
-      ],
+      doses: [DoseConfig(doseNumber: 1, doseName: 'Única', ageMonthsMin: 0)],
     ),
     // Meningococo
     VaccineType.meningococo: VaccineConfig(
@@ -544,8 +841,18 @@ class VaccineCatalog {
       ],
       doses: [
         DoseConfig(doseNumber: 1, doseName: 'Primera dosis', ageMonthsMin: 2),
-        DoseConfig(doseNumber: 2, doseName: 'Segunda dosis', ageMonthsMin: 4, daysFromPrevious: 60),
-        DoseConfig(doseNumber: 3, doseName: 'Tercera dosis', ageMonthsMin: 6, daysFromPrevious: 60),
+        DoseConfig(
+          doseNumber: 2,
+          doseName: 'Segunda dosis',
+          ageMonthsMin: 4,
+          daysFromPrevious: 60,
+        ),
+        DoseConfig(
+          doseNumber: 3,
+          doseName: 'Tercera dosis',
+          ageMonthsMin: 6,
+          daysFromPrevious: 60,
+        ),
         DoseConfig(doseNumber: 4, doseName: 'Única', ageMonthsMin: 12),
       ],
     ),
@@ -559,6 +866,7 @@ class VaccineCatalog {
       return null;
     }
   }
+
   static List<VaccineConfig> getAll() => vaccines.values.toList();
   static List<VaccineConfig> getByAgeMonths(int ageMonths) {
     return vaccines.values.where((v) {

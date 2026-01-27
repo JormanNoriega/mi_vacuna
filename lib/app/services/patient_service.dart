@@ -46,6 +46,18 @@ class PatientService {
     return maps.map((map) => Patient.fromMap(map)).toList();
   }
 
+  /// Obtener pacientes por enfermera
+  Future<List<Patient>> getPatientsByNurseId(int nurseId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'patients',
+      where: 'nurse_id = ?',
+      whereArgs: [nurseId],
+      orderBy: 'created_at DESC',
+    );
+    return maps.map((map) => Patient.fromMap(map)).toList();
+  }
+
   /// Buscar pacientes por nombre
   Future<List<Patient>> searchPatientsByName(String searchTerm) async {
     final db = await _dbHelper.database;
