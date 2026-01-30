@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app/controllers/auth_controller.dart';
+import 'app/controllers/vaccination_record_controller.dart';
 import 'app/modules/auth/login.dart';
+import 'app/data/database_helper.dart';
 
-void main() {
-  // Inicializar controladores
+void main() async {
+  // Asegurar que los bindings de Flutter estén inicializados
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar la base de datos
+  await DatabaseHelper.instance.database;
+
+  // Inicializar controladores globales
   Get.put(AuthController());
+  Get.put(VaccinationRecordController());
 
   runApp(const MyApp());
 }

@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../theme/colors.dart';
 import '../auth/login.dart';
-import '../vaccination_record/new_patient_page.dart';
+import '../vaccination_record/vaccination_form_wrapper.dart';
+import '../vaccine_management/vaccine_management_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -125,29 +126,47 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Get.to(() => const NewPatientPage());
-                },
-                icon: const Icon(Icons.person_add),
-                label: const Text('Nuevo Paciente'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF135BEC),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Get.to(() => const VaccinationFormWrapper());
+                      },
+                      icon: const Icon(Icons.person_add),
+                      label: const Text('Nuevo Paciente'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF135BEC),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Get.to(() => const VaccineManagementPage());
+                      },
+                      icon: const Icon(Icons.list_alt),
+                      label: const Text('Gestion de Vacunas'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF135BEC),
+                        side: const BorderSide(color: Color(0xFF135BEC)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
                   ),
-                  elevation: 2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Aquí puedes agregar las funcionalidades de la aplicación...',
-                style: TextStyle(color: Color(0xFF616F89)),
+                ],
               ),
             ],
           ),

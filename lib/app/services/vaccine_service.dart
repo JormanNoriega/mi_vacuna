@@ -1,261 +1,309 @@
+import 'package:sqflite/sqflite.dart';
 import '../data/database_helper.dart';
-import '../models/applied_dose_model.dart';
-import '../models/patient_model.dart';
-import '../domain/vaccine_catalog.dart';
-import '../domain/vaccine_config.dart';
-import '../domain/vaccine_type.dart';
-import '../domain/dose_config.dart';
+import '../models/vaccine.dart';
+import '../models/vaccine_config_option.dart';
 
-/// Servicio para gestionar la aplicación de vacunas
+/// Servicio para gestionar vacunas del catálogo
+///
+/// Proporciona métodos para:
+/// - Consultar vacunas activas, por categoría y por rango de edad
+/// - Obtener configuraciones dinámicas (dosis, laboratorios, jeringas, etc.)
+/// - Validar disponibilidad de vacunas
 class VaccineService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  /// Aplicar una dosis de vacuna a un paciente
-  Future<int> applyDose(AppliedDose dose) async {
-    final db = await _dbHelper.database;
-    return await db.insert('applied_doses', dose.toMap());
-  }
+  // ==================== CONSULTAS DE VACUNAS ====================
 
-  /// Obtener todas las dosis aplicadas a un paciente
-  Future<List<AppliedDose>> getDosesByPatient(int patientId) async {
+  /// Obtiene todas las vacunas activas
+  Future<List<Vaccine>> getAllActiveVaccines() async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'applied_doses',
-      where: 'patient_id = ?',
-      whereArgs: [patientId],
-      orderBy: 'application_date DESC',
+    final result = await db.query(
+      'vaccines',
+      where: 'is_active = ?',
+      whereArgs: [1],
+      orderBy: 'name ASC',
     );
-    return maps.map((map) => AppliedDose.fromMap(map)).toList();
+    return result.map((json) => Vaccine.fromMap(json)).toList();
   }
 
-  /// Obtener dosis de una vacuna específica para un paciente
-  Future<List<AppliedDose>> getDosesByVaccineType(
-    int patientId,
-    VaccineType vaccineType,
-  ) async {
+  /// Obtiene todas las vacunas (incluidas las inactivas)
+  Future<List<Vaccine>> getAllVaccines() async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'applied_doses',
-      where: 'patient_id = ? AND vaccine_type = ?',
-      whereArgs: [patientId, vaccineType.name],
-      orderBy: 'application_date ASC',
+    final result = await db.query('vaccines', orderBy: 'name ASC');
+    return result.map((json) => Vaccine.fromMap(json)).toList();
+  }
+
+  /// Obtiene vacunas por categoría
+  ///
+  /// Categorías disponibles:
+  /// - "Programa Ampliado de Inmunización (PAI)"
+  /// - "Especial"
+  /// - "Programa Ampliado de Inmunización (PAI) - Especial"
+  Future<List<Vaccine>> getVaccinesByCategory(String category) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'vaccines',
+      where: 'category = ? AND is_active = ?',
+      whereArgs: [category, 1],
+      orderBy: 'name ASC',
     );
-    return maps.map((map) => AppliedDose.fromMap(map)).toList();
+    return result.map((json) => Vaccine.fromMap(json)).toList();
   }
 
-  /// Obtener la última dosis aplicada de una vacuna específica
-  Future<AppliedDose?> getLastDoseByVaccine(
-    int patientId,
-    VaccineType vaccineType,
-  ) async {
+  /// Obtiene vacunas aplicables para una edad específica (en meses)
+  ///
+  /// Devuelve solo vacunas que tengan rango de edad definido Y la edad esté dentro del rango
+  Future<List<Vaccine>> getVaccinesForAge(int ageInMonths) async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'applied_doses',
-      where: 'patient_id = ? AND vaccine_type = ?',
-      whereArgs: [patientId, vaccineType.name],
-      orderBy: 'application_date DESC',
+    final result = await db.query(
+      'vaccines',
+      where: '''
+        is_active = 1 
+        AND min_months IS NOT NULL 
+        AND max_months IS NOT NULL
+        AND ? BETWEEN min_months AND max_months
+      ''',
+      whereArgs: [ageInMonths],
+      orderBy: 'min_months ASC, name ASC',
+    );
+    return result.map((json) => Vaccine.fromMap(json)).toList();
+  }
+
+  /// Obtiene vacunas que recomienden un rango de edad (sin ser obligatorio)
+  Future<List<Vaccine>> getVaccinesRecommendedForAge(int ageInMonths) async {
+    final allVaccines = await getAllActiveVaccines();
+    return allVaccines.where((v) => v.isInRecommendedAge(ageInMonths)).toList();
+  }
+
+  /// Obtiene una vacuna por su ID
+  Future<Vaccine?> getVaccineById(int id) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'vaccines',
+      where: 'id = ?',
+      whereArgs: [id],
       limit: 1,
     );
 
-    if (maps.isEmpty) return null;
-    return AppliedDose.fromMap(maps.first);
+    if (result.isEmpty) return null;
+    return Vaccine.fromMap(result.first);
   }
 
-  /// Verificar si se puede aplicar una dosis específica
-  Future<bool> canApplyDose(
-    Patient patient,
-    VaccineType vaccineType,
-    int doseNumber,
-  ) async {
-    final vaccineConfig = VaccineCatalog.getByType(vaccineType);
-    if (vaccineConfig == null) return false;
-
-    // Verificar que la dosis existe en la configuración
-    if (doseNumber > vaccineConfig.totalDoses) return false;
-
-    final doseConfig = vaccineConfig.doses.firstWhere(
-      (d) => d.doseNumber == doseNumber,
-      orElse: () => vaccineConfig.doses.first,
-    );
-
-    // Verificar edad del paciente
-    final ageMonths = patient.ageMonths;
-    if (ageMonths < doseConfig.ageMonthsMin) return false;
-    if (doseConfig.ageMonthsMax != null &&
-        ageMonths > doseConfig.ageMonthsMax!) {
-      return false;
-    }
-
-    // Verificar que no esté duplicada
-    final appliedDoses = await getDosesByVaccineType(patient.id!, vaccineType);
-    if (appliedDoses.any((d) => d.doseNumber == doseNumber)) {
-      return false;
-    }
-
-    // Verificar intervalo mínimo si es dosis subsecuente
-    if (doseConfig.daysFromPrevious != null && doseNumber > 1) {
-      final lastDose = await getLastDoseByVaccine(patient.id!, vaccineType);
-      if (lastDose != null) {
-        final daysSinceLastDose = DateTime.now()
-            .difference(lastDose.applicationDate)
-            .inDays;
-        if (daysSinceLastDose < doseConfig.daysFromPrevious!) {
-          return false;
-        }
-      } else {
-        // Si requiere dosis previa y no existe, no se puede aplicar
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Calcular fecha de próxima dosis
-  Future<DateTime?> calculateNextDoseDate(
-    int patientId,
-    VaccineType vaccineType,
-    int currentDoseNumber,
-  ) async {
-    final vaccineConfig = VaccineCatalog.getByType(vaccineType);
-    if (vaccineConfig == null) return null;
-
-    // Si es la última dosis, no hay siguiente
-    if (currentDoseNumber >= vaccineConfig.totalDoses) return null;
-
-    // Buscar la siguiente dosis en la configuración
-    final nextDose = vaccineConfig.doses.firstWhere(
-      (d) => d.doseNumber == currentDoseNumber + 1,
-      orElse: () => vaccineConfig.doses.first,
-    );
-
-    if (nextDose.daysFromPrevious != null) {
-      // Calcular desde la última aplicación
-      return DateTime.now().add(Duration(days: nextDose.daysFromPrevious!));
-    }
-
-    return null;
-  }
-
-  /// Obtener vacunas disponibles para un paciente según su edad
-  Future<List<VaccineConfig>> getAvailableVaccines(Patient patient) async {
-    final ageMonths = patient.ageMonths;
-    return VaccineCatalog.getByAgeMonths(ageMonths);
-  }
-
-  /// Obtener dosis pendientes para un paciente
-  Future<Map<VaccineType, List<DoseConfig>>> getPendingDoses(
-    Patient patient,
-  ) async {
-    final availableVaccines = await getAvailableVaccines(patient);
-    final pendingDoses = <VaccineType, List<DoseConfig>>{};
-
-    for (final vaccine in availableVaccines) {
-      final appliedDoses = await getDosesByVaccineType(
-        patient.id!,
-        vaccine.type,
-      );
-      final appliedDoseNumbers = appliedDoses.map((d) => d.doseNumber).toSet();
-
-      final pending = vaccine.doses.where((dose) {
-        // Verificar si no está aplicada
-        if (appliedDoseNumbers.contains(dose.doseNumber)) return false;
-
-        // Verificar edad
-        final ageMonths = patient.ageMonths;
-        if (ageMonths < dose.ageMonthsMin) return false;
-        if (dose.ageMonthsMax != null && ageMonths > dose.ageMonthsMax!) {
-          return false;
-        }
-
-        return true;
-      }).toList();
-
-      if (pending.isNotEmpty) {
-        pendingDoses[vaccine.type] = pending;
-      }
-    }
-
-    return pendingDoses;
-  }
-
-  /// Calcular porcentaje de completitud del esquema de vacunación
-  Future<double> getVaccinationCompletionPercentage(int patientId) async {
-    final appliedDoses = await getDosesByPatient(patientId);
-
-    // Total de dosis del PAI (aproximado para menores de 5 años)
-    // Este número puede ajustarse según las políticas del PAI
-    const totalExpectedDoses = 25;
-
-    if (appliedDoses.isEmpty) return 0.0;
-
-    final percentage = (appliedDoses.length / totalExpectedDoses) * 100;
-    return percentage > 100 ? 100.0 : percentage;
-  }
-
-  /// Obtener conteo de dosis por vacuna para un paciente
-  Future<Map<VaccineType, int>> getVaccineCountByPatient(int patientId) async {
-    final doses = await getDosesByPatient(patientId);
-    final counts = <VaccineType, int>{};
-
-    for (final dose in doses) {
-      counts[dose.vaccineType] = (counts[dose.vaccineType] ?? 0) + 1;
-    }
-
-    return counts;
-  }
-
-  /// Actualizar dosis aplicada
-  Future<int> updateDose(AppliedDose dose) async {
+  /// Obtiene una vacuna por su código único
+  Future<Vaccine?> getVaccineByCode(String code) async {
     final db = await _dbHelper.database;
-    return await db.update(
-      'applied_doses',
-      dose.copyWith(updatedAt: DateTime.now()).toMap(),
-      where: 'id = ?',
-      whereArgs: [dose.id],
+    final result = await db.query(
+      'vaccines',
+      where: 'code = ?',
+      whereArgs: [code],
+      limit: 1,
     );
+
+    if (result.isEmpty) return null;
+    return Vaccine.fromMap(result.first);
   }
 
-  /// Eliminar dosis aplicada
-  Future<int> deleteDose(int doseId) async {
+  /// Verifica si existe una vacuna con un código específico
+  Future<bool> existsByCode(String code) async {
+    final vaccine = await getVaccineByCode(code);
+    return vaccine != null;
+  }
+
+  // ==================== CONFIGURACIONES DINÁMICAS ====================
+
+  /// Obtiene todas las opciones de configuración de una vacuna
+  Future<List<VaccineConfigOption>> getOptions(
+    int vaccineId, {
+    ConfigFieldType? fieldType,
+  }) async {
     final db = await _dbHelper.database;
-    return await db.delete(
-      'applied_doses',
-      where: 'id = ?',
-      whereArgs: [doseId],
+
+    String where = 'vaccine_id = ? AND is_active = ?';
+    List<dynamic> whereArgs = [vaccineId, 1];
+
+    if (fieldType != null) {
+      where += ' AND field_type = ?';
+      whereArgs.add(fieldType.name);
+    }
+
+    final result = await db.query(
+      'vaccine_config_options',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'sort_order ASC, display_name ASC',
     );
+
+    return result.map((json) => VaccineConfigOption.fromMap(json)).toList();
   }
 
-  /// Obtener dosis aplicadas por una enfermera
-  Future<List<AppliedDose>> getDosesByNurse(int nurseId) async {
+  /// Obtiene las dosis disponibles de una vacuna
+  Future<List<VaccineConfigOption>> getDoses(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.dose);
+  }
+
+  /// Obtiene los laboratorios disponibles de una vacuna
+  Future<List<VaccineConfigOption>> getLaboratories(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.laboratory);
+  }
+
+  /// Obtiene las jeringas disponibles de una vacuna
+  Future<List<VaccineConfigOption>> getSyringes(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.syringe);
+  }
+
+  /// Obtiene los goteros disponibles de una vacuna
+  Future<List<VaccineConfigOption>> getDroppers(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.dropper);
+  }
+
+  /// Obtiene los tipos de neumococo disponibles
+  Future<List<VaccineConfigOption>> getPneumococcalTypes(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.pneumococcalType);
+  }
+
+  /// Obtiene las observaciones predefinidas de una vacuna
+  Future<List<VaccineConfigOption>> getObservations(int vaccineId) async {
+    return getOptions(vaccineId, fieldType: ConfigFieldType.observation);
+  }
+
+  /// Obtiene la opción marcada como predeterminada para un campo específico
+  Future<VaccineConfigOption?> getDefaultOption(
+    int vaccineId,
+    ConfigFieldType fieldType,
+  ) async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'applied_doses',
-      where: 'nurse_id = ?',
-      whereArgs: [nurseId],
-      orderBy: 'application_date DESC',
+    final result = await db.query(
+      'vaccine_config_options',
+      where:
+          'vaccine_id = ? AND field_type = ? AND is_default = ? AND is_active = ?',
+      whereArgs: [vaccineId, fieldType.name, 1, 1],
+      limit: 1,
     );
-    return maps.map((map) => AppliedDose.fromMap(map)).toList();
+
+    if (result.isEmpty) return null;
+    return VaccineConfigOption.fromMap(result.first);
   }
 
-  /// Contar dosis aplicadas totales
-  Future<int> countAppliedDoses() async {
+  // ==================== BÚSQUEDA Y FILTRADO ====================
+
+  /// Busca vacunas por nombre (búsqueda parcial, case-insensitive)
+  Future<List<Vaccine>> searchByName(String searchTerm) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'vaccines',
+      where: 'name LIKE ? AND is_active = ?',
+      whereArgs: ['%$searchTerm%', 1],
+      orderBy: 'name ASC',
+    );
+    return result.map((json) => Vaccine.fromMap(json)).toList();
+  }
+
+  /// Filtra vacunas por múltiples criterios
+  Future<List<Vaccine>> filterVaccines({
+    String? category,
+    int? minAgeMonths,
+    int? maxAgeMonths,
+    bool? hasLaboratory,
+    bool? hasSyringe,
+    bool? onlyActive = true,
+  }) async {
+    final db = await _dbHelper.database;
+
+    List<String> conditions = [];
+    List<dynamic> args = [];
+
+    if (onlyActive == true) {
+      conditions.add('is_active = ?');
+      args.add(1);
+    }
+
+    if (category != null) {
+      conditions.add('category = ?');
+      args.add(category);
+    }
+
+    if (minAgeMonths != null) {
+      conditions.add('(max_months IS NULL OR max_months >= ?)');
+      args.add(minAgeMonths);
+    }
+
+    if (maxAgeMonths != null) {
+      conditions.add('(min_months IS NULL OR min_months <= ?)');
+      args.add(maxAgeMonths);
+    }
+
+    if (hasLaboratory != null) {
+      conditions.add('has_laboratory = ?');
+      args.add(hasLaboratory ? 1 : 0);
+    }
+
+    if (hasSyringe != null) {
+      conditions.add('has_syringe = ?');
+      args.add(hasSyringe ? 1 : 0);
+    }
+
+    final whereClause = conditions.isEmpty ? null : conditions.join(' AND ');
+
+    final result = await db.query(
+      'vaccines',
+      where: whereClause,
+      whereArgs: args.isEmpty ? null : args,
+      orderBy: 'name ASC',
+    );
+
+    return result.map((json) => Vaccine.fromMap(json)).toList();
+  }
+
+  // ==================== ESTADÍSTICAS ====================
+
+  /// Cuenta el total de vacunas activas
+  Future<int> countActiveVaccines() async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM applied_doses',
+      'SELECT COUNT(*) as count FROM vaccines WHERE is_active = 1',
     );
-    return result.first['count'] as int;
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  /// Buscar dosis por número de lote (para trazabilidad)
-  Future<List<AppliedDose>> getDosesByLotNumber(String lotNumber) async {
+  /// Cuenta vacunas por categoría
+  Future<Map<String, int>> countByCategory() async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'applied_doses',
-      where: 'lot_number = ?',
-      whereArgs: [lotNumber],
-      orderBy: 'application_date DESC',
+    final result = await db.rawQuery('''
+      SELECT category, COUNT(*) as count 
+      FROM vaccines 
+      WHERE is_active = 1
+      GROUP BY category
+    ''');
+
+    return Map.fromEntries(
+      result.map(
+        (row) => MapEntry(row['category'] as String, row['count'] as int),
+      ),
     );
-    return maps.map((map) => AppliedDose.fromMap(map)).toList();
+  }
+
+  // ==================== UTILIDADES ====================
+
+  /// Obtiene una lista de todas las categorías únicas
+  Future<List<String>> getAllCategories() async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery('''
+      SELECT DISTINCT category 
+      FROM vaccines 
+      WHERE is_active = 1 
+      ORDER BY category
+    ''');
+    return result.map((row) => row['category'] as String).toList();
+  }
+
+  /// Verifica si una vacuna tiene configuraciones dinámicas
+  Future<bool> hasConfigOptions(int vaccineId) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM vaccine_config_options WHERE vaccine_id = ? AND is_active = 1',
+      [vaccineId],
+    );
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    return count > 0;
   }
 }

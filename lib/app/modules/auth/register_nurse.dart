@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
-import '../../widgets/InputField.dart';
-import '../../widgets/PasswordField.dart';
-import '../../widgets/DropdownField.dart';
+import '../../widgets/form_fields.dart';
 import '../../theme/colors.dart';
 import '../home/home_page.dart';
 
@@ -27,23 +25,7 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
-  String? selectedIdType;
-  final List<Map<String, String>> idTypes = [
-    {'value': '', 'label': 'Selecciona tipo de ID'},
-    {'value': 'CN', 'label': 'CN - Certificado de Nacido Vivo'},
-    {'value': 'RC', 'label': 'RC - Registro Civil'},
-    {'value': 'TI', 'label': 'TI - Tarjeta de Identidad'},
-    {'value': 'CC', 'label': 'CC - Cédula de Ciudadanía'},
-    {'value': 'AS', 'label': 'AS - Adulto sin Identificación'},
-    {'value': 'MS', 'label': 'MS - Menor sin Identificación'},
-    {'value': 'CE', 'label': 'CE - Cédula de Extranjería'},
-    {'value': 'PA', 'label': 'PA - Pasaporte'},
-    {'value': 'CD', 'label': 'CD - Carné Diplomático'},
-    {'value': 'SC', 'label': 'SC - Salvoconducto'},
-    {'value': 'PE', 'label': 'PE - Permiso Especial de Permanencia'},
-    {'value': 'PPT', 'label': 'PPT - Permiso por Protección Temporal'},
-    {'value': 'DE', 'label': 'DE - Documento Extranjero'},
-  ];
+  String? selectedIdType = 'CC';
 
   @override
   Widget build(BuildContext context) {
@@ -84,120 +66,87 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
               ),
               const SizedBox(height: 20),
               // ID Type
-              DropdownField(
+              FormFields.buildDropdownField(
                 label: 'Tipo de identificación',
-                hint: 'Selecciona tipo de ID',
-                icon: Icons.badge_outlined,
-                items: idTypes,
-                value: selectedIdType,
+                value: selectedIdType ?? 'CC',
+                items: const [
+                  'CC - Cédula de Ciudadanía',
+                  'CE - Cédula de Extranjería',
+                  'PA - Pasaporte',
+                  'TI - Tarjeta de Identidad',
+                ],
                 onChanged: (value) {
                   setState(() {
                     selectedIdType = value;
                   });
                 },
+                required: true,
               ),
-              const SizedBox(height: 16),
               // ID Number
-              InputField(
-                controller: idController,
+              FormFields.buildTextField(
                 label: 'Número de identificación',
-                hint: 'Ingresa tu número de identificación',
-                icon: Icons.badge_outlined,
+                controller: idController,
+                placeholder: 'Ingresa tu número de identificación',
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Este campo es requerido';
-                  }
-                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                    return 'Solo se permiten números';
-                  }
-                  return null;
-                },
+                required: true,
               ),
-              const SizedBox(height: 16),
               // Names
               Row(
                 children: [
                   Expanded(
-                    child: InputField(
-                      controller: firstNameController,
+                    child: FormFields.buildTextField(
                       label: 'Nombre(s)',
-                      hint: 'Ejemplo: Juana',
-                      icon: Icons.person_outline,
+                      controller: firstNameController,
+                      placeholder: 'Ejemplo: Juana',
+                      required: true,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: InputField(
-                      controller: lastNameController,
+                    child: FormFields.buildTextField(
                       label: 'Apellido(s)',
-                      hint: 'Ejemplo: Pérez',
-                      icon: Icons.person_outline,
+                      controller: lastNameController,
+                      placeholder: 'Ejemplo: Pérez',
+                      required: true,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
               // Email
-              InputField(
-                controller: emailController,
+              FormFields.buildTextField(
                 label: 'Correo electrónico',
-                hint: 'ejemplo@salud.org',
-                icon: Icons.email_outlined,
+                controller: emailController,
+                placeholder: 'ejemplo@salud.org',
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Este campo es requerido';
-                  }
-                  if (!value.contains('@')) {
-                    return 'El correo debe contener @';
-                  }
-                  return null;
-                },
+                required: true,
               ),
-              const SizedBox(height: 16),
               // Phone
-              InputField(
-                controller: phoneController,
+              FormFields.buildTextField(
                 label: 'Teléfono',
-                hint: '3001234567',
-                icon: Icons.phone_outlined,
+                controller: phoneController,
+                placeholder: '3001234567',
                 keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Este campo es requerido';
-                  }
-                  if (value.length != 10) {
-                    return 'El teléfono debe tener 10 dígitos';
-                  }
-                  return null;
-                },
+                required: true,
               ),
-              const SizedBox(height: 16),
               // Institution
-              InputField(
-                controller: institutionController,
+              FormFields.buildTextField(
                 label: 'Institución de salud',
-                hint: 'Nombre del hospital o clínica',
-                icon: Icons.domain_outlined,
+                controller: institutionController,
+                placeholder: 'Nombre del hospital o clínica',
+                required: true,
               ),
-              const SizedBox(height: 16),
               // Password
-              PasswordField(
-                controller: passwordController,
+              FormFields.buildPasswordField(
                 label: 'Contraseña',
-                hintText: 'Crea una contraseña segura',
+                controller: passwordController,
+                placeholder: 'Crea una contraseña segura',
+                required: true,
               ),
-              const SizedBox(height: 16),
-              PasswordField(
-                controller: confirmPasswordController,
+              FormFields.buildPasswordField(
                 label: 'Confirmar contraseña',
-                hintText: 'Repite tu contraseña',
+                controller: confirmPasswordController,
+                placeholder: 'Repite tu contraseña',
+                required: true,
               ),
               const SizedBox(height: 16),
               // Mensaje de error
