@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/patient_form_controller.dart';
+import '../../controllers/vaccine_selection_controller.dart';
 import '../../theme/colors.dart';
 import 'steps/step1_basic_data.dart';
 import 'steps/step2_additional_data.dart';
 import 'steps/step3_vaccines.dart';
-
+import 'steps/step4_review.dart';
 
 class VaccinationFormWrapper extends StatelessWidget {
   const VaccinationFormWrapper({Key? key}) : super(key: key);
@@ -107,6 +108,10 @@ class VaccinationFormWrapper extends StatelessWidget {
                       height: constraints.maxHeight,
                       child: const Step3Vaccines(),
                     ),
+                    SizedBox(
+                      height: constraints.maxHeight,
+                      child: const Step4Review(),
+                    ),
                   ],
                 );
               },
@@ -145,14 +150,25 @@ class VaccinationFormWrapper extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         if (controller.currentStep.value == 0) {
+                          // Validar paso 1 y avanzar
                           if (controller.validateStep1()) {
                             controller.nextStep();
                           }
-                        } else if (controller.currentStep.value ==
-                            controller.totalSteps - 1) {
-                          controller.submitForm();
-                        } else {
+                        } else if (controller.currentStep.value == 1) {
+                          // Paso 2 -> Paso 3 (sin validación obligatoria)
                           controller.nextStep();
+                        } else if (controller.currentStep.value == 2) {
+                          // Paso 3 (vacunas) -> Paso 4 (revisión)
+                          // Validar vacunas antes de avanzar
+                          final vaccineController =
+                              Get.find<VaccineSelectionController>();
+                          if (vaccineController.validate()) {
+                            controller.nextStep();
+                          }
+                        } else if (controller.currentStep.value == 3) {
+                          // Paso 4 (último) -> Guardar
+                          print('🚀 Botón Guardar presionado en paso 4');
+                          controller.submitForm();
                         }
                       },
                       style: ElevatedButton.styleFrom(

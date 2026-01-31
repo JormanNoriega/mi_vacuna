@@ -248,7 +248,7 @@ class VaccineManagementPage extends StatelessWidget {
               return RefreshIndicator(
                 onRefresh: () => controller.refresh(),
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   itemCount: controller.filteredVaccines.length,
                   itemBuilder: (context, index) {
                     final vaccine = controller.filteredVaccines[index];
@@ -288,50 +288,142 @@ class VaccineManagementPage extends StatelessWidget {
         color: cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: vaccine.isActive
-                ? primaryColor.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Text(
-              vaccine.name[0].toUpperCase(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: vaccine.isActive ? primaryColor : Colors.grey,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          vaccine.name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            color: vaccine.isActive ? textPrimary : textSecondary,
-          ),
-        ),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text(
-              'Código: ${vaccine.code}',
-              style: const TextStyle(color: textSecondary, fontSize: 12),
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: vaccine.isActive
+                        ? primaryColor.withOpacity(0.15)
+                        : Colors.grey.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      vaccine.name[0].toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: vaccine.isActive ? primaryColor : Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Título y código
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        vaccine.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: vaccine.isActive ? textPrimary : textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Código: ${vaccine.code}',
+                        style: const TextStyle(
+                          color: textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Menú
+                PopupMenuButton(
+                  icon: const Icon(Icons.more_vert, color: textSecondary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20, color: primaryColor),
+                          const SizedBox(width: 12),
+                          const Text('Editar'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(
+                            vaccine.isActive
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 20,
+                            color: vaccine.isActive
+                                ? Colors.orange
+                                : Colors.green,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(vaccine.isActive ? 'Desactivar' : 'Activar'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delete, size: 20, color: Colors.red),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Eliminar',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'edit':
+                        final result = await Get.to(
+                          () => VaccineFormPage(vaccine: vaccine),
+                        );
+                        if (result == true) controller.refresh();
+                        break;
+                      case 'toggle':
+                        await controller.toggleVaccineStatus(vaccine);
+                        break;
+                      case 'delete':
+                        _confirmDelete(context, vaccine, controller);
+                        break;
+                    }
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: borderColor),
+            const SizedBox(height: 12),
+            // Etiquetas principales
             Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _buildChip(
                   '${vaccine.maxDoses} dosis',
@@ -343,154 +435,107 @@ class VaccineManagementPage extends StatelessWidget {
                   Icons.calendar_today,
                   primaryColor,
                 ),
+                _buildChip(
+                  vaccine.category.replaceAll(
+                    'Programa Ampliado de Inmunización (PAI)',
+                    'PAI',
+                  ),
+                  Icons.category,
+                  Colors.deepPurple,
+                ),
                 if (!vaccine.isActive)
                   _buildChip('INACTIVA', Icons.visibility_off, Colors.red),
               ],
             ),
-          ],
-        ),
-        trailing: PopupMenuButton(
-          icon: const Icon(Icons.more_vert, color: textSecondary),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 20, color: primaryColor),
-                  const SizedBox(width: 12),
-                  const Text('Editar'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'toggle',
-              child: Row(
-                children: [
-                  Icon(
-                    vaccine.isActive ? Icons.visibility_off : Icons.visibility,
-                    size: 20,
-                    color: vaccine.isActive ? Colors.orange : Colors.green,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(vaccine.isActive ? 'Desactivar' : 'Activar'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  const Icon(Icons.delete, size: 20, color: Colors.red),
-                  const SizedBox(width: 12),
-                  const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
-          onSelected: (value) async {
-            switch (value) {
-              case 'edit':
-                final result = await Get.to(
-                  () => VaccineFormPage(vaccine: vaccine),
-                );
-                if (result == true) controller.refresh();
-                break;
-              case 'toggle':
-                await controller.toggleVaccineStatus(vaccine);
-                break;
-              case 'delete':
-                _confirmDelete(context, vaccine, controller);
-                break;
-            }
-          },
-        ),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: backgroundLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Categoría',
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+            // Características
+            if (_hasAnyFeature(vaccine)) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: backgroundLight,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  vaccine.category,
-                  style: const TextStyle(color: textPrimary, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Características:',
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (vaccine.hasLaboratory)
-                      _buildFeatureChip('Laboratorio', Icons.business),
-                    if (vaccine.hasLot) _buildFeatureChip('Lote', Icons.tag),
-                    if (vaccine.hasSyringe)
-                      _buildFeatureChip('Jeringa', Icons.medication),
-                    if (vaccine.hasSyringeLot)
-                      _buildFeatureChip('Lote Jeringa', Icons.qr_code),
-                    if (vaccine.hasDiluent)
-                      _buildFeatureChip('Diluyente', Icons.water_drop),
-                    if (vaccine.hasDropper)
-                      _buildFeatureChip('Gotero', Icons.colorize),
-                    if (vaccine.hasPneumococcalType)
-                      _buildFeatureChip('Tipo Neumococo', Icons.science),
-                    if (vaccine.hasVialCount)
-                      _buildFeatureChip(
-                        'Cant. Frascos',
-                        Icons.format_list_numbered,
+                    const Text(
+                      'Características:',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                    if (vaccine.hasObservation)
-                      _buildFeatureChip('Observaciones', Icons.note),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (vaccine.hasLaboratory)
+                          _buildFeatureChip('Laboratorio', Icons.business),
+                        if (vaccine.hasLot)
+                          _buildFeatureChip('Lote', Icons.tag),
+                        if (vaccine.hasSyringe)
+                          _buildFeatureChip('Jeringa', Icons.medication),
+                        if (vaccine.hasSyringeLot)
+                          _buildFeatureChip('Lote Jeringa', Icons.qr_code),
+                        if (vaccine.hasDiluent)
+                          _buildFeatureChip('Diluyente', Icons.water_drop),
+                        if (vaccine.hasDropper)
+                          _buildFeatureChip('Gotero', Icons.colorize),
+                        if (vaccine.hasPneumococcalType)
+                          _buildFeatureChip('Tipo Neumococo', Icons.science),
+                        if (vaccine.hasVialCount)
+                          _buildFeatureChip(
+                            'Cant. Frascos',
+                            Icons.format_list_numbered,
+                          ),
+                        if (vaccine.hasObservation)
+                          _buildFeatureChip('Observaciones', Icons.note),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
+  bool _hasAnyFeature(Vaccine vaccine) {
+    return vaccine.hasLaboratory ||
+        vaccine.hasLot ||
+        vaccine.hasSyringe ||
+        vaccine.hasSyringeLot ||
+        vaccine.hasDiluent ||
+        vaccine.hasDropper ||
+        vaccine.hasPneumococcalType ||
+        vaccine.hasVialCount ||
+        vaccine.hasObservation;
+  }
+
   Widget _buildChip(String label, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.4), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: color,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

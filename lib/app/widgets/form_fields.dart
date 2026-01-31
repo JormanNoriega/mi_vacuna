@@ -138,6 +138,56 @@ class FormFields {
     );
   }
 
+  // Widget para campo de texto de solo lectura
+  static Widget buildReadOnlyTextField({
+    required String label,
+    required TextEditingController controller,
+    required String placeholder,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 6),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextFormField(
+            controller: controller,
+            readOnly: true,
+            style: const TextStyle(color: textPrimary, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: placeholder,
+              hintStyle: const TextStyle(color: textHint),
+              filled: true,
+              fillColor: Colors.grey[200],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: borderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: borderColor),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Widget para campo de texto
   static Widget buildTextField({
     required String label,

@@ -751,11 +751,45 @@ class Step2AdditionalData extends StatelessWidget {
                     ? Column(
                         children: [
                           const SizedBox(height: 16),
-                          FormFields.buildTextField(
+                          FormFields.buildDropdownField(
                             label: '¿Cuál?',
-                            controller:
-                                controller.contraindicationDetailsController,
-                            placeholder: 'Describa la contraindicación',
+                            value:
+                                controller
+                                    .contraindicationDetailsController
+                                    .text
+                                    .isEmpty
+                                ? 'Adultos'
+                                : controller
+                                      .contraindicationDetailsController
+                                      .text,
+                            items: const [
+                              'Adultos',
+                              'Anafilaxia o hipersensibilidad al huevo',
+                              'Cancer',
+                              'Encefalopatía',
+                              'Enfermedad Autoinmune',
+                              'Enfermedad congénita Inmunológica',
+                              'Enfermedad neurológica degenerativa',
+                              'Gestante',
+                              'Hipersensibilidad a los Aminoglucósidos',
+                              'Inmunocomprometido',
+                              'Inmunodeficiencia Primaria o secundaria',
+                              'Malformación del aparato gastrointestinal',
+                              'Menor de 6 meses',
+                              'Neoplasias',
+                              'Reacción alergica a estreptomicina',
+                              'Reacción alérgica a neomicina',
+                              'Reacción alérgica polimixina B',
+                              'Transfusiones de derivados sanguíneos o inmunoglobulina',
+                              'Tratamiento inmunosupresor',
+                              'Varicela',
+                            ],
+                            onChanged: (value) {
+                              controller
+                                      .contraindicationDetailsController
+                                      .text =
+                                  value ?? '';
+                            },
                             required: false,
                           ),
                         ],
@@ -787,10 +821,47 @@ class Step2AdditionalData extends StatelessWidget {
                     ? Column(
                         children: [
                           const SizedBox(height: 16),
-                          FormFields.buildTextField(
+                          FormFields.buildDropdownField(
                             label: '¿Cuál?',
-                            controller: controller.reactionDetailsController,
-                            placeholder: 'Describa la reacción',
+                            value:
+                                controller
+                                    .reactionDetailsController
+                                    .text
+                                    .isEmpty
+                                ? 'Convulsiones'
+                                : controller.reactionDetailsController.text,
+                            items: const [
+                              'Convulsiones',
+                              'Diarrea',
+                              'Dificultad respiratoria',
+                              'Dolor de cabeza',
+                              'Dolor local',
+                              'Dolor muscular',
+                              'Edema',
+                              'Encefalitis',
+                              'Enfermedad viscerotrópica',
+                              'Enrrojecimiento',
+                              'Eritema',
+                              'Escalofrios',
+                              'Hipotonia',
+                              'Induración',
+                              'Irritabilidad',
+                              'Linfadenitis',
+                              'Llanto persistente',
+                              'Parálisis flácida',
+                              'Perdida de apetito',
+                              'Shock anafiláctico',
+                              'Sindróme de Guillain Barré',
+                              'Temperatura mayor 40° C',
+                              'Trombocitopenia',
+                              'Urticaria',
+                              'Varicela',
+                              'Vómito',
+                            ],
+                            onChanged: (value) {
+                              controller.reactionDetailsController.text =
+                                  value ?? '';
+                            },
                             required: false,
                           ),
                         ],
@@ -813,21 +884,23 @@ class Step2AdditionalData extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Fecha de registro
-              FormFields.buildDatePickerField(
-                label: 'Fecha de Registro del Antecedente',
-                value: controller.historyRecordDate.value,
-                icon: Icons.calendar_today,
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: Get.context!,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) {
-                    controller.historyRecordDate.value = date;
-                  }
-                },
+              Obx(
+                () => FormFields.buildDatePickerField(
+                  label: 'Fecha de Registro del Antecedente',
+                  value: controller.historyRecordDate.value,
+                  icon: Icons.calendar_today,
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: Get.context!,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      controller.historyRecordDate.value = date;
+                    }
+                  },
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -863,11 +936,22 @@ class Step2AdditionalData extends StatelessWidget {
     );
   }
 
-  // Sección de condición usuaria (solo mujeres)
+  // Sección de condición usuaria (solo mujeres >= 9 años)
   Widget _buildUserConditionSection(PatientFormController controller) {
     return Obx(() {
       // Solo mostrar si el sexo es mujer
       if (controller.selectedSex.value != Sexo.mujer) {
+        return const SizedBox.shrink();
+      }
+
+      // Validar edad >= 9 años
+      final birthDate = controller.birthDate.value;
+      if (birthDate == null) {
+        return const SizedBox.shrink();
+      }
+
+      final int age = DateTime.now().difference(birthDate).inDays ~/ 365;
+      if (age < 9) {
         return const SizedBox.shrink();
       }
 
@@ -899,19 +983,34 @@ class Step2AdditionalData extends StatelessWidget {
                 // Condición usuaria
                 FormFields.buildDropdownField(
                   label: 'Condición de la Usuaria',
-                  value:
-                      controller.selectedUserCondition.value?.name ??
-                      'noAplica',
+                  value: _getUserConditionLabel(
+                    controller.selectedUserCondition.value,
+                  ),
                   items: const [
-                    'noAplica',
-                    'mujerEdadFertil',
-                    'gestante',
-                    'mujerMayor50',
+                    'No Aplica',
+                    'Mujer en Edad Fértil',
+                    'Gestante',
+                    'Mujer Mayor de 50 Años',
                   ],
                   onChanged: (value) {
-                    controller.selectedUserCondition.value = CondicionUsuaria
-                        .values
-                        .firstWhere((e) => e.name == value);
+                    // Mapear etiqueta a valor del enum
+                    final conditionMap = {
+                      'No Aplica': CondicionUsuaria.noAplica,
+                      'Mujer en Edad Fértil': CondicionUsuaria.mujerEdadFertil,
+                      'Gestante': CondicionUsuaria.gestante,
+                      'Mujer Mayor de 50 Años': CondicionUsuaria.mujerMayor50,
+                    };
+
+                    controller.selectedUserCondition.value =
+                        conditionMap[value]!;
+
+                    // Si cambia de gestante a otro valor, limpiar campos
+                    if (value != 'Gestante') {
+                      controller.lastMenstrualDate.value = null;
+                      controller.probableDeliveryDate.value = null;
+                      controller.gestationWeeksController.clear();
+                      controller.previousPregnanciesController.clear();
+                    }
                   },
                   required: false,
                 ),
@@ -926,7 +1025,7 @@ class Step2AdditionalData extends StatelessWidget {
                           children: [
                             // Fecha de última menstruación
                             FormFields.buildDatePickerField(
-                              label: 'Fecha de Última Menstruación',
+                              label: 'Fecha de Última Menstruación *',
                               value: controller.lastMenstrualDate.value,
                               icon: Icons.calendar_today,
                               onTap: () async {
@@ -940,6 +1039,16 @@ class Step2AdditionalData extends StatelessWidget {
                                 );
                                 if (date != null) {
                                   controller.lastMenstrualDate.value = date;
+
+                                  // Calcular automáticamente semanas de gestación
+                                  final int daysDiff = DateTime.now()
+                                      .difference(date)
+                                      .inDays;
+                                  final int weeks = daysDiff ~/ 7;
+                                  final int remainingDays = daysDiff % 7;
+                                  controller.gestationWeeksController.text =
+                                      '$weeks semanas${remainingDays > 0 ? ' y $remainingDays días' : ''}';
+
                                   // Calcular fecha probable de parto (280 días después)
                                   controller.probableDeliveryDate.value = date
                                       .add(const Duration(days: 280));
@@ -948,17 +1057,15 @@ class Step2AdditionalData extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
 
-                            // Semanas de gestación
-                            FormFields.buildTextField(
+                            // Semanas de gestación (calculado automáticamente - solo lectura)
+                            FormFields.buildReadOnlyTextField(
                               label: 'Semanas de Gestación',
                               controller: controller.gestationWeeksController,
-                              placeholder: 'Ej: 12',
-                              keyboardType: TextInputType.number,
-                              required: false,
+                              placeholder: 'Se calcula automáticamente',
                             ),
                             const SizedBox(height: 16),
 
-                            // Fecha probable de parto (calculada)
+                            // Fecha probable de parto (calculada automáticamente - solo lectura)
                             Obx(
                               () => FormFields.buildReadOnlyDateField(
                                 label: 'Fecha Probable de Parto',
@@ -1618,5 +1725,21 @@ class Step2AdditionalData extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Helper para obtener etiqueta legible de condición usuaria
+  String _getUserConditionLabel(CondicionUsuaria? condition) {
+    if (condition == null) return 'No Aplica';
+
+    switch (condition) {
+      case CondicionUsuaria.noAplica:
+        return 'No Aplica';
+      case CondicionUsuaria.mujerEdadFertil:
+        return 'Mujer en Edad Fértil';
+      case CondicionUsuaria.gestante:
+        return 'Gestante';
+      case CondicionUsuaria.mujerMayor50:
+        return 'Mujer Mayor de 50 Años';
+    }
   }
 }

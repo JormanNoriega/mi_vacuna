@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/patient_model.dart';
+import '../models/applied_dose.dart';
 import '../services/patient_service.dart';
+import '../services/applied_dose_service.dart';
+import '../widgets/custom_snackbar.dart';
+import 'vaccine_selection_controller.dart';
 
 /// Controlador para el formulario de registro de pacientes
-/// Gestiona los pasos 1 y 2 del formulario (datos básicos y adicionales)
+/// Gestiona los pasos del formulario (datos básicos, adicionales, vacunas y revisión)
 class PatientFormController extends GetxController {
   final PatientService _patientService = PatientService();
+  final AppliedDoseService _appliedDoseService = AppliedDoseService();
 
   // ==================== ESTADO ====================
   final isLoading = false.obs;
@@ -16,7 +21,7 @@ class PatientFormController extends GetxController {
   final pageController = PageController();
   final RxInt currentStep = 0.obs;
   final int totalSteps =
-      2; // Solo paso 1 (datos básicos) y paso 2 (datos adicionales)
+      4; // Paso 1 (básicos), Paso 2 (adicionales), Paso 3 (vacunas), Paso 4 (revisión)
 
   // ==================== PASO 1: DATOS BÁSICOS ====================
   // Controllers de texto
@@ -195,6 +200,9 @@ class PatientFormController extends GetxController {
       if (currentStep.value == 0 && !validateStep1()) {
         return;
       }
+      if (currentStep.value == 1 && !validateStep2()) {
+        return;
+      }
 
       currentStep.value++;
       pageController.animateToPage(
@@ -270,39 +278,89 @@ class PatientFormController extends GetxController {
   // ==================== VALIDACIONES ====================
   bool validateStep1() {
     if (idNumberController.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'El número de identificación es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError('El número de identificación es requerido');
       return false;
     }
 
     if (firstNameController.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'El primer nombre es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError('El primer nombre es requerido');
       return false;
     }
 
     if (lastNameController.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'El primer apellido es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError('El primer apellido es requerido');
       return false;
     }
 
     if (birthDate.value == null) {
-      Get.snackbar(
-        'Error',
-        'La fecha de nacimiento es requerida',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError('La fecha de nacimiento es requerida');
       return false;
+    }
+
+    return true;
+  }
+
+  bool validateStep2() {
+    // País de Nacimiento (requerido)
+    if (birthCountryController.text.trim().isEmpty) {
+      CustomSnackbar.showError('El país de nacimiento es requerido');
+      return false;
+    }
+
+    // Estatus Migratorio (requerido)
+    if (selectedMigratoryStatus.value == null) {
+      CustomSnackbar.showError('El estatus migratorio es requerido');
+      return false;
+    }
+
+    // Lugar de Atención del Parto (requerido)
+    if (birthPlaceController.text.trim().isEmpty) {
+      CustomSnackbar.showError('El lugar de atención del parto es requerido');
+      return false;
+    }
+
+    // Régimen de Afiliación (requerido)
+    if (selectedHealthRegime.value == null) {
+      CustomSnackbar.showError('El régimen de afiliación es requerido');
+      return false;
+    }
+
+    // Aseguradora (requerido)
+    if (insurerController.text.trim().isEmpty) {
+      CustomSnackbar.showError('La aseguradora (EPS) es requerida');
+      return false;
+    }
+
+    // Pertenencia Étnica (requerido)
+    if (selectedEthnicity.value == PertenenciaEtnica.ninguno) {
+      // Esto es válido, ninguno es una opción
+    }
+
+    // Departamento y Municipio (requeridos)
+    if (residenceDepartmentController.text.trim().isEmpty) {
+      CustomSnackbar.showError('El departamento de residencia es requerido');
+      return false;
+    }
+
+    if (residenceMunicipalityController.text.trim().isEmpty) {
+      CustomSnackbar.showError('El municipio de residencia es requerido');
+      return false;
+    }
+
+    // Área (requerida)
+    if (selectedArea.value == null) {
+      CustomSnackbar.showError('El área de residencia es requerida');
+      return false;
+    }
+
+    // Validaciones condicionales para gestantes
+    if (selectedUserCondition.value == CondicionUsuaria.gestante) {
+      if (lastMenstrualDate.value == null) {
+        CustomSnackbar.showError(
+          'La fecha de última menstruación es requerida para gestantes',
+        );
+        return false;
+      }
     }
 
     return true;
@@ -311,15 +369,19 @@ class PatientFormController extends GetxController {
   // ==================== OPERACIONES CRUD ====================
   /// Guarda el paciente en la base de datos
   Future<void> submitForm() async {
+    print('🔥 submitForm llamado');
     // Validar datos básicos
     if (!validateStep1()) {
+      print('❌ Validación de paso 1 falló');
       goToStep(0);
       return;
     }
 
+    print('✅ Validación paso 1 exitosa');
     try {
       isLoading.value = true;
       errorMessage.value = '';
+      print('📝 Iniciando guardado de paciente...');
 
       // Calcular edad
       final age = calculateAge();
@@ -545,33 +607,115 @@ class PatientFormController extends GetxController {
       );
 
       // Guardar en la base de datos
+      print('💾 Guardando paciente en la base de datos...');
       final patientId = await _patientService.createPatient(patient);
+      print('✅ Paciente guardado con ID: $patientId');
 
       if (patientId > 0) {
+        // Guardar las vacunas aplicadas
+        print('💉 Guardando vacunas aplicadas...');
+        await _saveAppliedDoses(patientId, nurseId);
+        print('✅ Vacunas guardadas exitosamente');
+
         Get.back();
-        Get.snackbar(
-          'Éxito',
-          'Paciente registrado correctamente',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
+        CustomSnackbar.showSuccess(
+          'Paciente y vacunas registrados correctamente',
         );
       } else {
         throw Exception('No se pudo crear el paciente');
       }
     } catch (e) {
+      print('❌ ERROR en submitForm: $e');
+      print('Stack trace: ${StackTrace.current}');
       errorMessage.value = 'Error al guardar el paciente: $e';
-      Get.snackbar(
-        'Error',
-        errorMessage.value,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
-      );
+      CustomSnackbar.showError(errorMessage.value);
     } finally {
       isLoading.value = false;
+      print('🏁 submitForm terminado');
     }
+  }
+
+  /// Guarda las dosis aplicadas (vacunas seleccionadas)
+  Future<void> _saveAppliedDoses(int patientId, int nurseId) async {
+    try {
+      final vaccineController = Get.find<VaccineSelectionController>();
+      final vaccinesData = vaccineController.getVaccinesData();
+
+      for (var vaccineData in vaccinesData) {
+        final appliedDose = AppliedDose(
+          patientId: patientId,
+          nurseId: nurseId,
+          vaccineId: vaccineData['vaccine_id'],
+          applicationDate: DateTime.parse(vaccineData['application_date']),
+          selectedDose: _getOptionDisplayName(
+            vaccineData['dose_option_id'],
+            vaccineController,
+          ),
+          selectedLaboratory: _getOptionDisplayName(
+            vaccineData['laboratory_option_id'],
+            vaccineController,
+          ),
+          lotNumber: vaccineData['lot'] ?? '',
+          selectedSyringe: _getOptionDisplayName(
+            vaccineData['syringe_option_id'],
+            vaccineController,
+          ),
+          syringeLot: vaccineData['syringe_lot']?.isEmpty == false
+              ? vaccineData['syringe_lot']
+              : null,
+          diluentLot: vaccineData['diluent']?.isEmpty == false
+              ? vaccineData['diluent']
+              : null,
+          selectedDropper: _getOptionDisplayName(
+            vaccineData['dropper_option_id'],
+            vaccineController,
+          ),
+          selectedPneumococcalType: _getOptionDisplayName(
+            vaccineData['pneumococcal_type_option_id'],
+            vaccineController,
+          ),
+          vialCount: vaccineData['vial_count']?.isEmpty == false
+              ? int.tryParse(vaccineData['vial_count'])
+              : null,
+          selectedObservation: _getOptionDisplayName(
+            vaccineData['observation_option_id'],
+            vaccineController,
+          ),
+        );
+
+        await _appliedDoseService.createDose(appliedDose);
+      }
+    } catch (e) {
+      print('Error guardando dosis aplicadas: $e');
+      // No lanzamos error para no bloquear el guardado del paciente
+    }
+  }
+
+  /// Helper para obtener el displayName de una opción por su ID
+  String? _getOptionDisplayName(
+    int? optionId,
+    VaccineSelectionController controller,
+  ) {
+    if (optionId == null) return null;
+
+    // Buscar en todos los caches de opciones
+    for (var cache in [
+      controller.getDoseOptions,
+      controller.getLaboratoryOptions,
+      controller.getSyringeOptions,
+      controller.getDropperOptions,
+      controller.getPneumococcalTypeOptions,
+      controller.getObservationOptions,
+    ]) {
+      // Buscar en todas las vacunas
+      for (var vaccineId in controller.selectedVaccines.keys) {
+        final options = cache(vaccineId);
+        final option = options.firstWhereOrNull((opt) => opt.id == optionId);
+        if (option != null) return option.displayName;
+      }
+    }
+
+    return null;
   }
 
   /// Limpia todos los campos del formulario
