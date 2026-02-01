@@ -5,6 +5,7 @@ import '../../theme/colors.dart';
 import '../auth/login.dart';
 import '../vaccination_record/vaccination_form_wrapper.dart';
 import '../vaccine_management/vaccine_management_page.dart';
+import '../patient_history/patient_history_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -134,7 +135,7 @@ class HomePage extends StatelessWidget {
                         Get.to(() => const VaccinationFormWrapper());
                       },
                       icon: const Icon(Icons.person_add),
-                      label: const Text('Nuevo Paciente'),
+                      label: const Text('Nueva Atención'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF135BEC),
                         foregroundColor: Colors.white,
@@ -153,7 +154,7 @@ class HomePage extends StatelessWidget {
                         Get.to(() => const VaccineManagementPage());
                       },
                       icon: const Icon(Icons.list_alt),
-                      label: const Text('Gestion de Vacunas'),
+                      label: const Text('Gestión de Vacunas'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF135BEC),
@@ -167,6 +168,27 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.to(() => const PatientHistoryPage());
+                  },
+                  icon: const Icon(Icons.history),
+                  label: const Text('Historial de Atenciones'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF135BEC),
+                    side: const BorderSide(color: Color(0xFF135BEC)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
               ),
             ],
           ),

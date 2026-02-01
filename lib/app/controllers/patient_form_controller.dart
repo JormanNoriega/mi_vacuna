@@ -16,6 +16,8 @@ class PatientFormController extends GetxController {
   // ==================== ESTADO ====================
   final isLoading = false.obs;
   final errorMessage = ''.obs;
+  final isEditMode = false.obs;
+  int? editingPatientId;
 
   // ==================== CONTROL DE NAVEGACIÓN ====================
   final pageController = PageController();
@@ -234,6 +236,162 @@ class PatientFormController extends GetxController {
         step,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  // ==================== M\u00c9TODO PARA CARGAR DATOS EXISTENTES ====================
+  /// Carga los datos de un paciente existente para edici\u00f3n
+  void loadPatientData(Patient patient) async {
+    isEditMode.value = true;
+    editingPatientId = patient.id;
+
+    // Paso 1: Datos b\u00e1sicos
+    selectedIdType.value = patient.idType;
+    idNumberController.text = patient.idNumber;
+    firstNameController.text = patient.firstName;
+    secondNameController.text = patient.secondName ?? '';
+    lastNameController.text = patient.lastName;
+    secondLastNameController.text = patient.secondLastName ?? '';
+    selectedSex.value = patient.sex;
+    birthDate.value = patient.birthDate;
+    attentionDate.value = patient.attentionDate;
+    completeScheme.value = patient.completeScheme;
+
+    // Paso 2: Datos adicionales
+    birthCountryController.text = patient.birthCountry;
+    birthPlaceController.text = patient.birthPlace ?? '';
+    residenceCountryController.text = patient.residenceCountry ?? 'Colombia';
+    residenceDepartmentController.text = patient.residenceDepartment ?? '';
+    residenceMunicipalityController.text = patient.residenceMunicipality ?? '';
+    communeController.text = patient.commune ?? '';
+    addressController.text = patient.address ?? '';
+    landlineController.text = patient.landline ?? '';
+    cellphoneController.text = patient.cellphone ?? '';
+    emailController.text = patient.email ?? '';
+    authorizeCalls.value = patient.authorizeCalls;
+    authorizeEmail.value = patient.authorizeEmail;
+
+    selectedGender.value = patient.gender;
+    selectedSexualOrientation.value = patient.sexualOrientation;
+    selectedMigratoryStatus.value = patient.migrationStatus;
+    if (patient.ethnicity != null) {
+      selectedEthnicity.value = patient.ethnicity!;
+    }
+    selectedHealthRegime.value = patient.affiliationRegime;
+    selectedArea.value = patient.area;
+    insurerController.text = patient.insurer ?? '';
+    gestationalAgeController.text = patient.gestationalAge?.toString() ?? '';
+
+    displaced.value = patient.displaced;
+    disabled.value = patient.disabled;
+    deceased.value = patient.deceased;
+    armedConflictVictim.value = patient.armedConflictVictim;
+    currentlyStudying.value = patient.currentlyStudying;
+
+    // Antecedentes
+    hasContraindication.value = patient.hasContraindication;
+    contraindicationDetailsController.text =
+        patient.contraindicationDetails ?? '';
+    hasPreviousReaction.value = patient.hasPreviousReaction;
+    reactionDetailsController.text = patient.reactionDetails ?? '';
+    historyRecordDate.value = patient.historyRecordDate;
+    historyTypeController.text = patient.historyType ?? '';
+    historyDescriptionController.text = patient.historyDescription ?? '';
+    specialObservationsController.text = patient.specialObservations ?? '';
+
+    // Condici\u00f3n usuaria
+    selectedUserCondition.value = patient.userCondition;
+    lastMenstrualDate.value = patient.lastMenstrualDate;
+    gestationWeeksController.text = patient.gestationWeeks?.toString() ?? '';
+    probableDeliveryDate.value = patient.probableDeliveryDate;
+    previousPregnanciesController.text =
+        patient.previousPregnancies?.toString() ?? '';
+
+    // Ya no intentamos cargar vacunas aquí, se cargarán cuando el usuario llegue al Step 3
+  }
+
+  /// Método público para cargar las vacunas del paciente (llamado desde Step3)
+  Future<void> loadPatientVaccinesForEdit(int patientId) async {
+    await _loadPatientVaccines(patientId);
+  }
+
+  /// Carga las vacunas aplicadas al paciente en modo edición
+  Future<void> _loadPatientVaccines(int patientId) async {
+    try {
+      print('🔍 Cargando vacunas del paciente ID: $patientId...');
+
+      // Obtener las dosis aplicadas del paciente
+      final doses = await _appliedDoseService.getDosesByPatient(patientId);
+      print('✅ Se encontraron ${doses.length} vacunas aplicadas');
+
+      if (doses.isEmpty) {
+        print('ℹ️ No hay vacunas que cargar');
+        return;
+      }
+
+      // Obtener el controlador de selección de vacunas
+      final vaccineController = Get.find<VaccineSelectionController>();
+
+      // Limpiar selección actual
+      vaccineController.selectedVaccines.clear();
+
+      // Cargar cada vacuna aplicada
+      for (var dose in doses) {
+        print(
+          '📋 Cargando vacuna ID ${dose.vaccineId}: ${dose.selectedDose ?? "Sin dosis"}',
+        );
+
+        // Seleccionar la vacuna
+        vaccineController.toggleVaccineSelection(dose.vaccineId);
+
+        // Esperar un momento para que se carguen las opciones
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Configurar la fecha de aplicación
+        vaccineController.setApplicationDate(
+          dose.vaccineId,
+          dose.applicationDate,
+        );
+
+        // Configurar el número de lote (campo obligatorio)
+        final lotController = vaccineController.getLotController(
+          dose.vaccineId,
+        );
+        lotController.text = dose.lotNumber;
+
+        // Configurar lote de jeringa si existe
+        if (dose.syringeLot != null) {
+          final syringeLotController = vaccineController
+              .getSyringeLotController(dose.vaccineId);
+          syringeLotController.text = dose.syringeLot!;
+        }
+
+        // Configurar lote de diluyente si existe
+        if (dose.diluentLot != null) {
+          final diluentController = vaccineController.getDiluentController(
+            dose.vaccineId,
+          );
+          diluentController.text = dose.diluentLot!;
+        }
+
+        // Configurar número de frascos si existe
+        if (dose.vialCount != null) {
+          final vialController = vaccineController.getVialCountController(
+            dose.vaccineId,
+          );
+          vialController.text = dose.vialCount.toString();
+        }
+
+        // Nota: Los dropdowns (dosis, laboratorio, jeringa, etc.) quedarán con valores predeterminados
+        // ya que requieren IDs y las dosis almacenan valores String
+      }
+
+      print('✅ Vacunas cargadas exitosamente en el controlador');
+    } catch (e) {
+      print('❌ Error al cargar vacunas del paciente: $e');
+      CustomSnackbar.showError(
+        'No se pudieron cargar las vacunas del paciente. Error: ${e.toString()}',
       );
     }
   }
@@ -606,20 +764,113 @@ class PatientFormController extends GetxController {
             : null,
       );
 
-      // Guardar en la base de datos
-      print('💾 Guardando paciente en la base de datos...');
-      final patientId = await _patientService.createPatient(patient);
-      print('✅ Paciente guardado con ID: $patientId');
+      // Guardar o actualizar en la base de datos
+      int patientId;
+      if (isEditMode.value && editingPatientId != null) {
+        print('📝 Actualizando paciente ID: $editingPatientId...');
+        final updatedPatient = Patient(
+          id: editingPatientId,
+          nurseId: patient.nurseId,
+          consecutivo: patient.consecutivo,
+          attentionDate: patient.attentionDate,
+          idType: patient.idType,
+          idNumber: patient.idNumber,
+          firstName: patient.firstName,
+          secondName: patient.secondName,
+          lastName: patient.lastName,
+          secondLastName: patient.secondLastName,
+          birthDate: patient.birthDate,
+          years: patient.years,
+          months: patient.months,
+          days: patient.days,
+          totalMonths: patient.totalMonths,
+          completeScheme: patient.completeScheme,
+          sex: patient.sex,
+          gender: patient.gender,
+          sexualOrientation: patient.sexualOrientation,
+          gestationalAge: patient.gestationalAge,
+          birthCountry: patient.birthCountry,
+          migrationStatus: patient.migrationStatus,
+          birthPlace: patient.birthPlace,
+          affiliationRegime: patient.affiliationRegime,
+          insurer: patient.insurer,
+          ethnicity: patient.ethnicity,
+          displaced: patient.displaced,
+          disabled: patient.disabled,
+          deceased: patient.deceased,
+          armedConflictVictim: patient.armedConflictVictim,
+          currentlyStudying: patient.currentlyStudying,
+          residenceCountry: patient.residenceCountry,
+          residenceDepartment: patient.residenceDepartment,
+          residenceMunicipality: patient.residenceMunicipality,
+          commune: patient.commune,
+          area: patient.area,
+          address: patient.address,
+          landline: patient.landline,
+          cellphone: patient.cellphone,
+          email: patient.email,
+          authorizeCalls: patient.authorizeCalls,
+          authorizeEmail: patient.authorizeEmail,
+          hasContraindication: patient.hasContraindication,
+          contraindicationDetails: patient.contraindicationDetails,
+          hasPreviousReaction: patient.hasPreviousReaction,
+          reactionDetails: patient.reactionDetails,
+          historyRecordDate: patient.historyRecordDate,
+          historyType: patient.historyType,
+          historyDescription: patient.historyDescription,
+          specialObservations: patient.specialObservations,
+          userCondition: patient.userCondition,
+          lastMenstrualDate: patient.lastMenstrualDate,
+          gestationWeeks: patient.gestationWeeks,
+          probableDeliveryDate: patient.probableDeliveryDate,
+          previousPregnancies: patient.previousPregnancies,
+          motherIdType: patient.motherIdType,
+          motherIdNumber: patient.motherIdNumber,
+          motherFirstName: patient.motherFirstName,
+          motherSecondName: patient.motherSecondName,
+          motherLastName: patient.motherLastName,
+          motherSecondLastName: patient.motherSecondLastName,
+          motherEmail: patient.motherEmail,
+          motherLandline: patient.motherLandline,
+          motherCellphone: patient.motherCellphone,
+          motherAffiliationRegime: patient.motherAffiliationRegime,
+          motherEthnicity: patient.motherEthnicity,
+          motherDisplaced: patient.motherDisplaced,
+          caregiverIdType: patient.caregiverIdType,
+          caregiverIdNumber: patient.caregiverIdNumber,
+          caregiverFirstName: patient.caregiverFirstName,
+          caregiverSecondName: patient.caregiverSecondName,
+          caregiverLastName: patient.caregiverLastName,
+          caregiverSecondLastName: patient.caregiverSecondLastName,
+          caregiverRelationship: patient.caregiverRelationship,
+          caregiverEmail: patient.caregiverEmail,
+          caregiverLandline: patient.caregiverLandline,
+          caregiverCellphone: patient.caregiverCellphone,
+          createdAt: patient.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        await _patientService.updatePatient(updatedPatient);
+        patientId = editingPatientId!;
+        print('✅ Paciente actualizado exitosamente');
+      } else {
+        print('💾 Guardando paciente nuevo en la base de datos...');
+        patientId = await _patientService.createPatient(patient);
+        print('✅ Paciente guardado con ID: $patientId');
+      }
 
       if (patientId > 0) {
-        // Guardar las vacunas aplicadas
-        print('💉 Guardando vacunas aplicadas...');
-        await _saveAppliedDoses(patientId, nurseId);
-        print('✅ Vacunas guardadas exitosamente');
+        // Guardar las vacunas aplicadas (solo en modo creación)
+        if (!isEditMode.value) {
+          print('💉 Guardando vacunas aplicadas...');
+          await _saveAppliedDoses(patientId, nurseId);
+          print('✅ Vacunas guardadas exitosamente');
+        }
 
         Get.back();
         CustomSnackbar.showSuccess(
-          'Paciente y vacunas registrados correctamente',
+          isEditMode.value
+              ? 'Paciente actualizado correctamente'
+              : 'Paciente y vacunas registrados correctamente',
         );
       } else {
         throw Exception('No se pudo crear el paciente');

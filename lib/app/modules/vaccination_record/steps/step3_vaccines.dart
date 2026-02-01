@@ -17,6 +17,17 @@ class Step3Vaccines extends StatelessWidget {
     // Cargar vacunas disponibles según la edad del paciente
     vaccineController.loadAvailableVaccines(patientController.birthDate.value);
 
+    // Si está en modo edición y tiene un ID de paciente, cargar sus vacunas
+    if (patientController.isEditMode.value &&
+        patientController.editingPatientId != null) {
+      // Cargar vacunas del paciente de forma asíncrona
+      Future.microtask(() async {
+        await patientController.loadPatientVaccinesForEdit(
+          patientController.editingPatientId!,
+        );
+      });
+    }
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 100),

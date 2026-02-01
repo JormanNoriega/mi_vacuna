@@ -195,6 +195,7 @@ class FormFields {
     required String placeholder,
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
+    bool enabled = true,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -215,12 +216,16 @@ class FormFields {
           TextFormField(
             controller: controller,
             keyboardType: keyboardType,
-            style: const TextStyle(color: textPrimary, fontSize: 16),
+            enabled: enabled,
+            style: TextStyle(
+              color: enabled ? textPrimary : textSecondary,
+              fontSize: 16,
+            ),
             decoration: InputDecoration(
               hintText: placeholder,
               hintStyle: const TextStyle(color: textHint),
               filled: true,
-              fillColor: inputBackground,
+              fillColor: enabled ? inputBackground : Colors.grey[100],
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: borderColor),
@@ -228,6 +233,10 @@ class FormFields {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: borderColor),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),

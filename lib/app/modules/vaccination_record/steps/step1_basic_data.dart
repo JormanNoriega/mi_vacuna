@@ -95,12 +95,17 @@ class Step1BasicData extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // Número de Identificación
-                    FormFields.buildTextField(
-                      label: 'Número de Identificación',
-                      controller: controller.idNumberController,
-                      placeholder: 'Ej: 1020304050',
-                      keyboardType: TextInputType.number,
-                      required: true,
+                    Obx(
+                      () => FormFields.buildTextField(
+                        label: 'Número de Identificación',
+                        controller: controller.idNumberController,
+                        placeholder: 'Ej: 1020304050',
+                        keyboardType: TextInputType.number,
+                        required: true,
+                        enabled: !controller
+                            .isEditMode
+                            .value, // Bloquear en modo edición
+                      ),
                     ),
                     const SizedBox(height: 16),
 
