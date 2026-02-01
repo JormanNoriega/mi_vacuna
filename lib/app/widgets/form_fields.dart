@@ -64,9 +64,11 @@ class FormFields {
     required String label,
     required String value,
     required List<String> items,
-    required ValueChanged<String?> onChanged,
+    ValueChanged<String?>? onChanged, // Ahora puede ser null
     bool required = false,
   }) {
+    final bool isEnabled = onChanged != null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -88,7 +90,9 @@ class FormFields {
             isExpanded: true,
             decoration: InputDecoration(
               filled: true,
-              fillColor: inputBackground,
+              fillColor: isEnabled
+                  ? inputBackground
+                  : textSecondary.withOpacity(0.05),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
@@ -101,12 +105,19 @@ class FormFields {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: borderColor),
               ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: borderColor),
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: inputFocusBorder, width: 2),
               ),
             ),
-            style: const TextStyle(color: textPrimary, fontSize: 16),
+            style: TextStyle(
+              color: isEnabled ? textPrimary : textSecondary,
+              fontSize: 16,
+            ),
             dropdownStyleData: DropdownStyleData(
               maxHeight: 300,
               decoration: BoxDecoration(
@@ -120,10 +131,13 @@ class FormFields {
               height: 48,
               padding: EdgeInsets.symmetric(horizontal: 16),
             ),
-            iconStyleData: const IconStyleData(
-              icon: Icon(Icons.expand_more),
+            iconStyleData: IconStyleData(
+              icon: const Icon(Icons.expand_more),
               iconSize: 24,
-              iconEnabledColor: textSecondary,
+              iconEnabledColor: isEnabled
+                  ? textSecondary
+                  : textSecondary.withOpacity(0.5),
+              iconDisabledColor: textSecondary.withOpacity(0.5),
             ),
             items: items.map((String item) {
               return DropdownMenuItem<String>(
@@ -131,7 +145,7 @@ class FormFields {
                 child: Text(item, overflow: TextOverflow.ellipsis, maxLines: 1),
               );
             }).toList(),
-            onChanged: onChanged,
+            onChanged: isEnabled ? onChanged : null,
           ),
         ],
       ),

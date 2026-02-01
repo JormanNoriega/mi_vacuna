@@ -129,6 +129,13 @@ class PatientFormController extends GetxController {
 
   // ==================== LIFECYCLE ====================
   @override
+  void onInit() {
+    super.onInit();
+    // Resetear el estado al inicializar
+    resetForm();
+  }
+
+  @override
   void onClose() {
     // Liberar recursos
     pageController.dispose();
@@ -240,6 +247,18 @@ class PatientFormController extends GetxController {
     }
   }
 
+  /// Resetea el formulario al estado inicial
+  void resetForm() {
+    currentStep.value = 0;
+    isEditMode.value = false;
+    editingPatientId = null;
+
+    // Resetear el PageController si ya está inicializado
+    if (pageController.hasClients) {
+      pageController.jumpToPage(0);
+    }
+  }
+
   // ==================== M\u00c9TODO PARA CARGAR DATOS EXISTENTES ====================
   /// Carga los datos de un paciente existente para edici\u00f3n
   void loadPatientData(Patient patient) async {
@@ -321,71 +340,14 @@ class PatientFormController extends GetxController {
     try {
       print('🔍 Cargando vacunas del paciente ID: $patientId...');
 
-      // Obtener las dosis aplicadas del paciente
-      final doses = await _appliedDoseService.getDosesByPatient(patientId);
-      print('✅ Se encontraron ${doses.length} vacunas aplicadas');
-
-      if (doses.isEmpty) {
-        print('ℹ️ No hay vacunas que cargar');
-        return;
-      }
-
       // Obtener el controlador de selección de vacunas
       final vaccineController = Get.find<VaccineSelectionController>();
 
       // Limpiar selección actual
       vaccineController.selectedVaccines.clear();
 
-      // Cargar cada vacuna aplicada
-      for (var dose in doses) {
-        print(
-          '📋 Cargando vacuna ID ${dose.vaccineId}: ${dose.selectedDose ?? "Sin dosis"}',
-        );
-
-        // Seleccionar la vacuna
-        vaccineController.toggleVaccineSelection(dose.vaccineId);
-
-        // Esperar un momento para que se carguen las opciones
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // Configurar la fecha de aplicación
-        vaccineController.setApplicationDate(
-          dose.vaccineId,
-          dose.applicationDate,
-        );
-
-        // Configurar el número de lote (campo obligatorio)
-        final lotController = vaccineController.getLotController(
-          dose.vaccineId,
-        );
-        lotController.text = dose.lotNumber;
-
-        // Configurar lote de jeringa si existe
-        if (dose.syringeLot != null) {
-          final syringeLotController = vaccineController
-              .getSyringeLotController(dose.vaccineId);
-          syringeLotController.text = dose.syringeLot!;
-        }
-
-        // Configurar lote de diluyente si existe
-        if (dose.diluentLot != null) {
-          final diluentController = vaccineController.getDiluentController(
-            dose.vaccineId,
-          );
-          diluentController.text = dose.diluentLot!;
-        }
-
-        // Configurar número de frascos si existe
-        if (dose.vialCount != null) {
-          final vialController = vaccineController.getVialCountController(
-            dose.vaccineId,
-          );
-          vialController.text = dose.vialCount.toString();
-        }
-
-        // Nota: Los dropdowns (dosis, laboratorio, jeringa, etc.) quedarán con valores predeterminados
-        // ya que requieren IDs y las dosis almacenan valores String
-      }
+      // Cargar las dosis registradas (el controlador se encarga de marcarlas como bloqueadas)
+      await vaccineController.loadPatientRegisteredDoses(patientId);
 
       print('✅ Vacunas cargadas exitosamente en el controlador');
     } catch (e) {
@@ -859,12 +821,10 @@ class PatientFormController extends GetxController {
       }
 
       if (patientId > 0) {
-        // Guardar las vacunas aplicadas (solo en modo creación)
-        if (!isEditMode.value) {
-          print('💉 Guardando vacunas aplicadas...');
-          await _saveAppliedDoses(patientId, nurseId);
-          print('✅ Vacunas guardadas exitosamente');
-        }
+        // Guardar las vacunas aplicadas (nuevas dosis)
+        print('💉 Guardando vacunas aplicadas...');
+        await _saveAppliedDoses(patientId, nurseId);
+        print('✅ Vacunas guardadas exitosamente');
 
         Get.back();
         CustomSnackbar.showSuccess(
@@ -892,7 +852,13 @@ class PatientFormController extends GetxController {
       final vaccineController = Get.find<VaccineSelectionController>();
       final vaccinesData = vaccineController.getVaccinesData();
 
-      for (var vaccineData in vaccinesData) {
+      print('💉 Guardando ${vaccinesData.length} dosis...');
+      for (var i = 0; i < vaccinesData.length; i++) {
+        var vaccineData = vaccinesData[i];
+        print(
+          '  📌 Dosis ${i + 1}: Vacuna ID ${vaccineData['vaccine_id']}, Dosis: ${vaccineData['selected_dose']}',
+        );
+
         final appliedDose = AppliedDose(
           patientId: patientId,
           nurseId: nurseId,

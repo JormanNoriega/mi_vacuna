@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../theme/colors.dart';
 import '../../models/patient_model.dart';
 import '../../controllers/patient_form_controller.dart';
+import '../../controllers/vaccine_selection_controller.dart';
 import '../vaccination_record/vaccination_form_wrapper.dart';
 import '../../controllers/patient_history_controller.dart';
 
@@ -390,8 +391,18 @@ class PatientHistoryPage extends StatelessWidget {
 
   /// Navega al formulario de edición del paciente
   void _editPatient(Patient patient) {
+    // Eliminar instancias previas para empezar limpio
+    if (Get.isRegistered<PatientFormController>()) {
+      Get.delete<PatientFormController>();
+    }
+    if (Get.isRegistered<VaccineSelectionController>()) {
+      Get.delete<VaccineSelectionController>();
+    }
+
+    // Crear nuevo controlador y cargar datos
     final formController = Get.put(PatientFormController());
     formController.loadPatientData(patient);
+
     Get.to(() => const VaccinationFormWrapper())?.then((_) {
       // Recargar la lista cuando regrese
       final historyController = Get.find<PatientHistoryController>();

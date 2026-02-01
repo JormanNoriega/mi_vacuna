@@ -13,7 +13,10 @@ class VaccinationFormWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(PatientFormController());
+    // Obtener controlador existente o crear uno nuevo
+    final controller = Get.isRegistered<PatientFormController>()
+        ? Get.find<PatientFormController>()
+        : Get.put(PatientFormController());
 
     return Scaffold(
       backgroundColor: backgroundLight,

@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/vaccine.dart';
 import '../models/vaccine_config_option.dart';
+import '../models/applied_dose.dart';
 import '../services/vaccine_service.dart';
+import '../services/applied_dose_service.dart';
+import '../widgets/custom_snackbar.dart';
 
-/// Modelo para almacenar la información de una vacuna seleccionada
-class SelectedVaccineData {
-  final int vaccineId;
-  int? selectedDoseId;
+/// Modelo para almacenar la información de UNA DOSIS específica
+class DoseData {
+  final int doseOptionId;
+  String doseValue; // Valor de la dosis para guardar
+  String doseDisplayName; // Nombre para mostrar
+
   int? selectedLaboratoryId;
   int? selectedSyringeId;
   int? selectedDropperId;
@@ -21,7 +26,19 @@ class SelectedVaccineData {
   final TextEditingController diluentController = TextEditingController();
   final TextEditingController vialCountController = TextEditingController();
 
-  SelectedVaccineData({required this.vaccineId});
+  // Estado de la dosis
+  bool isLocked; // Ya registrada previamente (solo lectura)
+  bool isActive; // Dosis actualmente siendo editada
+  bool isCompleted; // Dosis completada en esta sesión
+
+  DoseData({
+    required this.doseOptionId,
+    required this.doseValue,
+    required this.doseDisplayName,
+    this.isLocked = false,
+    this.isActive = false,
+    this.isCompleted = false,
+  });
 
   void dispose() {
     lotController.dispose();
@@ -29,11 +46,82 @@ class SelectedVaccineData {
     diluentController.dispose();
     vialCountController.dispose();
   }
+
+  /// Valida que la dosis tenga todos los campos requeridos
+  bool validate(Vaccine vaccine) {
+    if (applicationDate == null) return false;
+    if (lotController.text.trim().isEmpty) return false;
+    return true;
+  }
+}
+
+/// Modelo para almacenar la información de una vacuna seleccionada
+class SelectedVaccineData {
+  final int vaccineId;
+
+  // Mapa de dosis: doseOptionId -> DoseData
+  final Map<int, DoseData> doses = {};
+
+  // Dosis activas (pueden ser múltiples)
+  final Set<int> activeDoses = {};
+
+  // Verifica si tiene dosis bloqueadas
+  bool get hasLockedDoses => doses.values.any((d) => d.isLocked);
+
+  // Verifica si tiene al menos una dosis completada
+  bool get hasCompletedDoses =>
+      doses.values.any((d) => d.isCompleted || d.isLocked);
+
+  SelectedVaccineData({required this.vaccineId});
+
+  void dispose() {
+    for (var dose in doses.values) {
+      dose.dispose();
+    }
+    doses.clear();
+    activeDoses.clear();
+  }
+
+  /// Obtiene o crea una dosis
+  DoseData getOrCreateDose(
+    int doseOptionId,
+    String doseValue,
+    String doseDisplayName, {
+    bool isLocked = false,
+  }) {
+    if (!doses.containsKey(doseOptionId)) {
+      doses[doseOptionId] = DoseData(
+        doseOptionId: doseOptionId,
+        doseValue: doseValue,
+        doseDisplayName: doseDisplayName,
+        isLocked: isLocked,
+      );
+    }
+    return doses[doseOptionId]!;
+  }
+
+  /// Verifica si una dosis existe
+  bool hasDose(int doseOptionId) => doses.containsKey(doseOptionId);
+
+  /// Verifica si una dosis está bloqueada
+  bool isDoseLocked(int doseOptionId) => doses[doseOptionId]?.isLocked ?? false;
+
+  /// Verifica si una dosis está activa
+  bool isDoseActive(int doseOptionId) => activeDoses.contains(doseOptionId);
+
+  /// Verifica si una dosis tiene datos completados (no vacía)
+  bool hasDoseWithData(int doseOptionId) {
+    final dose = doses[doseOptionId];
+    if (dose == null) return false;
+    // Una dosis tiene datos si tiene fecha y lote
+    return dose.applicationDate != null && dose.lotController.text.isNotEmpty;
+  }
 }
 
 /// Controlador para la selección y configuración de vacunas en el paso 3
 class VaccineSelectionController extends GetxController {
   final VaccineService _vaccineService = VaccineService();
+  final AppliedDoseService _appliedDoseService = AppliedDoseService();
 
   // Estado
   final isLoading = false.obs;
@@ -55,7 +143,6 @@ class VaccineSelectionController extends GetxController {
 
   @override
   void onClose() {
-    // Liberar controladores
     for (var data in selectedVaccines.values) {
       data.dispose();
     }
@@ -69,35 +156,39 @@ class VaccineSelectionController extends GetxController {
       errorMessage.value = '';
 
       if (birthDate == null) {
-        // Si no hay fecha de nacimiento, mostrar todas las vacunas activas
         availableVaccines.value = await _vaccineService.getAllActiveVaccines();
       } else {
-        // Obtener vacunas recomendadas para la edad
-        // Por ahora mostramos todas las activas (según especificación)
         availableVaccines.value = await _vaccineService.getAllActiveVaccines();
       }
     } catch (e) {
       errorMessage.value = 'Error al cargar vacunas: $e';
-      Get.snackbar(
-        'Error',
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
   }
 
   /// Alterna la selección de una vacuna
-  void toggleVaccineSelection(int vaccineId) {
+  Future<void> toggleVaccineSelection(int vaccineId) async {
     if (selectedVaccines.containsKey(vaccineId)) {
-      // Deseleccionar: liberar recursos y remover
-      selectedVaccines[vaccineId]?.dispose();
+      final vaccineData = selectedVaccines[vaccineId];
+
+      // Si tiene dosis bloqueadas, no permitir deseleccionar
+      if (vaccineData != null && vaccineData.hasLockedDoses) {
+        CustomSnackbar.showError(
+          'No puedes deseleccionar una vacuna con dosis ya registradas',
+        );
+        selectedVaccines.refresh();
+        return;
+      }
+
+      // Deseleccionar
+      vaccineData?.dispose();
       selectedVaccines.remove(vaccineId);
     } else {
-      // Seleccionar: crear datos y cargar opciones
+      // Seleccionar
       selectedVaccines[vaccineId] = SelectedVaccineData(vaccineId: vaccineId);
-      _loadVaccineOptions(vaccineId);
+      await _loadVaccineOptions(vaccineId);
     }
   }
 
@@ -114,79 +205,262 @@ class VaccineSelectionController extends GetxController {
     if (vaccine == null) return;
 
     try {
-      // Cargar dosis (siempre)
       _doseOptionsCache[vaccineId] = await _vaccineService.getDoses(vaccineId);
 
-      // Cargar laboratorios (si aplica)
       if (vaccine.hasLaboratory) {
         _laboratoryOptionsCache[vaccineId] = await _vaccineService
             .getLaboratories(vaccineId);
       }
-
-      // Cargar jeringas (si aplica)
       if (vaccine.hasSyringe) {
         _syringeOptionsCache[vaccineId] = await _vaccineService.getSyringes(
           vaccineId,
         );
       }
-
-      // Cargar goteros (si aplica)
       if (vaccine.hasDropper) {
         _dropperOptionsCache[vaccineId] = await _vaccineService.getDroppers(
           vaccineId,
         );
       }
-
-      // Cargar tipos neumococo (si aplica)
       if (vaccine.hasPneumococcalType) {
         _pneumococcalTypeOptionsCache[vaccineId] = await _vaccineService
             .getPneumococcalTypes(vaccineId);
       }
-
-      // Cargar observaciones (si aplica)
       if (vaccine.hasObservation) {
         _observationOptionsCache[vaccineId] = await _vaccineService
             .getObservations(vaccineId);
       }
 
-      // Establecer valores predeterminados
-      _setDefaultValues(vaccineId);
+      selectedVaccines.refresh();
     } catch (e) {
       print('Error cargando opciones para vacuna $vaccineId: $e');
     }
   }
 
-  /// Establece valores predeterminados para una vacuna
-  void _setDefaultValues(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data == null) return;
+  // ==================== MANEJO DE DOSIS ====================
 
-    // Fecha de aplicación por defecto: hoy
-    data.applicationDate = DateTime.now();
+  /// Alterna el estado activo de una dosis
+  void toggleDoseSelection(int vaccineId, int doseOptionId) {
+    final vaccineData = selectedVaccines[vaccineId];
+    if (vaccineData == null) return;
 
-    // Establecer opciones predeterminadas si existen
-    final doseOptions = _doseOptionsCache[vaccineId] ?? [];
-    if (doseOptions.isNotEmpty) {
-      final defaultDose = doseOptions.firstWhereOrNull((opt) => opt.isDefault);
-      data.selectedDoseId = defaultDose?.id ?? doseOptions.first.id;
+    // Si la dosis está bloqueada, mostrar error
+    if (vaccineData.isDoseLocked(doseOptionId)) {
+      CustomSnackbar.showError(
+        'Esta dosis ya fue registrada y no puede ser modificada',
+      );
+      return;
     }
 
+    // Obtener info de la dosis
+    final doseOptions = getDoseOptions(vaccineId);
+    final doseOption = doseOptions.firstWhereOrNull(
+      (opt) => opt.id == doseOptionId,
+    );
+    if (doseOption == null) return;
+
+    if (vaccineData.isDoseActive(doseOptionId)) {
+      // Desactivar dosis
+      vaccineData.activeDoses.remove(doseOptionId);
+      if (vaccineData.hasDose(doseOptionId)) {
+        vaccineData.doses[doseOptionId]!.isActive = false;
+      }
+    } else {
+      // Activar dosis y crear si no existe
+      final doseData = vaccineData.getOrCreateDose(
+        doseOptionId,
+        doseOption.value,
+        doseOption.displayName,
+      );
+      doseData.isActive = true;
+      vaccineData.activeDoses.add(doseOptionId);
+
+      // Establecer valores predeterminados
+      _setDefaultValuesForDose(vaccineId, doseOptionId);
+    }
+
+    selectedVaccines.refresh();
+  }
+
+  /// Establece valores predeterminados para una dosis
+  void _setDefaultValuesForDose(int vaccineId, int doseOptionId) {
+    final vaccineData = selectedVaccines[vaccineId];
+    if (vaccineData == null) return;
+
+    final doseData = vaccineData.doses[doseOptionId];
+    if (doseData == null || doseData.isLocked) return;
+
+    final vaccine = availableVaccines.firstWhereOrNull(
+      (v) => v.id == vaccineId,
+    );
+    if (vaccine == null) return;
+
+    // Fecha por defecto: hoy
+    if (doseData.applicationDate == null) {
+      doseData.applicationDate = DateTime.now();
+    }
+
+    // Establecer opciones predeterminadas
     final labOptions = _laboratoryOptionsCache[vaccineId] ?? [];
-    if (labOptions.isNotEmpty) {
+    if (labOptions.isNotEmpty && doseData.selectedLaboratoryId == null) {
       final defaultLab = labOptions.firstWhereOrNull((opt) => opt.isDefault);
-      data.selectedLaboratoryId = defaultLab?.id ?? labOptions.first.id;
+      doseData.selectedLaboratoryId = defaultLab?.id ?? labOptions.first.id;
     }
 
     final syringeOptions = _syringeOptionsCache[vaccineId] ?? [];
-    if (syringeOptions.isNotEmpty) {
+    if (syringeOptions.isNotEmpty && doseData.selectedSyringeId == null) {
       final defaultSyringe = syringeOptions.firstWhereOrNull(
         (opt) => opt.isDefault,
       );
-      data.selectedSyringeId = defaultSyringe?.id ?? syringeOptions.first.id;
+      doseData.selectedSyringeId =
+          defaultSyringe?.id ?? syringeOptions.first.id;
     }
   }
 
-  // ==================== GETTERS DE OPCIONES ====================
+  /// Carga las dosis ya registradas de un paciente
+  Future<void> loadPatientRegisteredDoses(int patientId) async {
+    try {
+      print('🔍 Cargando dosis registradas del paciente ID: $patientId');
+      final List<AppliedDose> doses = await _appliedDoseService
+          .getDosesByPatient(patientId);
+      print('📋 Se encontraron ${doses.length} dosis aplicadas');
+
+      for (final AppliedDose appliedDose in doses) {
+        final vaccineId = appliedDose.vaccineId;
+        print(
+          '💉 Procesando vacuna ID: $vaccineId, Dosis: ${appliedDose.selectedDose}',
+        );
+
+        if (!isVaccineSelected(vaccineId)) {
+          print('  📌 Seleccionando vacuna y cargando opciones...');
+          await toggleVaccineSelection(vaccineId);
+        }
+
+        final vaccineData = selectedVaccines[vaccineId];
+        if (vaccineData == null) {
+          print('  ❌ No se encontró vaccineData para ID: $vaccineId');
+          continue;
+        }
+
+        final doseOptions = getDoseOptions(vaccineId);
+        if (doseOptions.isEmpty) {
+          print('  ❌ No hay opciones de dosis cargadas para vacuna $vaccineId');
+          continue;
+        }
+
+        print('  🔍 Buscando dosis "${appliedDose.selectedDose}" en opciones:');
+        for (var opt in doseOptions) {
+          print(
+            '     - ID: ${opt.id}, Value: "${opt.value}", Display: "${opt.displayName}"',
+          );
+        }
+
+        // Buscar por displayName en lugar de value
+        final doseOption = doseOptions.firstWhereOrNull(
+          (opt) =>
+              opt.displayName == appliedDose.selectedDose ||
+              opt.value == appliedDose.selectedDose,
+        );
+
+        if (doseOption != null) {
+          print('  ✅ Creando dosis bloqueada: ${doseOption.displayName}');
+          final doseData = vaccineData.getOrCreateDose(
+            doseOption.id!,
+            doseOption.value,
+            doseOption.displayName,
+            isLocked: true,
+          );
+
+          // Agregar a activeDoses para que se muestre en la UI
+          vaccineData.activeDoses.add(doseOption.id!);
+          doseData.isActive = true;
+
+          doseData.applicationDate = appliedDose.applicationDate;
+          doseData.lotController.text = appliedDose.lotNumber;
+
+          if (appliedDose.syringeLot != null) {
+            doseData.syringeLotController.text = appliedDose.syringeLot!;
+          }
+          if (appliedDose.diluentLot != null) {
+            doseData.diluentController.text = appliedDose.diluentLot!;
+          }
+          if (appliedDose.vialCount != null) {
+            doseData.vialCountController.text = appliedDose.vialCount
+                .toString();
+          }
+
+          // Cargar opciones seleccionadas
+          if (appliedDose.selectedLaboratory != null) {
+            final labOptions = getLaboratoryOptions(vaccineId);
+            final labOption = labOptions.firstWhereOrNull(
+              (opt) => opt.value == appliedDose.selectedLaboratory,
+            );
+            if (labOption != null) {
+              doseData.selectedLaboratoryId = labOption.id;
+              print('    🏥 Laboratorio: ${labOption.displayName}');
+            }
+          }
+
+          if (appliedDose.selectedSyringe != null) {
+            final syringeOptions = getSyringeOptions(vaccineId);
+            final syringeOption = syringeOptions.firstWhereOrNull(
+              (opt) => opt.value == appliedDose.selectedSyringe,
+            );
+            if (syringeOption != null) {
+              doseData.selectedSyringeId = syringeOption.id;
+              print('    💉 Jeringa: ${syringeOption.displayName}');
+            }
+          }
+
+          if (appliedDose.selectedDropper != null) {
+            final dropperOptions = getDropperOptions(vaccineId);
+            final dropperOption = dropperOptions.firstWhereOrNull(
+              (opt) => opt.value == appliedDose.selectedDropper,
+            );
+            if (dropperOption != null) {
+              doseData.selectedDropperId = dropperOption.id;
+              print('    💧 Gotero: ${dropperOption.displayName}');
+            }
+          }
+
+          if (appliedDose.selectedPneumococcalType != null) {
+            final pneumoOptions = getPneumococcalTypeOptions(vaccineId);
+            final pneumoOption = pneumoOptions.firstWhereOrNull(
+              (opt) => opt.value == appliedDose.selectedPneumococcalType,
+            );
+            if (pneumoOption != null) {
+              doseData.selectedPneumococcalTypeId = pneumoOption.id;
+              print('    🦠 Neumococo: ${pneumoOption.displayName}');
+            }
+          }
+
+          if (appliedDose.selectedObservation != null) {
+            final obsOptions = getObservationOptions(vaccineId);
+            final obsOption = obsOptions.firstWhereOrNull(
+              (opt) => opt.value == appliedDose.selectedObservation,
+            );
+            if (obsOption != null) {
+              doseData.selectedObservationId = obsOption.id;
+              print('    📝 Observación: ${obsOption.displayName}');
+            }
+          }
+
+          print('    ✅ Dosis bloqueada cargada correctamente');
+        } else {
+          print(
+            '  ⚠️ No se encontró doseOption para: ${appliedDose.selectedDose}',
+          );
+        }
+      }
+
+      print('✅ Dosis registradas cargadas exitosamente');
+      selectedVaccines.refresh();
+    } catch (e) {
+      print('❌ Error al cargar dosis registradas: $e');
+      CustomSnackbar.showError('Error al cargar historial de vacunas');
+    }
+  }
+
+  // ==================== GETTERS ====================
 
   List<VaccineConfigOption> getDoseOptions(int vaccineId) {
     return _doseOptionsCache[vaccineId] ?? [];
@@ -212,224 +486,249 @@ class VaccineSelectionController extends GetxController {
     return _observationOptionsCache[vaccineId] ?? [];
   }
 
-  // ==================== GETTERS DE VALORES SELECCIONADOS ====================
-
-  String? getSelectedDose(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedDoseId == null) return null;
-
-    final options = getDoseOptions(vaccineId);
-    final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedDoseId,
-    );
-    return option?.displayName;
+  bool isDoseActive(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.isDoseActive(doseOptionId) ?? false;
   }
 
-  String? getSelectedLaboratory(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedLaboratoryId == null) return null;
+  bool isDoseLocked(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.isDoseLocked(doseOptionId) ?? false;
+  }
+
+  bool hasDoseData(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.hasDoseWithData(doseOptionId) ?? false;
+  }
+
+  Set<int> getActiveDoses(int vaccineId) {
+    return selectedVaccines[vaccineId]?.activeDoses ?? {};
+  }
+
+  // Getters para valores seleccionados por dosis
+  String? getSelectedLaboratory(int vaccineId, int doseOptionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData?.selectedLaboratoryId == null) return null;
 
     final options = getLaboratoryOptions(vaccineId);
     final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedLaboratoryId,
+      (opt) => opt.id == doseData!.selectedLaboratoryId,
     );
     return option?.displayName;
   }
 
-  String? getSelectedSyringe(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedSyringeId == null) return null;
+  String? getSelectedSyringe(int vaccineId, int doseOptionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData?.selectedSyringeId == null) return null;
 
     final options = getSyringeOptions(vaccineId);
     final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedSyringeId,
+      (opt) => opt.id == doseData!.selectedSyringeId,
     );
     return option?.displayName;
   }
 
-  String? getSelectedDropper(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedDropperId == null) return null;
+  String? getSelectedDropper(int vaccineId, int doseOptionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData?.selectedDropperId == null) return null;
 
     final options = getDropperOptions(vaccineId);
     final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedDropperId,
+      (opt) => opt.id == doseData!.selectedDropperId,
     );
     return option?.displayName;
   }
 
-  String? getSelectedPneumococcalType(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedPneumococcalTypeId == null) return null;
+  String? getSelectedPneumococcalType(int vaccineId, int doseOptionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData?.selectedPneumococcalTypeId == null) return null;
 
     final options = getPneumococcalTypeOptions(vaccineId);
     final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedPneumococcalTypeId,
+      (opt) => opt.id == doseData!.selectedPneumococcalTypeId,
     );
     return option?.displayName;
   }
 
-  String? getSelectedObservation(int vaccineId) {
-    final data = selectedVaccines[vaccineId];
-    if (data?.selectedObservationId == null) return null;
+  String? getSelectedObservation(int vaccineId, int doseOptionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData?.selectedObservationId == null) return null;
 
     final options = getObservationOptions(vaccineId);
     final option = options.firstWhereOrNull(
-      (opt) => opt.id == data!.selectedObservationId,
+      (opt) => opt.id == doseData!.selectedObservationId,
     );
     return option?.displayName;
   }
 
-  DateTime? getApplicationDate(int vaccineId) {
-    return selectedVaccines[vaccineId]?.applicationDate;
+  DateTime? getApplicationDate(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.doses[doseOptionId]?.applicationDate;
   }
 
-  // ==================== GETTERS DE CONTROLADORES ====================
-
-  TextEditingController getLotController(int vaccineId) {
-    return selectedVaccines[vaccineId]!.lotController;
+  TextEditingController? getLotController(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.doses[doseOptionId]?.lotController;
   }
 
-  TextEditingController getSyringeLotController(int vaccineId) {
-    return selectedVaccines[vaccineId]!.syringeLotController;
+  TextEditingController? getSyringeLotController(
+    int vaccineId,
+    int doseOptionId,
+  ) {
+    return selectedVaccines[vaccineId]
+        ?.doses[doseOptionId]
+        ?.syringeLotController;
   }
 
-  TextEditingController getDiluentController(int vaccineId) {
-    return selectedVaccines[vaccineId]!.diluentController;
+  TextEditingController? getDiluentController(int vaccineId, int doseOptionId) {
+    return selectedVaccines[vaccineId]?.doses[doseOptionId]?.diluentController;
   }
 
-  TextEditingController getVialCountController(int vaccineId) {
-    return selectedVaccines[vaccineId]!.vialCountController;
+  TextEditingController? getVialCountController(
+    int vaccineId,
+    int doseOptionId,
+  ) {
+    return selectedVaccines[vaccineId]
+        ?.doses[doseOptionId]
+        ?.vialCountController;
   }
 
   // ==================== SETTERS ====================
 
-  void setSelectedDose(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedDoseId = optionId;
+  void setSelectedLaboratory(int vaccineId, int doseOptionId, int optionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.selectedLaboratoryId = optionId;
       selectedVaccines.refresh();
     }
   }
 
-  void setSelectedLaboratory(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedLaboratoryId = optionId;
+  void setSelectedSyringe(int vaccineId, int doseOptionId, int optionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.selectedSyringeId = optionId;
       selectedVaccines.refresh();
     }
   }
 
-  void setSelectedSyringe(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedSyringeId = optionId;
+  void setSelectedDropper(int vaccineId, int doseOptionId, int optionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.selectedDropperId = optionId;
       selectedVaccines.refresh();
     }
   }
 
-  void setSelectedDropper(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedDropperId = optionId;
+  void setSelectedPneumococcalType(
+    int vaccineId,
+    int doseOptionId,
+    int optionId,
+  ) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.selectedPneumococcalTypeId = optionId;
       selectedVaccines.refresh();
     }
   }
 
-  void setSelectedPneumococcalType(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedPneumococcalTypeId = optionId;
+  void setSelectedObservation(int vaccineId, int doseOptionId, int optionId) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.selectedObservationId = optionId;
       selectedVaccines.refresh();
     }
   }
 
-  void setSelectedObservation(int vaccineId, int optionId) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.selectedObservationId = optionId;
-      selectedVaccines.refresh();
-    }
-  }
-
-  void setApplicationDate(int vaccineId, DateTime date) {
-    final data = selectedVaccines[vaccineId];
-    if (data != null) {
-      data.applicationDate = date;
+  void setApplicationDate(int vaccineId, int doseOptionId, DateTime date) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null && !doseData.isLocked) {
+      doseData.applicationDate = date;
       selectedVaccines.refresh();
     }
   }
 
   // ==================== VALIDACIÓN ====================
 
-  /// Valida que todas las vacunas seleccionadas tengan los campos requeridos
   bool validate() {
     if (selectedVaccines.isEmpty) {
-      Get.snackbar(
-        'Atención',
-        'Debes seleccionar al menos una vacuna',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      CustomSnackbar.showError('Debes seleccionar al menos una vacuna');
       return false;
     }
 
     for (var entry in selectedVaccines.entries) {
       final vaccineId = entry.key;
-      final data = entry.value;
+      final vaccineData = entry.value;
       final vaccine = availableVaccines.firstWhereOrNull(
         (v) => v.id == vaccineId,
       );
 
       if (vaccine == null) continue;
 
-      // Validar dosis (requerida)
-      if (data.selectedDoseId == null) {
-        Get.snackbar(
-          'Campo requerido',
-          'Selecciona la dosis para ${vaccine.name}',
-          snackPosition: SnackPosition.BOTTOM,
+      // Verificar que tenga al menos una dosis activa
+      if (vaccineData.activeDoses.isEmpty && !vaccineData.hasLockedDoses) {
+        CustomSnackbar.showError(
+          'Debes seleccionar al menos una dosis para ${vaccine.name}',
         );
         return false;
       }
 
-      // Validar fecha (requerida)
-      if (data.applicationDate == null) {
-        Get.snackbar(
-          'Campo requerido',
-          'Selecciona la fecha de aplicación para ${vaccine.name}',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return false;
+      // Validar cada dosis activa
+      for (var doseId in vaccineData.activeDoses) {
+        final doseData = vaccineData.doses[doseId];
+        if (doseData != null && !doseData.isLocked) {
+          if (!doseData.validate(vaccine)) {
+            CustomSnackbar.showError(
+              'Completa todos los campos requeridos de ${doseData.doseDisplayName} para ${vaccine.name}',
+            );
+            return false;
+          }
+        }
       }
     }
 
     return true;
   }
 
-  /// Obtiene los datos de las vacunas seleccionadas para guardar
+  /// Obtiene los datos de todas las dosis activas para guardar
   List<Map<String, dynamic>> getVaccinesData() {
     final result = <Map<String, dynamic>>[];
 
+    print('🔍 getVaccinesData: Revisando vacunas seleccionadas...');
     for (var entry in selectedVaccines.entries) {
       final vaccineId = entry.key;
-      final data = entry.value;
+      final vaccineData = entry.value;
 
-      result.add({
-        'vaccine_id': vaccineId,
-        'dose_option_id': data.selectedDoseId,
-        'laboratory_option_id': data.selectedLaboratoryId,
-        'syringe_option_id': data.selectedSyringeId,
-        'dropper_option_id': data.selectedDropperId,
-        'pneumococcal_type_option_id': data.selectedPneumococcalTypeId,
-        'observation_option_id': data.selectedObservationId,
-        'application_date': data.applicationDate?.toIso8601String(),
-        'lot': data.lotController.text.trim(),
-        'syringe_lot': data.syringeLotController.text.trim(),
-        'diluent': data.diluentController.text.trim(),
-        'vial_count': data.vialCountController.text.trim(),
-      });
+      print(
+        '  📦 Vacuna ID $vaccineId tiene ${vaccineData.doses.length} dosis',
+      );
+      // Guardar solo dosis activas (no bloqueadas)
+      for (var doseEntry in vaccineData.doses.entries) {
+        final doseData = doseEntry.value;
+
+        print(
+          '    🔹 Dosis ${doseData.doseDisplayName}: isLocked=${doseData.isLocked}, isActive=${doseData.isActive}',
+        );
+
+        // Solo guardar dosis activas y no bloqueadas
+        if (!doseData.isLocked && doseData.isActive) {
+          print('      ✅ Incluyendo dosis para guardar');
+          result.add({
+            'vaccine_id': vaccineId,
+            'dose_option_id': doseEntry.key,
+            'selected_dose': doseData.doseValue,
+            'laboratory_option_id': doseData.selectedLaboratoryId,
+            'syringe_option_id': doseData.selectedSyringeId,
+            'dropper_option_id': doseData.selectedDropperId,
+            'pneumococcal_type_option_id': doseData.selectedPneumococcalTypeId,
+            'observation_option_id': doseData.selectedObservationId,
+            'application_date': doseData.applicationDate?.toIso8601String(),
+            'lot': doseData.lotController.text.trim(),
+            'syringe_lot': doseData.syringeLotController.text.trim(),
+            'diluent': doseData.diluentController.text.trim(),
+            'vial_count': doseData.vialCountController.text.trim(),
+          });
+        } else {
+          print('      ⏭️ Saltando dosis (bloqueada o inactiva)');
+        }
+      }
     }
 
+    print('📊 Total de dosis a guardar: ${result.length}');
     return result;
   }
 }

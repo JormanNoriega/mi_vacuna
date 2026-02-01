@@ -303,284 +303,653 @@ class Step3Vaccines extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Dosis (siempre se muestra)
-        _buildDoseDropdown(vaccine, controller),
+        // Botones de dosis
+        _buildDoseButtons(vaccine, controller),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
+        // Formularios de las dosis activas
+        _buildActiveDoseForms(vaccine, controller),
+      ],
+    );
+  }
+
+  /// Construye los botones de selección de dosis
+  Widget _buildDoseButtons(
+    Vaccine vaccine,
+    VaccineSelectionController controller,
+  ) {
+    return Obx(() {
+      final doseOptions = controller.getDoseOptions(vaccine.id!);
+
+      if (doseOptions.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Dosis Disponibles',
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: doseOptions.map((doseOption) {
+              final isLocked = controller.isDoseLocked(
+                vaccine.id!,
+                doseOption.id!,
+              );
+              final isActive = controller.isDoseActive(
+                vaccine.id!,
+                doseOption.id!,
+              );
+              final hasDoseData = controller.hasDoseData(
+                vaccine.id!,
+                doseOption.id!,
+              );
+
+              Color buttonColor;
+              Color textColor;
+              IconData? icon;
+
+              if (isLocked) {
+                // Dosis ya registrada (bloqueada)
+                buttonColor = textSecondary.withOpacity(0.2);
+                textColor = textSecondary;
+                icon = Icons.lock;
+              } else if (isActive) {
+                // Dosis activa (siendo editada)
+                buttonColor = primaryColor;
+                textColor = Colors.white;
+                icon = Icons.edit;
+              } else if (hasDoseData) {
+                // Dosis completada pero inactiva
+                buttonColor = Colors.green.withOpacity(0.1);
+                textColor = Colors.green;
+                icon = Icons.check_circle;
+              } else {
+                // Dosis disponible (sin datos)
+                buttonColor = inputBackground;
+                textColor = textSecondary;
+                icon = null;
+              }
+
+              return InkWell(
+                onTap: isLocked
+                    ? null
+                    : () => controller.toggleDoseSelection(
+                        vaccine.id!,
+                        doseOption.id!,
+                      ),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: buttonColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isActive ? primaryColor : borderColor,
+                      width: isActive ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 16, color: textColor),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        doseOption.displayName,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 13,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+          // Leyenda
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            children: [
+              _buildLegendItem(Icons.edit, 'Activa', primaryColor),
+              _buildLegendItem(Icons.lock, 'Registrada', textSecondary),
+              _buildLegendItem(Icons.check_circle, 'Completada', Colors.green),
+            ],
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildLegendItem(IconData icon, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: textSecondary, fontSize: 11)),
+      ],
+    );
+  }
+
+  /// Construye los formularios de las dosis activas
+  Widget _buildActiveDoseForms(
+    Vaccine vaccine,
+    VaccineSelectionController controller,
+  ) {
+    return Obx(() {
+      final activeDoses = controller.getActiveDoses(vaccine.id!);
+
+      if (activeDoses.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Selecciona una dosis para completar su información',
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
+
+      final doseOptions = controller.getDoseOptions(vaccine.id!);
+
+      return Column(
+        children: activeDoses.map((doseOptionId) {
+          final doseOption = doseOptions.firstWhereOrNull(
+            (opt) => opt.id == doseOptionId,
+          );
+
+          if (doseOption == null) return const SizedBox.shrink();
+
+          final isLocked = controller.isDoseLocked(vaccine.id!, doseOptionId);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isLocked
+                  ? textSecondary.withOpacity(0.05)
+                  : primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isLocked ? borderColor : primaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header del formulario de dosis
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isLocked
+                            ? textSecondary.withOpacity(0.1)
+                            : primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        isLocked ? Icons.lock : Icons.vaccines,
+                        size: 16,
+                        color: isLocked ? textSecondary : primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      doseOption.displayName,
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (isLocked) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: textSecondary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Ya registrada',
+                          style: TextStyle(
+                            color: textSecondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Campos del formulario
+                _buildDoseForm(vaccine, controller, doseOptionId, isLocked),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+
+  /// Construye el formulario de una dosis específica
+  Widget _buildDoseForm(
+    Vaccine vaccine,
+    VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         // Fecha de aplicación
-        _buildDateField(vaccine, controller),
+        _buildDateFieldForDose(vaccine, controller, doseOptionId, isLocked),
 
         const SizedBox(height: 12),
 
         // Laboratorio (si aplica)
         if (vaccine.hasLaboratory) ...[
-          _buildLaboratoryDropdown(vaccine, controller),
+          _buildLaboratoryDropdownForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Lote (siempre se muestra)
-        _buildLotField(vaccine, controller),
+        _buildLotFieldForDose(vaccine, controller, doseOptionId, isLocked),
 
         const SizedBox(height: 12),
 
         // Jeringa (si aplica)
         if (vaccine.hasSyringe) ...[
-          _buildSyringeDropdown(vaccine, controller),
+          _buildSyringeDropdownForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Lote de jeringa (si aplica)
         if (vaccine.hasSyringeLot) ...[
-          _buildSyringeLotField(vaccine, controller),
+          _buildSyringeLotFieldForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Diluyente (si aplica)
         if (vaccine.hasDiluent) ...[
-          _buildDiluentField(vaccine, controller),
+          _buildDiluentFieldForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Gotero (si aplica)
         if (vaccine.hasDropper) ...[
-          _buildDropperDropdown(vaccine, controller),
+          _buildDropperDropdownForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Tipo neumococo (si aplica)
         if (vaccine.hasPneumococcalType) ...[
-          _buildPneumococcalTypeDropdown(vaccine, controller),
+          _buildPneumococcalTypeDropdownForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Cantidad de frascos (si aplica)
         if (vaccine.hasVialCount) ...[
-          _buildVialCountField(vaccine, controller),
+          _buildVialCountFieldForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
           const SizedBox(height: 12),
         ],
 
         // Observaciones (si aplica)
         if (vaccine.hasObservation) ...[
-          _buildObservationDropdown(vaccine, controller),
+          _buildObservationDropdownForDose(
+            vaccine,
+            controller,
+            doseOptionId,
+            isLocked,
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildDoseDropdown(
+  // ==================== CAMPOS ESPECÍFICOS POR DOSIS ====================
+
+  Widget _buildLaboratoryDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-  ) {
-    return Obx(() {
-      final options = controller.getDoseOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedDose(vaccine.id!);
-      final items = options.map((opt) => opt.displayName).toList();
-
-      return FormFields.buildDropdownField(
-        label: 'Dosis',
-        value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
-        items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedDose(vaccine.id!, option.id!);
-          }
-        },
-        required: true,
-      );
-    });
-  }
-
-  Widget _buildLaboratoryDropdown(
-    Vaccine vaccine,
-    VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
       final options = controller.getLaboratoryOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedLaboratory(vaccine.id!);
+      final selectedValue = controller.getSelectedLaboratory(
+        vaccine.id!,
+        doseOptionId,
+      );
       final items = options.map((opt) => opt.displayName).toList();
 
       return FormFields.buildDropdownField(
         label: 'Laboratorio',
         value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
         items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedLaboratory(vaccine.id!, option.id!);
-          }
-        },
+        onChanged: isLocked
+            ? null
+            : (value) {
+                if (value != null) {
+                  final option = options.firstWhere(
+                    (opt) => opt.displayName == value,
+                  );
+                  controller.setSelectedLaboratory(
+                    vaccine.id!,
+                    doseOptionId,
+                    option.id!,
+                  );
+                }
+              },
       );
     });
   }
 
-  Widget _buildSyringeDropdown(
+  Widget _buildSyringeDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
       final options = controller.getSyringeOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedSyringe(vaccine.id!);
+      final selectedValue = controller.getSelectedSyringe(
+        vaccine.id!,
+        doseOptionId,
+      );
       final items = options.map((opt) => opt.displayName).toList();
 
       return FormFields.buildDropdownField(
         label: 'Jeringa',
         value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
         items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedSyringe(vaccine.id!, option.id!);
-          }
-        },
+        onChanged: isLocked
+            ? null
+            : (value) {
+                if (value != null) {
+                  final option = options.firstWhere(
+                    (opt) => opt.displayName == value,
+                  );
+                  controller.setSelectedSyringe(
+                    vaccine.id!,
+                    doseOptionId,
+                    option.id!,
+                  );
+                }
+              },
       );
     });
   }
 
-  Widget _buildDropperDropdown(
+  Widget _buildDropperDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
       final options = controller.getDropperOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedDropper(vaccine.id!);
+      final selectedValue = controller.getSelectedDropper(
+        vaccine.id!,
+        doseOptionId,
+      );
       final items = options.map((opt) => opt.displayName).toList();
 
       return FormFields.buildDropdownField(
         label: 'Gotero',
         value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
         items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedDropper(vaccine.id!, option.id!);
-          }
-        },
+        onChanged: isLocked
+            ? null
+            : (value) {
+                if (value != null) {
+                  final option = options.firstWhere(
+                    (opt) => opt.displayName == value,
+                  );
+                  controller.setSelectedDropper(
+                    vaccine.id!,
+                    doseOptionId,
+                    option.id!,
+                  );
+                }
+              },
       );
     });
   }
 
-  Widget _buildPneumococcalTypeDropdown(
+  Widget _buildPneumococcalTypeDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
       final options = controller.getPneumococcalTypeOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedPneumococcalType(vaccine.id!);
+      final selectedValue = controller.getSelectedPneumococcalType(
+        vaccine.id!,
+        doseOptionId,
+      );
       final items = options.map((opt) => opt.displayName).toList();
 
       return FormFields.buildDropdownField(
         label: 'Tipo de Neumococo',
         value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
         items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedPneumococcalType(vaccine.id!, option.id!);
-          }
-        },
+        onChanged: isLocked
+            ? null
+            : (value) {
+                if (value != null) {
+                  final option = options.firstWhere(
+                    (opt) => opt.displayName == value,
+                  );
+                  controller.setSelectedPneumococcalType(
+                    vaccine.id!,
+                    doseOptionId,
+                    option.id!,
+                  );
+                }
+              },
       );
     });
   }
 
-  Widget _buildObservationDropdown(
+  Widget _buildObservationDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
       final options = controller.getObservationOptions(vaccine.id!);
-      final selectedValue = controller.getSelectedObservation(vaccine.id!);
+      final selectedValue = controller.getSelectedObservation(
+        vaccine.id!,
+        doseOptionId,
+      );
       final items = options.map((opt) => opt.displayName).toList();
 
       return FormFields.buildDropdownField(
         label: 'Observaciones',
         value: selectedValue ?? (items.isNotEmpty ? items.first : ''),
         items: items,
-        onChanged: (value) {
-          if (value != null) {
-            final option = options.firstWhere(
-              (opt) => opt.displayName == value,
-            );
-            controller.setSelectedObservation(vaccine.id!, option.id!);
-          }
-        },
+        onChanged: isLocked
+            ? null
+            : (value) {
+                if (value != null) {
+                  final option = options.firstWhere(
+                    (opt) => opt.displayName == value,
+                  );
+                  controller.setSelectedObservation(
+                    vaccine.id!,
+                    doseOptionId,
+                    option.id!,
+                  );
+                }
+              },
       );
     });
   }
 
-  Widget _buildLotField(
+  Widget _buildLotFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
-    final textController = controller.getLotController(vaccine.id!);
+    final textController = controller.getLotController(
+      vaccine.id!,
+      doseOptionId,
+    );
+    if (textController == null) return const SizedBox.shrink();
 
     return FormFields.buildTextField(
       label: 'Lote',
       controller: textController,
       placeholder: 'Ej: LOT123456',
+      enabled: !isLocked,
     );
   }
 
-  Widget _buildSyringeLotField(
+  Widget _buildSyringeLotFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
-    final textController = controller.getSyringeLotController(vaccine.id!);
+    final textController = controller.getSyringeLotController(
+      vaccine.id!,
+      doseOptionId,
+    );
+    if (textController == null) return const SizedBox.shrink();
 
     return FormFields.buildTextField(
       label: 'Lote de Jeringa',
       controller: textController,
       placeholder: 'Ej: SYR789',
+      enabled: !isLocked,
     );
   }
 
-  Widget _buildDiluentField(
+  Widget _buildDiluentFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
-    final textController = controller.getDiluentController(vaccine.id!);
+    final textController = controller.getDiluentController(
+      vaccine.id!,
+      doseOptionId,
+    );
+    if (textController == null) return const SizedBox.shrink();
 
     return FormFields.buildTextField(
       label: 'Diluyente',
       controller: textController,
       placeholder: 'Ej: DIL456',
+      enabled: !isLocked,
     );
   }
 
-  Widget _buildVialCountField(
+  Widget _buildVialCountFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
-    final textController = controller.getVialCountController(vaccine.id!);
+    final textController = controller.getVialCountController(
+      vaccine.id!,
+      doseOptionId,
+    );
+    if (textController == null) return const SizedBox.shrink();
 
     return FormFields.buildTextField(
       label: 'Cantidad de Frascos',
       controller: textController,
       placeholder: 'Ej: 2',
       keyboardType: TextInputType.number,
+      enabled: !isLocked,
     );
   }
 
-  Widget _buildDateField(
+  Widget _buildDateFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
+    int doseOptionId,
+    bool isLocked,
   ) {
     return Obx(() {
-      final selectedDate = controller.getApplicationDate(vaccine.id!);
+      final selectedDate = controller.getApplicationDate(
+        vaccine.id!,
+        doseOptionId,
+      );
 
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -596,18 +965,24 @@ class Step3Vaccines extends StatelessWidget {
               ),
             ),
             InkWell(
-              onTap: () async {
-                final date = await Get.dialog<DateTime>(
-                  DatePickerDialog(
-                    initialDate: selectedDate ?? DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  ),
-                );
-                if (date != null) {
-                  controller.setApplicationDate(vaccine.id!, date);
-                }
-              },
+              onTap: isLocked
+                  ? null
+                  : () async {
+                      final date = await Get.dialog<DateTime>(
+                        DatePickerDialog(
+                          initialDate: selectedDate ?? DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        ),
+                      );
+                      if (date != null) {
+                        controller.setApplicationDate(
+                          vaccine.id!,
+                          doseOptionId,
+                          date,
+                        );
+                      }
+                    },
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -615,15 +990,17 @@ class Step3Vaccines extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: inputBackground,
+                  color: isLocked
+                      ? textSecondary.withOpacity(0.05)
+                      : inputBackground,
                   border: Border.all(color: borderColor),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today,
-                      color: primaryColor,
+                      color: isLocked ? textSecondary : primaryColor,
                       size: 18,
                     ),
                     const SizedBox(width: 12),

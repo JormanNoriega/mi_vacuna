@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'app/controllers/auth_controller.dart';
-import 'app/controllers/vaccination_record_controller.dart';
 import 'app/modules/auth/login.dart';
 import 'app/data/database_helper.dart';
 
@@ -18,7 +17,7 @@ void main() async {
 
   // Inicializar controladores globales
   Get.put(AuthController());
-  Get.put(VaccinationRecordController());
+  // PatientFormController se creará cuando se necesite, no es global
 
   runApp(const MyApp());
 }

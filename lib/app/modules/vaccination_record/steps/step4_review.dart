@@ -298,130 +298,216 @@ class Step4Review extends StatelessWidget {
       );
     }
 
-    return _buildSection(
-      title:
-          'Vacunas Registradas (${vaccineController.selectedVaccines.length})',
-      icon: Icons.vaccines,
-      children: vaccineController.selectedVaccines.entries.map((entry) {
-        final vaccineId = entry.key;
-        final data = entry.value;
-        final vaccine = vaccineController.availableVaccines.firstWhereOrNull(
-          (v) => v.id == vaccineId,
-        );
+    // Contar el total de dosis (activas + bloqueadas)
+    int totalDoses = 0;
+    for (var vaccineData in vaccineController.selectedVaccines.values) {
+      totalDoses += vaccineData.doses.length;
+    }
 
-        if (vaccine == null) return const SizedBox.shrink();
+    final List<Widget> doseCards = [];
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: primaryColor.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Nombre de la vacuna
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        vaccine.name[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: primaryColor,
+    // Iterar sobre cada vacuna y sus dosis
+    for (var entry in vaccineController.selectedVaccines.entries) {
+      final vaccineId = entry.key;
+      final vaccineData = entry.value;
+      final vaccine = vaccineController.availableVaccines.firstWhereOrNull(
+        (v) => v.id == vaccineId,
+      );
+
+      if (vaccine == null) continue;
+
+      // Iterar sobre todas las dosis de esta vacuna
+      for (var doseEntry in vaccineData.doses.entries) {
+        final doseOptionId = doseEntry.key;
+        final doseData = doseEntry.value;
+
+        // Solo mostrar dosis activas o bloqueadas
+        if (!doseData.isActive && !doseData.isLocked) continue;
+
+        doseCards.add(
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: doseData.isLocked
+                  ? textSecondary.withOpacity(0.05)
+                  : primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: doseData.isLocked
+                    ? borderColor
+                    : primaryColor.withOpacity(0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Nombre de la vacuna con dosis
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          vaccine.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: primaryColor,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      vaccine.name,
-                      style: const TextStyle(
-                        color: textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            vaccine.name,
+                            style: const TextStyle(
+                              color: textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            doseData.doseDisplayName,
+                            style: TextStyle(
+                              color: primaryColor.withOpacity(0.8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, color: borderColor),
-              const SizedBox(height: 8),
+                    if (doseData.isLocked)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: textSecondary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.lock, size: 10, color: textSecondary),
+                            SizedBox(width: 3),
+                            Text(
+                              'Registrada',
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: borderColor),
+                const SizedBox(height: 8),
 
-              // Información de la vacuna
-              _buildVaccineDetail(
-                'Dosis',
-                vaccineController.getSelectedDose(vaccineId) ??
-                    'No especificada',
-              ),
-              _buildVaccineDetail(
-                'Fecha de Aplicación',
-                data.applicationDate != null
-                    ? DateFormat('dd/MM/yyyy').format(data.applicationDate!)
-                    : 'No especificada',
-              ),
-              if (vaccine.hasLaboratory)
+                // Información de la dosis
                 _buildVaccineDetail(
-                  'Laboratorio',
-                  vaccineController.getSelectedLaboratory(vaccineId) ??
-                      'No especificado',
+                  'Fecha de Aplicación',
+                  doseData.applicationDate != null
+                      ? DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(doseData.applicationDate!)
+                      : 'No especificada',
                 ),
-              if (data.lotController.text.isNotEmpty)
-                _buildVaccineDetail('Lote', data.lotController.text),
-              if (vaccine.hasSyringe)
-                _buildVaccineDetail(
-                  'Jeringa',
-                  vaccineController.getSelectedSyringe(vaccineId) ??
-                      'No especificada',
-                ),
-              if (vaccine.hasSyringeLot &&
-                  data.syringeLotController.text.isNotEmpty)
-                _buildVaccineDetail(
-                  'Lote Jeringa',
-                  data.syringeLotController.text,
-                ),
-              if (vaccine.hasDiluent && data.diluentController.text.isNotEmpty)
-                _buildVaccineDetail('Diluyente', data.diluentController.text),
-              if (vaccine.hasDropper)
-                _buildVaccineDetail(
-                  'Gotero',
-                  vaccineController.getSelectedDropper(vaccineId) ??
-                      'No especificado',
-                ),
-              if (vaccine.hasPneumococcalType)
-                _buildVaccineDetail(
-                  'Tipo Neumococo',
-                  vaccineController.getSelectedPneumococcalType(vaccineId) ??
-                      'No especificado',
-                ),
-              if (vaccine.hasVialCount &&
-                  data.vialCountController.text.isNotEmpty)
-                _buildVaccineDetail(
-                  'Cant. Frascos',
-                  data.vialCountController.text,
-                ),
-              if (vaccine.hasObservation)
-                _buildVaccineDetail(
-                  'Observaciones',
-                  vaccineController.getSelectedObservation(vaccineId) ??
-                      'No especificadas',
-                ),
-            ],
+                if (vaccine.hasLaboratory &&
+                    doseData.selectedLaboratoryId != null)
+                  _buildVaccineDetail(
+                    'Laboratorio',
+                    vaccineController.getSelectedLaboratory(
+                          vaccineId,
+                          doseOptionId,
+                        ) ??
+                        'No especificado',
+                  ),
+                if (doseData.lotController.text.isNotEmpty)
+                  _buildVaccineDetail('Lote', doseData.lotController.text),
+                if (vaccine.hasSyringe && doseData.selectedSyringeId != null)
+                  _buildVaccineDetail(
+                    'Jeringa',
+                    vaccineController.getSelectedSyringe(
+                          vaccineId,
+                          doseOptionId,
+                        ) ??
+                        'No especificada',
+                  ),
+                if (vaccine.hasSyringeLot &&
+                    doseData.syringeLotController.text.isNotEmpty)
+                  _buildVaccineDetail(
+                    'Lote Jeringa',
+                    doseData.syringeLotController.text,
+                  ),
+                if (vaccine.hasDiluent &&
+                    doseData.diluentController.text.isNotEmpty)
+                  _buildVaccineDetail(
+                    'Diluyente',
+                    doseData.diluentController.text,
+                  ),
+                if (vaccine.hasDropper && doseData.selectedDropperId != null)
+                  _buildVaccineDetail(
+                    'Gotero',
+                    vaccineController.getSelectedDropper(
+                          vaccineId,
+                          doseOptionId,
+                        ) ??
+                        'No especificado',
+                  ),
+                if (vaccine.hasPneumococcalType &&
+                    doseData.selectedPneumococcalTypeId != null)
+                  _buildVaccineDetail(
+                    'Tipo Neumococo',
+                    vaccineController.getSelectedPneumococcalType(
+                          vaccineId,
+                          doseOptionId,
+                        ) ??
+                        'No especificado',
+                  ),
+                if (vaccine.hasVialCount &&
+                    doseData.vialCountController.text.isNotEmpty)
+                  _buildVaccineDetail(
+                    'Cant. Frascos',
+                    doseData.vialCountController.text,
+                  ),
+                if (vaccine.hasObservation &&
+                    doseData.selectedObservationId != null)
+                  _buildVaccineDetail(
+                    'Observaciones',
+                    vaccineController.getSelectedObservation(
+                          vaccineId,
+                          doseOptionId,
+                        ) ??
+                        'No especificadas',
+                  ),
+              ],
+            ),
           ),
         );
-      }).toList(),
+      }
+    }
+
+    return _buildSection(
+      title: 'Vacunas Registradas ($totalDoses dosis)',
+      icon: Icons.vaccines,
+      children: doseCards,
     );
   }
 
