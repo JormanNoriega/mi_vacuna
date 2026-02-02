@@ -17,7 +17,7 @@ class PatientFormController extends GetxController {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final isEditMode = false.obs;
-  int? editingPatientId;
+  String? editingPatientId; // Cambiado de int? a String? para UUID
 
   // ==================== CONTROL DE NAVEGACIÓN ====================
   final pageController = PageController();
@@ -259,6 +259,15 @@ class PatientFormController extends GetxController {
     }
   }
 
+  /// Busca un paciente por número de identificación
+  Future<Patient?> findPatientByIdNumber(String idNumber) async {
+    try {
+      return await _patientService.getPatientByIdNumber(idNumber);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ==================== M\u00c9TODO PARA CARGAR DATOS EXISTENTES ====================
   /// Carga los datos de un paciente existente para edici\u00f3n
   void loadPatientData(Patient patient) async {
@@ -331,12 +340,12 @@ class PatientFormController extends GetxController {
   }
 
   /// Método público para cargar las vacunas del paciente (llamado desde Step3)
-  Future<void> loadPatientVaccinesForEdit(int patientId) async {
+  Future<void> loadPatientVaccinesForEdit(String patientId) async {
     await _loadPatientVaccines(patientId);
   }
 
   /// Carga las vacunas aplicadas al paciente en modo edición
-  Future<void> _loadPatientVaccines(int patientId) async {
+  Future<void> _loadPatientVaccines(String patientId) async {
     try {
       print('🔍 Cargando vacunas del paciente ID: $patientId...');
 
@@ -507,8 +516,8 @@ class PatientFormController extends GetxController {
       final age = calculateAge();
 
       // TODO: Obtener el nurseId del usuario logueado
-      // Por ahora usamos 1 como valor por defecto
-      final int nurseId = 1;
+      // Por ahora usamos UUID temporal
+      final String nurseId = '00000000-0000-0000-0000-000000000001';
 
       // Crear objeto Patient
       final patient = Patient(
@@ -727,11 +736,11 @@ class PatientFormController extends GetxController {
       );
 
       // Guardar o actualizar en la base de datos
-      int patientId;
+      String patientId;
       if (isEditMode.value && editingPatientId != null) {
         print('📝 Actualizando paciente ID: $editingPatientId...');
         final updatedPatient = Patient(
-          id: editingPatientId,
+          id: editingPatientId, // Ya es String (UUID)
           nurseId: patient.nurseId,
           consecutivo: patient.consecutivo,
           attentionDate: patient.attentionDate,
@@ -812,15 +821,17 @@ class PatientFormController extends GetxController {
           updatedAt: DateTime.now(),
         );
         await _patientService.updatePatient(updatedPatient);
-        patientId = editingPatientId!;
+        patientId = editingPatientId!; // Ya es String (UUID)
         print('✅ Paciente actualizado exitosamente');
       } else {
         print('💾 Guardando paciente nuevo en la base de datos...');
-        patientId = await _patientService.createPatient(patient);
-        print('✅ Paciente guardado con ID: $patientId');
+        patientId = await _patientService.createPatient(
+          patient,
+        ); // Retorna String (UUID)
+        print('✅ Paciente guardado con UUID: $patientId');
       }
 
-      if (patientId > 0) {
+      if (patientId.isNotEmpty) {
         // Guardar las vacunas aplicadas (nuevas dosis)
         print('💉 Guardando vacunas aplicadas...');
         await _saveAppliedDoses(patientId, nurseId);
@@ -847,7 +858,7 @@ class PatientFormController extends GetxController {
   }
 
   /// Guarda las dosis aplicadas (vacunas seleccionadas)
-  Future<void> _saveAppliedDoses(int patientId, int nurseId) async {
+  Future<void> _saveAppliedDoses(String patientId, String nurseId) async {
     try {
       final vaccineController = Get.find<VaccineSelectionController>();
       final vaccinesData = vaccineController.getVaccinesData();

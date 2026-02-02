@@ -28,7 +28,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Versión actualizada
+      version: 3, // Versión actualizada para UUID en patients
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -114,8 +114,8 @@ class DatabaseHelper {
       CREATE TABLE applied_doses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         uuid TEXT NOT NULL UNIQUE,
-        patient_id INTEGER NOT NULL,
-        nurse_id INTEGER NOT NULL,
+        patient_id TEXT NOT NULL, -- Cambiado a TEXT para UUID
+        nurse_id TEXT NOT NULL,
         vaccine_id INTEGER NOT NULL,
         application_date TEXT NOT NULL,
         selected_dose TEXT,
@@ -164,8 +164,8 @@ class DatabaseHelper {
     // ==================== TABLA: PATIENTS ====================
     await db.execute('''
       CREATE TABLE patients (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nurse_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY NOT NULL, -- UUID como String
+        nurse_id TEXT NOT NULL,
         
         -- DATOS BÁSICOS
         consecutivo TEXT,
@@ -469,6 +469,161 @@ class DatabaseHelper {
       await VaccineSeeder.seedAll(db);
 
       print('✅ Migración completada');
+    }
+
+    if (oldVersion < 3) {
+      // Migración de v2 a v3: Cambiar IDs a UUID (patients y nurses)
+      print('🔄 Migrando a UUID (se borrarán todos los datos)...');
+
+      // Borrar tablas existentes
+      await db.execute('DROP TABLE IF EXISTS applied_doses');
+      await db.execute('DROP TABLE IF EXISTS patients');
+      await db.execute('DROP TABLE IF EXISTS nurses');
+
+      // Recrear nurses con UUID
+      await db.execute('''
+        CREATE TABLE nurses (
+          id TEXT PRIMARY KEY NOT NULL,
+          idType TEXT NOT NULL,
+          idNumber TEXT NOT NULL,
+          firstName TEXT NOT NULL,
+          lastName TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          phone TEXT NOT NULL,
+          institution TEXT NOT NULL,
+          password TEXT NOT NULL,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+
+      // Recrear patients con UUID
+      await db.execute('''
+        CREATE TABLE patients (
+          id TEXT PRIMARY KEY NOT NULL,
+          nurse_id TEXT NOT NULL,
+          consecutivo TEXT,
+          attention_date TEXT NOT NULL,
+          id_type TEXT NOT NULL,
+          id_number TEXT NOT NULL,
+          first_name TEXT NOT NULL,
+          second_name TEXT,
+          last_name TEXT NOT NULL,
+          second_last_name TEXT,
+          birth_date TEXT NOT NULL,
+          years INTEGER,
+          months INTEGER,
+          days INTEGER,
+          total_months INTEGER,
+          complete_scheme INTEGER DEFAULT 0,
+          sex TEXT NOT NULL,
+          gender TEXT,
+          sexual_orientation TEXT,
+          gestational_age INTEGER,
+          birth_country TEXT NOT NULL,
+          migration_status TEXT,
+          birth_place TEXT,
+          affiliation_regime TEXT,
+          insurer TEXT,
+          ethnicity TEXT,
+          displaced INTEGER DEFAULT 0,
+          disabled INTEGER DEFAULT 0,
+          deceased INTEGER DEFAULT 0,
+          armed_conflict_victim INTEGER DEFAULT 0,
+          currently_studying INTEGER,
+          residence_country TEXT,
+          residence_department TEXT,
+          residence_municipality TEXT,
+          commune TEXT,
+          area TEXT,
+          address TEXT,
+          landline TEXT,
+          cellphone TEXT,
+          email TEXT,
+          authorize_calls INTEGER DEFAULT 0,
+          authorize_email INTEGER DEFAULT 0,
+          has_contraindication INTEGER DEFAULT 0,
+          contraindication_details TEXT,
+          has_previous_reaction INTEGER DEFAULT 0,
+          reaction_details TEXT,
+          history_record_date TEXT,
+          history_type TEXT,
+          history_description TEXT,
+          special_observations TEXT,
+          user_condition TEXT,
+          last_menstrual_date TEXT,
+          gestation_weeks INTEGER,
+          probable_delivery_date TEXT,
+          previous_pregnancies INTEGER,
+          mother_id_type TEXT,
+          mother_id_number TEXT,
+          mother_first_name TEXT,
+          mother_second_name TEXT,
+          mother_last_name TEXT,
+          mother_second_last_name TEXT,
+          mother_email TEXT,
+          mother_landline TEXT,
+          mother_cellphone TEXT,
+          mother_affiliation_regime TEXT,
+          mother_ethnicity TEXT,
+          mother_displaced INTEGER,
+          caregiver_id_type TEXT,
+          caregiver_id_number TEXT,
+          caregiver_first_name TEXT,
+          caregiver_second_name TEXT,
+          caregiver_last_name TEXT,
+          caregiver_second_last_name TEXT,
+          caregiver_relationship TEXT,
+          caregiver_email TEXT,
+          caregiver_landline TEXT,
+          caregiver_cellphone TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT,
+          FOREIGN KEY (nurse_id) REFERENCES nurses (id)
+        )
+      ''');
+
+      // Recrear applied_doses con UUIDs
+      await db.execute('''
+        CREATE TABLE applied_doses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          uuid TEXT NOT NULL UNIQUE,
+          patient_id TEXT NOT NULL,
+          nurse_id TEXT NOT NULL,
+          vaccine_id INTEGER NOT NULL,
+          application_date TEXT NOT NULL,
+          selected_dose TEXT,
+          selected_laboratory TEXT,
+          lot_number TEXT NOT NULL,
+          selected_syringe TEXT,
+          syringe_lot TEXT,
+          diluent_lot TEXT,
+          selected_dropper TEXT,
+          selected_pneumococcal_type TEXT,
+          vial_count INTEGER,
+          selected_observation TEXT,
+          custom_observation TEXT,
+          next_dose_date TEXT,
+          sync_status TEXT DEFAULT 'local',
+          created_at TEXT NOT NULL,
+          updated_at TEXT,
+          FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE,
+          FOREIGN KEY (nurse_id) REFERENCES nurses (id),
+          FOREIGN KEY (vaccine_id) REFERENCES vaccines (id)
+        )
+      ''');
+
+      // Recrear índices
+      await db.execute(
+        'CREATE INDEX idx_patient_id_number ON patients(id_number)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_dose_patient ON applied_doses(patient_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_dose_nurse ON applied_doses(nurse_id)',
+      );
+
+      print('✅ Migración a UUID completada (datos eliminados)');
     }
   }
 

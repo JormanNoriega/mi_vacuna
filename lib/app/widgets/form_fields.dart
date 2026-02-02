@@ -210,6 +210,7 @@ class FormFields {
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
     bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -231,6 +232,7 @@ class FormFields {
             controller: controller,
             keyboardType: keyboardType,
             enabled: enabled,
+            onChanged: onChanged,
             style: TextStyle(
               color: enabled ? textPrimary : textSecondary,
               fontSize: 16,

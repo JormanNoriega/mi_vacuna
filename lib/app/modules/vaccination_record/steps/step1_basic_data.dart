@@ -3,10 +3,18 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../controllers/patient_form_controller.dart';
 import '../../../widgets/form_fields.dart';
+import '../../../widgets/custom_snackbar.dart';
 import '../../../theme/colors.dart';
 
-class Step1BasicData extends StatelessWidget {
+class Step1BasicData extends StatefulWidget {
   const Step1BasicData({Key? key}) : super(key: key);
+
+  @override
+  State<Step1BasicData> createState() => _Step1BasicDataState();
+}
+
+class _Step1BasicDataState extends State<Step1BasicData> {
+  String? _lastCheckedId;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +113,8 @@ class Step1BasicData extends StatelessWidget {
                         enabled: !controller
                             .isEditMode
                             .value, // Bloquear en modo edición
+                        onChanged: (value) =>
+                            _checkExistingPatient(value, controller),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -283,6 +293,160 @@ class Step1BasicData extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Verifica si existe un paciente con el ID ingresado
+  void _checkExistingPatient(
+    String value,
+    PatientFormController controller,
+  ) async {
+    print('🔍 Verificando ID: $value (Longitud: ${value.length})');
+
+    // Solo verificar si el valor tiene al menos 4 dígitos y no está en modo edición
+    if (value.length < 4) {
+      print('❌ ID muy corto');
+      return;
+    }
+
+    if (controller.isEditMode.value) {
+      print('❌ Modo edición activo');
+      return;
+    }
+
+    // Evitar verificar el mismo ID múltiples veces
+    if (_lastCheckedId == value) {
+      print('⏭️  ID ya verificado');
+      return;
+    }
+
+    _lastCheckedId = value;
+    print('🔎 Buscando paciente con ID: $value');
+
+    // Buscar paciente
+    final patient = await controller.findPatientByIdNumber(value);
+
+    if (patient != null) {
+      print('✅ Paciente encontrado: ${patient.firstName} ${patient.lastName}');
+      if (mounted) {
+        _showLoadPatientDialog(patient, controller);
+      }
+    } else {
+      print('❌ Paciente no encontrado');
+    }
+  }
+
+  /// Muestra diálogo para cargar datos del paciente existente
+  void _showLoadPatientDialog(
+    dynamic patient,
+    PatientFormController controller,
+  ) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.info_outline,
+                color: primaryColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Paciente Encontrado',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ya existe un paciente registrado con este número de identificación:',
+              style: TextStyle(color: textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: backgroundMedium,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${patient.firstName} ${patient.lastName}',
+                    style: const TextStyle(
+                      color: textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${patient.idType} • ${patient.idNumber}',
+                    style: const TextStyle(color: textSecondary, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '¿Deseas cargar los datos de este paciente para editarlos?',
+              style: TextStyle(color: textSecondary, fontSize: 14),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+              // Solo resetear el flag para permitir nueva búsqueda
+              _lastCheckedId = null;
+            },
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              controller.loadPatientData(patient);
+              CustomSnackbar.showSuccess(
+                'Datos del paciente cargados correctamente',
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Sí, cargar datos',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
     );
   }
 

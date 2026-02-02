@@ -82,7 +82,7 @@ class AppliedDoseService {
   // ==================== CONSULTAS POR RELACIONES ====================
 
   /// Obtiene todas las dosis aplicadas a un paciente
-  Future<List<AppliedDose>> getDosesByPatient(int patientId) async {
+  Future<List<AppliedDose>> getDosesByPatient(String patientId) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'applied_doses',
@@ -134,7 +134,7 @@ class AppliedDoseService {
 
   /// Obtiene dosis de un paciente para una vacuna específica
   Future<List<AppliedDose>> getDosesByPatientAndVaccine(
-    int patientId,
+    String patientId,
     int vaccineId,
   ) async {
     final db = await _dbHelper.database;
@@ -151,8 +151,8 @@ class AppliedDoseService {
 
   /// Obtiene dosis con información de paciente, vacuna y enfermera
   Future<List<Map<String, dynamic>>> getDosesWithVaccineInfo({
-    int? patientId,
-    int? nurseId,
+    String? patientId,
+    String? nurseId,
     int? limit,
   }) async {
     final db = await _dbHelper.database;
@@ -240,9 +240,9 @@ class AppliedDoseService {
 
   /// Filtra dosis por múltiples criterios
   Future<List<AppliedDose>> filterDoses({
-    int? patientId,
+    String? patientId,
     int? vaccineId,
-    int? nurseId,
+    String? nurseId,
     DateTime? startDate,
     DateTime? endDate,
     String? syncStatus,
@@ -423,7 +423,10 @@ class AppliedDoseService {
   // ==================== VALIDACIONES Y CONTROL ====================
 
   /// Verifica si un paciente ya recibió todas las dosis de una vacuna
-  Future<bool> hasCompletedVaccineScheme(int patientId, int vaccineId) async {
+  Future<bool> hasCompletedVaccineScheme(
+    String patientId,
+    int vaccineId,
+  ) async {
     final db = await _dbHelper.database;
 
     // Obtener la cantidad máxima de dosis de la vacuna
@@ -449,7 +452,10 @@ class AppliedDoseService {
   }
 
   /// Obtiene el número de dosis aplicadas de una vacuna a un paciente
-  Future<int> countDosesForPatientVaccine(int patientId, int vaccineId) async {
+  Future<int> countDosesForPatientVaccine(
+    String patientId,
+    int vaccineId,
+  ) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM applied_doses WHERE patient_id = ? AND vaccine_id = ?',
@@ -460,7 +466,7 @@ class AppliedDoseService {
 
   /// Obtiene la última dosis aplicada de una vacuna a un paciente
   Future<AppliedDose?> getLastDoseForPatientVaccine(
-    int patientId,
+    String patientId,
     int vaccineId,
   ) async {
     final db = await _dbHelper.database;

@@ -6,27 +6,47 @@ import '../../../models/vaccine.dart';
 import '../../../theme/colors.dart';
 import '../../../widgets/form_fields.dart';
 
-class Step3Vaccines extends StatelessWidget {
+class Step3Vaccines extends StatefulWidget {
   const Step3Vaccines({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  State<Step3Vaccines> createState() => _Step3VaccinesState();
+}
+
+class _Step3VaccinesState extends State<Step3Vaccines> {
+  bool _hasLoadedEditData = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Cargar datos después de que el widget se construya
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
+  }
+
+  Future<void> _initializeData() async {
     final patientController = Get.find<PatientFormController>();
     final vaccineController = Get.put(VaccineSelectionController());
 
     // Cargar vacunas disponibles según la edad del paciente
     vaccineController.loadAvailableVaccines(patientController.birthDate.value);
 
-    // Si está en modo edición y tiene un ID de paciente, cargar sus vacunas
+    // Si está en modo edición y aún no se han cargado las vacunas
     if (patientController.isEditMode.value &&
-        patientController.editingPatientId != null) {
-      // Cargar vacunas del paciente de forma asíncrona
-      Future.microtask(() async {
-        await patientController.loadPatientVaccinesForEdit(
-          patientController.editingPatientId!,
-        );
-      });
+        patientController.editingPatientId != null &&
+        !_hasLoadedEditData) {
+      _hasLoadedEditData = true;
+      await patientController.loadPatientVaccinesForEdit(
+        patientController.editingPatientId!,
+      );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vaccineController = Get.put(VaccineSelectionController());
 
     return SingleChildScrollView(
       child: Padding(

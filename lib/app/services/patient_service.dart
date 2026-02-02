@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../data/database_helper.dart';
 import '../models/patient_model.dart';
 
@@ -10,18 +11,28 @@ import '../models/patient_model.dart';
 /// - Consultas con información de dosis aplicadas
 class PatientService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final Uuid _uuid = const Uuid();
 
   // ==================== CRUD BÁSICO ====================
 
-  /// Crea un nuevo paciente
-  /// Retorna el ID del paciente creado
-  Future<int> createPatient(Patient patient) async {
+  /// Crea un nuevo paciente con UUID generado
+  /// Retorna el UUID del paciente creado como String
+  Future<String> createPatient(Patient patient) async {
     final db = await _dbHelper.database;
-    return await db.insert('patients', patient.toMap());
+
+    // Generar UUID si no existe
+    final patientId = patient.id ?? _uuid.v4();
+
+    // Obtener mapa y asegurar que tenga el UUID
+    final patientMap = patient.toMap();
+    patientMap['id'] = patientId;
+
+    await db.insert('patients', patientMap);
+    return patientId;
   }
 
-  /// Obtiene un paciente por su ID
-  Future<Patient?> getPatientById(int id) async {
+  /// Obtiene un paciente por su UUID
+  Future<Patient?> getPatientById(String id) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'patients',
@@ -58,9 +69,9 @@ class PatientService {
     );
   }
 
-  /// Elimina un paciente por su ID
+  /// Elimina un paciente por su UUID
   /// NOTA: Esto también eliminará todas las dosis aplicadas (CASCADE)
-  Future<int> deletePatient(int id) async {
+  Future<int> deletePatient(String id) async {
     final db = await _dbHelper.database;
     return await db.delete('patients', where: 'id = ?', whereArgs: [id]);
   }

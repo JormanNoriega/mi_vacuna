@@ -3,8 +3,8 @@
 class AppliedDose {
   int? id;
   String uuid; // Identificador global único (para sincronización)
-  int patientId; // FK -> patients
-  int nurseId; // FK -> nurses
+  String patientId; // FK -> patients (UUID)
+  String nurseId; // FK -> nurses (UUID)
   int vaccineId; // FK -> vaccines
   DateTime applicationDate; // Fecha de aplicación (OBLIGATORIO)
 

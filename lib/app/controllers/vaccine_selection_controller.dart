@@ -317,41 +317,26 @@ class VaccineSelectionController extends GetxController {
   }
 
   /// Carga las dosis ya registradas de un paciente
-  Future<void> loadPatientRegisteredDoses(int patientId) async {
+  Future<void> loadPatientRegisteredDoses(String patientId) async {
     try {
-      print('🔍 Cargando dosis registradas del paciente ID: $patientId');
       final List<AppliedDose> doses = await _appliedDoseService
           .getDosesByPatient(patientId);
-      print('📋 Se encontraron ${doses.length} dosis aplicadas');
 
       for (final AppliedDose appliedDose in doses) {
         final vaccineId = appliedDose.vaccineId;
-        print(
-          '💉 Procesando vacuna ID: $vaccineId, Dosis: ${appliedDose.selectedDose}',
-        );
 
         if (!isVaccineSelected(vaccineId)) {
-          print('  📌 Seleccionando vacuna y cargando opciones...');
           await toggleVaccineSelection(vaccineId);
         }
 
         final vaccineData = selectedVaccines[vaccineId];
         if (vaccineData == null) {
-          print('  ❌ No se encontró vaccineData para ID: $vaccineId');
           continue;
         }
 
         final doseOptions = getDoseOptions(vaccineId);
         if (doseOptions.isEmpty) {
-          print('  ❌ No hay opciones de dosis cargadas para vacuna $vaccineId');
           continue;
-        }
-
-        print('  🔍 Buscando dosis "${appliedDose.selectedDose}" en opciones:');
-        for (var opt in doseOptions) {
-          print(
-            '     - ID: ${opt.id}, Value: "${opt.value}", Display: "${opt.displayName}"',
-          );
         }
 
         // Buscar por displayName en lugar de value
@@ -362,7 +347,6 @@ class VaccineSelectionController extends GetxController {
         );
 
         if (doseOption != null) {
-          print('  ✅ Creando dosis bloqueada: ${doseOption.displayName}');
           final doseData = vaccineData.getOrCreateDose(
             doseOption.id!,
             doseOption.value,
@@ -392,67 +376,74 @@ class VaccineSelectionController extends GetxController {
           if (appliedDose.selectedLaboratory != null) {
             final labOptions = getLaboratoryOptions(vaccineId);
             final labOption = labOptions.firstWhereOrNull(
-              (opt) => opt.value == appliedDose.selectedLaboratory,
+              (opt) =>
+                  opt.displayName.toUpperCase() ==
+                      appliedDose.selectedLaboratory!.toUpperCase() ||
+                  opt.value.toUpperCase() ==
+                      appliedDose.selectedLaboratory!.toUpperCase(),
             );
             if (labOption != null) {
               doseData.selectedLaboratoryId = labOption.id;
-              print('    🏥 Laboratorio: ${labOption.displayName}');
             }
           }
 
           if (appliedDose.selectedSyringe != null) {
             final syringeOptions = getSyringeOptions(vaccineId);
             final syringeOption = syringeOptions.firstWhereOrNull(
-              (opt) => opt.value == appliedDose.selectedSyringe,
+              (opt) =>
+                  opt.displayName.toUpperCase() ==
+                      appliedDose.selectedSyringe!.toUpperCase() ||
+                  opt.value.toUpperCase() ==
+                      appliedDose.selectedSyringe!.toUpperCase(),
             );
             if (syringeOption != null) {
               doseData.selectedSyringeId = syringeOption.id;
-              print('    💉 Jeringa: ${syringeOption.displayName}');
             }
           }
 
           if (appliedDose.selectedDropper != null) {
             final dropperOptions = getDropperOptions(vaccineId);
             final dropperOption = dropperOptions.firstWhereOrNull(
-              (opt) => opt.value == appliedDose.selectedDropper,
+              (opt) =>
+                  opt.displayName.toUpperCase() ==
+                      appliedDose.selectedDropper!.toUpperCase() ||
+                  opt.value.toUpperCase() ==
+                      appliedDose.selectedDropper!.toUpperCase(),
             );
             if (dropperOption != null) {
               doseData.selectedDropperId = dropperOption.id;
-              print('    💧 Gotero: ${dropperOption.displayName}');
             }
           }
 
           if (appliedDose.selectedPneumococcalType != null) {
             final pneumoOptions = getPneumococcalTypeOptions(vaccineId);
             final pneumoOption = pneumoOptions.firstWhereOrNull(
-              (opt) => opt.value == appliedDose.selectedPneumococcalType,
+              (opt) =>
+                  opt.displayName.toUpperCase() ==
+                      appliedDose.selectedPneumococcalType!.toUpperCase() ||
+                  opt.value.toUpperCase() ==
+                      appliedDose.selectedPneumococcalType!.toUpperCase(),
             );
             if (pneumoOption != null) {
               doseData.selectedPneumococcalTypeId = pneumoOption.id;
-              print('    🦠 Neumococo: ${pneumoOption.displayName}');
             }
           }
 
           if (appliedDose.selectedObservation != null) {
             final obsOptions = getObservationOptions(vaccineId);
             final obsOption = obsOptions.firstWhereOrNull(
-              (opt) => opt.value == appliedDose.selectedObservation,
+              (opt) =>
+                  opt.displayName.toUpperCase() ==
+                      appliedDose.selectedObservation!.toUpperCase() ||
+                  opt.value.toUpperCase() ==
+                      appliedDose.selectedObservation!.toUpperCase(),
             );
             if (obsOption != null) {
               doseData.selectedObservationId = obsOption.id;
-              print('    📝 Observación: ${obsOption.displayName}');
             }
           }
-
-          print('    ✅ Dosis bloqueada cargada correctamente');
-        } else {
-          print(
-            '  ⚠️ No se encontró doseOption para: ${appliedDose.selectedDose}',
-          );
         }
       }
-
-      print('✅ Dosis registradas cargadas exitosamente');
       selectedVaccines.refresh();
     } catch (e) {
       print('❌ Error al cargar dosis registradas: $e');
@@ -505,12 +496,20 @@ class VaccineSelectionController extends GetxController {
   // Getters para valores seleccionados por dosis
   String? getSelectedLaboratory(int vaccineId, int doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
-    if (doseData?.selectedLaboratoryId == null) return null;
+    print(
+      '🔍 getSelectedLaboratory - VaccineID: $vaccineId, DoseID: $doseOptionId',
+    );
+    print('   selectedLaboratoryId: ${doseData?.selectedLaboratoryId}');
+    if (doseData?.selectedLaboratoryId == null) {
+      print('   ❌ selectedLaboratoryId es NULL');
+      return null;
+    }
 
     final options = getLaboratoryOptions(vaccineId);
     final option = options.firstWhereOrNull(
       (opt) => opt.id == doseData!.selectedLaboratoryId,
     );
+    print('   ✅ Retornando: ${option?.displayName}');
     return option?.displayName;
   }
 

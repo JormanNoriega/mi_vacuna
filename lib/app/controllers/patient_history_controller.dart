@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../models/patient_model.dart';
 import '../services/patient_service.dart';
 import '../services/applied_dose_service.dart';
+import '../data/database_helper.dart';
 import '../widgets/custom_snackbar.dart';
 
 class PatientHistoryController extends GetxController {
@@ -13,8 +14,8 @@ class PatientHistoryController extends GetxController {
   final patients = <Patient>[].obs;
   final searchQuery = ''.obs;
 
-  // Mapa de paciente ID -> lista de nombres de vacunas
-  final patientVaccines = <int, List<String>>{}.obs;
+  // Mapa de paciente ID -> lista de nombres de vacunas (UUID -> List<String>)
+  final patientVaccines = <String, List<String>>{}.obs;
 
   @override
   void onInit() {
@@ -44,21 +45,41 @@ class PatientHistoryController extends GetxController {
   }
 
   /// Carga las vacunas aplicadas para un paciente específico
-  Future<void> _loadVaccinesForPatient(int patientId) async {
+  Future<void> _loadVaccinesForPatient(String patientId) async {
     try {
-      final doses = await _appliedDoseService.getDosesWithVaccineInfo(
-        patientId: patientId,
-      );
+      // Usar el mismo método que funciona en modo edición
+      final doses = await _appliedDoseService.getDosesByPatient(patientId);
 
-      // Extraer nombres únicos de vacunas
-      final vaccineNames = doses
-          .map((dose) => dose['vaccine_name'] as String)
-          .toSet()
-          .toList();
+      print('📋 Dosis encontradas para paciente $patientId: ${doses.length}');
 
+      // Obtener nombres únicos de vacunas de las dosis
+      final vaccineIds = doses.map((dose) => dose.vaccineId).toSet();
+
+      // Buscar los nombres de las vacunas
+      final db = await DatabaseHelper.instance.database;
+      if (vaccineIds.isEmpty) {
+        patientVaccines[patientId] = [];
+        return;
+      }
+
+      final vaccineNames = <String>[];
+      for (var vaccineId in vaccineIds) {
+        final result = await db.query(
+          'vaccines',
+          columns: ['name'],
+          where: 'id = ?',
+          whereArgs: [vaccineId],
+          limit: 1,
+        );
+        if (result.isNotEmpty) {
+          vaccineNames.add(result.first['name'] as String);
+        }
+      }
+
+      print('💉 Vacunas únicas: $vaccineNames');
       patientVaccines[patientId] = vaccineNames;
     } catch (e) {
-      print('Error cargando vacunas para paciente $patientId: $e');
+      print('❌ Error cargando vacunas para paciente $patientId: $e');
       patientVaccines[patientId] = [];
     }
   }
@@ -90,7 +111,7 @@ class PatientHistoryController extends GetxController {
   }
 
   /// Elimina un paciente
-  Future<void> deletePatient(int patientId) async {
+  Future<void> deletePatient(String patientId) async {
     try {
       await _patientService.deletePatient(patientId);
       patients.removeWhere((p) => p.id == patientId);

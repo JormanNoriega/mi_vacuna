@@ -1,5 +1,5 @@
 class NurseModel {
-  int? id;
+  String? id; // UUID
   String idType;
   String idNumber;
   String firstName;

@@ -1,14 +1,21 @@
 import '../data/database_helper.dart';
 import '../models/nurse_model.dart';
+import 'package:uuid/uuid.dart';
 
 class NurseService {
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final Uuid _uuid = const Uuid();
 
   // Crear enfermera
-  Future<NurseModel> createNurse(NurseModel nurse) async {
+  Future<String> createNurse(NurseModel nurse) async {
     final db = await _db.database;
-    final id = await db.insert('nurses', nurse.toMap());
-    return nurse..id = id;
+    final nurseId = nurse.id ?? _uuid.v4();
+
+    final nurseMap = nurse.toMap();
+    nurseMap['id'] = nurseId;
+
+    await db.insert('nurses', nurseMap);
+    return nurseId;
   }
 
   // Obtener enfermera por email
@@ -60,7 +67,7 @@ class NurseService {
   }
 
   // Eliminar enfermera
-  Future<int> deleteNurse(int id) async {
+  Future<int> deleteNurse(String id) async {
     final db = await _db.database;
     return await db.delete('nurses', where: 'id = ?', whereArgs: [id]);
   }

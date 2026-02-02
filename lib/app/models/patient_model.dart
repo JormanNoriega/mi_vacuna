@@ -31,9 +31,9 @@ enum Area { urbana, rural }
 enum CondicionUsuaria { mujerEdadFertil, gestante, mujerMayor50, noAplica }
 
 class Patient {
-  // Identificador
-  int? id;
-  int nurseId; // FK a la enfermera que registró
+  // Identificador UUID
+  String? id; // Cambiado de int? a String? para UUID
+  String nurseId; // FK a la enfermera que registró (UUID)
 
   // ============================================
   // DATOS BÁSICOS DEL PACIENTE
@@ -263,7 +263,9 @@ class Patient {
       'disabled': disabled ? 1 : 0,
       'deceased': deceased ? 1 : 0,
       'armed_conflict_victim': armedConflictVictim ? 1 : 0,
-      'currently_studying': currentlyStudying == null ? null : (currentlyStudying! ? 1 : 0),
+      'currently_studying': currentlyStudying == null
+          ? null
+          : (currentlyStudying! ? 1 : 0),
       'residence_country': residenceCountry,
       'residence_department': residenceDepartment,
       'residence_municipality': residenceMunicipality,
@@ -303,7 +305,9 @@ class Patient {
       'mother_cellphone': motherCellphone,
       'mother_affiliation_regime': motherAffiliationRegime?.name,
       'mother_ethnicity': motherEthnicity?.name,
-      'mother_displaced': motherDisplaced == null ? null : (motherDisplaced! ? 1 : 0),
+      'mother_displaced': motherDisplaced == null
+          ? null
+          : (motherDisplaced! ? 1 : 0),
       // Datos del cuidador
       'caregiver_id_type': caregiverIdType,
       'caregiver_id_number': caregiverIdNumber,
@@ -343,29 +347,31 @@ class Patient {
       totalMonths: map['total_months'],
       completeScheme: map['complete_scheme'] == 1,
       sex: Sexo.values.byName(map['sex']),
-      gender: map['gender'] != null ? Genero.values.byName(map['gender']) : null,
-      sexualOrientation: map['sexual_orientation'] != null 
-          ? OrientacionSexual.values.byName(map['sexual_orientation']) 
+      gender: map['gender'] != null
+          ? Genero.values.byName(map['gender'])
+          : null,
+      sexualOrientation: map['sexual_orientation'] != null
+          ? OrientacionSexual.values.byName(map['sexual_orientation'])
           : null,
       gestationalAge: map['gestational_age'],
       birthCountry: map['birth_country'],
-      migrationStatus: map['migration_status'] != null 
-          ? EstatusMigratorio.values.byName(map['migration_status']) 
+      migrationStatus: map['migration_status'] != null
+          ? EstatusMigratorio.values.byName(map['migration_status'])
           : null,
       birthPlace: map['birth_place'],
-      affiliationRegime: map['affiliation_regime'] != null 
-          ? RegimenAfiliacion.values.byName(map['affiliation_regime']) 
+      affiliationRegime: map['affiliation_regime'] != null
+          ? RegimenAfiliacion.values.byName(map['affiliation_regime'])
           : null,
       insurer: map['insurer'],
-      ethnicity: map['ethnicity'] != null 
-          ? PertenenciaEtnica.values.byName(map['ethnicity']) 
+      ethnicity: map['ethnicity'] != null
+          ? PertenenciaEtnica.values.byName(map['ethnicity'])
           : null,
       displaced: map['displaced'] == 1,
       disabled: map['disabled'] == 1,
       deceased: map['deceased'] == 1,
       armedConflictVictim: map['armed_conflict_victim'] == 1,
-      currentlyStudying: map['currently_studying'] != null 
-          ? map['currently_studying'] == 1 
+      currentlyStudying: map['currently_studying'] != null
+          ? map['currently_studying'] == 1
           : null,
       residenceCountry: map['residence_country'],
       residenceDepartment: map['residence_department'],
@@ -382,21 +388,21 @@ class Patient {
       contraindicationDetails: map['contraindication_details'],
       hasPreviousReaction: map['has_previous_reaction'] == 1,
       reactionDetails: map['reaction_details'],
-      historyRecordDate: map['history_record_date'] != null 
-          ? DateTime.parse(map['history_record_date']) 
+      historyRecordDate: map['history_record_date'] != null
+          ? DateTime.parse(map['history_record_date'])
           : null,
       historyType: map['history_type'],
       historyDescription: map['history_description'],
       specialObservations: map['special_observations'],
-      userCondition: map['user_condition'] != null 
-          ? CondicionUsuaria.values.byName(map['user_condition']) 
+      userCondition: map['user_condition'] != null
+          ? CondicionUsuaria.values.byName(map['user_condition'])
           : null,
-      lastMenstrualDate: map['last_menstrual_date'] != null 
-          ? DateTime.parse(map['last_menstrual_date']) 
+      lastMenstrualDate: map['last_menstrual_date'] != null
+          ? DateTime.parse(map['last_menstrual_date'])
           : null,
       gestationWeeks: map['gestation_weeks'],
-      probableDeliveryDate: map['probable_delivery_date'] != null 
-          ? DateTime.parse(map['probable_delivery_date']) 
+      probableDeliveryDate: map['probable_delivery_date'] != null
+          ? DateTime.parse(map['probable_delivery_date'])
           : null,
       previousPregnancies: map['previous_pregnancies'],
       motherIdType: map['mother_id_type'],
@@ -408,14 +414,14 @@ class Patient {
       motherEmail: map['mother_email'],
       motherLandline: map['mother_landline'],
       motherCellphone: map['mother_cellphone'],
-      motherAffiliationRegime: map['mother_affiliation_regime'] != null 
-          ? RegimenAfiliacion.values.byName(map['mother_affiliation_regime']) 
+      motherAffiliationRegime: map['mother_affiliation_regime'] != null
+          ? RegimenAfiliacion.values.byName(map['mother_affiliation_regime'])
           : null,
-      motherEthnicity: map['mother_ethnicity'] != null 
-          ? PertenenciaEtnica.values.byName(map['mother_ethnicity']) 
+      motherEthnicity: map['mother_ethnicity'] != null
+          ? PertenenciaEtnica.values.byName(map['mother_ethnicity'])
           : null,
-      motherDisplaced: map['mother_displaced'] != null 
-          ? map['mother_displaced'] == 1 
+      motherDisplaced: map['mother_displaced'] != null
+          ? map['mother_displaced'] == 1
           : null,
       caregiverIdType: map['caregiver_id_type'],
       caregiverIdNumber: map['caregiver_id_number'],
@@ -428,8 +434,8 @@ class Patient {
       caregiverLandline: map['caregiver_landline'],
       caregiverCellphone: map['caregiver_cellphone'],
       createdAt: DateTime.parse(map['created_at']),
-      updatedAt: map['updated_at'] != null 
-          ? DateTime.parse(map['updated_at']) 
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'])
           : null,
     );
   }
@@ -438,23 +444,32 @@ class Patient {
   // HELPERS
   // ============================================
   String get fullName {
-    return [firstName, secondName, lastName, secondLastName]
-        .where((name) => name != null && name.isNotEmpty)
-        .join(' ');
+    return [
+      firstName,
+      secondName,
+      lastName,
+      secondLastName,
+    ].where((name) => name != null && name.isNotEmpty).join(' ');
   }
 
   String? get motherFullName {
     if (motherFirstName == null) return null;
-    return [motherFirstName, motherSecondName, motherLastName, motherSecondLastName]
-        .where((name) => name != null && name.isNotEmpty)
-        .join(' ');
+    return [
+      motherFirstName,
+      motherSecondName,
+      motherLastName,
+      motherSecondLastName,
+    ].where((name) => name != null && name.isNotEmpty).join(' ');
   }
 
   String? get caregiverFullName {
     if (caregiverFirstName == null) return null;
-    return [caregiverFirstName, caregiverSecondName, caregiverLastName, caregiverSecondLastName]
-        .where((name) => name != null && name.isNotEmpty)
-        .join(' ');
+    return [
+      caregiverFirstName,
+      caregiverSecondName,
+      caregiverLastName,
+      caregiverSecondLastName,
+    ].where((name) => name != null && name.isNotEmpty).join(' ');
   }
 
   int get currentAge {

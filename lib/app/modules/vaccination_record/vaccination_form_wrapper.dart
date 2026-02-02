@@ -91,33 +91,15 @@ class VaccinationFormWrapper extends StatelessWidget {
 
           // PageView con los pasos
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return PageView(
-                  controller: controller.pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (index) =>
-                      controller.currentStep.value = index,
-                  children: [
-                    SizedBox(
-                      height: constraints.maxHeight,
-                      child: const Step1BasicData(),
-                    ),
-                    SizedBox(
-                      height: constraints.maxHeight,
-                      child: const Step2AdditionalData(),
-                    ),
-                    SizedBox(
-                      height: constraints.maxHeight,
-                      child: const Step3Vaccines(),
-                    ),
-                    SizedBox(
-                      height: constraints.maxHeight,
-                      child: const Step4Review(),
-                    ),
-                  ],
-                );
-              },
+            child: PageView(
+              controller: controller.pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: const [
+                Step1BasicData(),
+                Step2AdditionalData(),
+                Step3Vaccines(),
+                Step4Review(),
+              ],
             ),
           ),
         ],
@@ -151,29 +133,7 @@ class VaccinationFormWrapper extends StatelessWidget {
                     const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (controller.currentStep.value == 0) {
-                          // Validar paso 1 y avanzar
-                          if (controller.validateStep1()) {
-                            controller.nextStep();
-                          }
-                        } else if (controller.currentStep.value == 1) {
-                          // Paso 2 -> Paso 3 (sin validación obligatoria)
-                          controller.nextStep();
-                        } else if (controller.currentStep.value == 2) {
-                          // Paso 3 (vacunas) -> Paso 4 (revisión)
-                          // Validar vacunas antes de avanzar
-                          final vaccineController =
-                              Get.find<VaccineSelectionController>();
-                          if (vaccineController.validate()) {
-                            controller.nextStep();
-                          }
-                        } else if (controller.currentStep.value == 3) {
-                          // Paso 4 (último) -> Guardar
-                          print('🚀 Botón Guardar presionado en paso 4');
-                          controller.submitForm();
-                        }
-                      },
+                      onPressed: () => _handleNextButton(controller),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
@@ -216,6 +176,24 @@ class VaccinationFormWrapper extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleNextButton(PatientFormController controller) {
+    final step = controller.currentStep.value;
+    if (step == 0) {
+      if (controller.validateStep1()) {
+        controller.nextStep();
+      }
+    } else if (step == 1) {
+      controller.nextStep();
+    } else if (step == 2) {
+      final vaccineController = Get.find<VaccineSelectionController>();
+      if (vaccineController.validate()) {
+        controller.nextStep();
+      }
+    } else if (step == 3) {
+      controller.submitForm();
+    }
   }
 
   String _getStepTitle(int step) {

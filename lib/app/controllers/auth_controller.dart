@@ -59,7 +59,9 @@ class AuthController extends GetxController {
         password: _hashPassword(password),
       );
 
-      final createdNurse = await _nurseService.createNurse(nurse);
+      await _nurseService.createNurse(nurse);
+      // Obtener la enfermera creada por email
+      final createdNurse = await _nurseService.getNurseByEmail(email);
       currentNurse.value = createdNurse;
 
       return true;

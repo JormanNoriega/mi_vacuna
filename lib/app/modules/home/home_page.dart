@@ -6,6 +6,7 @@ import '../auth/login.dart';
 import '../vaccination_record/vaccination_form_wrapper.dart';
 import '../vaccine_management/vaccine_management_page.dart';
 import '../patient_history/patient_history_page.dart';
+import '../export/export_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -178,6 +179,27 @@ class HomePage extends StatelessWidget {
                   },
                   icon: const Icon(Icons.history),
                   label: const Text('Historial de Atenciones'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF135BEC),
+                    side: const BorderSide(color: Color(0xFF135BEC)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.to(() => const ExportPage());
+                  },
+                  icon: const Icon(Icons.file_download),
+                  label: const Text('Exportar Registros'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF135BEC),
