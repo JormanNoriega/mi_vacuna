@@ -5,7 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../../widgets/form_fields.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../theme/colors.dart';
-import '../home/home_page.dart';
+import '../home/main_navigation_page.dart';
 
 class RegisterNursePage extends StatefulWidget {
   const RegisterNursePage({Key? key}) : super(key: key);
@@ -274,7 +274,7 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                               CustomSnackbar.showSuccess(
                                 'Cuenta creada exitosamente. Bienvenido ${authController.currentNurse.value!.fullName}',
                               );
-                              Get.offAll(() => const HomePage());
+                              Get.offAll(() => const MainNavigationPage());
                             }
                           },
                     child: authController.isLoading.value

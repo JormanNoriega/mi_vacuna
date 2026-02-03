@@ -4,7 +4,7 @@ import '../../controllers/auth_controller.dart';
 import '../../widgets/form_fields.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../theme/colors.dart';
-import '../home/home_page.dart';
+import '../home/main_navigation_page.dart';
 import 'register_nurse.dart';
 
 class LoginPage extends StatelessWidget {
@@ -150,7 +150,7 @@ class LoginPage extends StatelessWidget {
                                 CustomSnackbar.showSuccess(
                                   'Bienvenido ${authController.currentNurse.value!.fullName}',
                                 );
-                                Get.offAll(() => const HomePage());
+                                Get.offAll(() => const MainNavigationPage());
                               }
                             },
                       icon: authController.isLoading.value

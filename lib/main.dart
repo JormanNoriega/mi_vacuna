@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'app/controllers/auth_controller.dart';
 import 'app/modules/auth/login.dart';
+import 'app/modules/export/export_page.dart';
 import 'app/data/database_helper.dart';
 
 void main() async {
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const LoginPage(),
+      getPages: [GetPage(name: '/export', page: () => const ExportPage())],
     );
   }
 }

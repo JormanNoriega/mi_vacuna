@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/patient_form_controller.dart';
 import '../../controllers/vaccine_selection_controller.dart';
+import '../../controllers/navigation_controller.dart';
 import '../../theme/colors.dart';
 import 'steps/step1_basic_data.dart';
 import 'steps/step2_additional_data.dart';
@@ -9,7 +10,10 @@ import 'steps/step3_vaccines.dart';
 import 'steps/step4_review.dart';
 
 class VaccinationFormWrapper extends StatelessWidget {
-  const VaccinationFormWrapper({Key? key}) : super(key: key);
+  final bool showPopScope;
+
+  const VaccinationFormWrapper({Key? key, this.showPopScope = false})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,170 +22,155 @@ class VaccinationFormWrapper extends StatelessWidget {
         ? Get.find<PatientFormController>()
         : Get.put(PatientFormController());
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-        _showCancelDialog(context, controller);
-      },
-      child: Scaffold(
-        backgroundColor: backgroundLight,
-        appBar: AppBar(
-          backgroundColor: cardBackground,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
-            onPressed: () => _showCancelDialog(context, controller),
-          ),
-          title: Obx(
-            () => Text(
-              _getStepTitle(controller.currentStep.value),
-              style: const TextStyle(
-                color: textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(color: borderColor, height: 1),
-          ),
-        ),
-        body: Column(
-          children: [
-            // Progress Indicator
-            Container(
-              color: cardBackground,
-              padding: const EdgeInsets.all(16),
-              child: Obx(
-                () => Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Registro de Vacunación',
-                          style: TextStyle(
-                            color: textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          'Paso ${controller.currentStep.value + 1} de ${controller.totalSteps}',
-                          style: const TextStyle(
-                            color: textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: controller.progress,
-                        backgroundColor: borderColor,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          primaryColor,
-                        ),
-                        minHeight: 6,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // PageView con los pasos
-            Expanded(
-              child: PageView.builder(
-                controller: controller.pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.totalSteps,
-                itemBuilder: (context, index) {
-                  // Lazy loading - solo construir la página cuando se necesita
-                  return RepaintBoundary(child: _buildStep(index));
-                },
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
+    final child = Scaffold(
+      backgroundColor: backgroundLight,
+      body: Column(
+        children: [
+          // Progress Indicator
+          Container(
             color: cardBackground,
-            border: Border(top: BorderSide(color: borderColor, width: 1)),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Obx(
-                () => Row(
-                  children: [
-                    if (controller.currentStep.value > 0)
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: controller.previousStep,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: primaryColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Anterior'),
+            padding: const EdgeInsets.all(16),
+            child: Obx(
+              () => Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Registro de Vacunación',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    if (controller.currentStep.value > 0)
-                      const SizedBox(width: 12),
+                      Text(
+                        'Paso ${controller.currentStep.value + 1} de ${controller.totalSteps}',
+                        style: const TextStyle(
+                          color: textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: controller.progress,
+                      backgroundColor: borderColor,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        primaryColor,
+                      ),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // PageView con los pasos
+          Expanded(
+            child: PageView.builder(
+              controller: controller.pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.totalSteps,
+              itemBuilder: (context, index) {
+                // Lazy loading - solo construir la página cuando se necesita
+                return RepaintBoundary(child: _buildStep(index));
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: cardBackground,
+          border: Border(top: BorderSide(color: borderColor, width: 1)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Obx(
+              () => Row(
+                children: [
+                  if (controller.currentStep.value > 0)
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _handleNextButton(controller),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
+                      child: OutlinedButton(
+                        onPressed: controller.previousStep,
+                        style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: primaryColor),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 8,
-                          shadowColor: primaryColor.withValues(alpha: 0.25),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              controller.currentStep.value ==
-                                      controller.totalSteps - 1
-                                  ? 'Guardar'
-                                  : 'Siguiente',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              controller.currentStep.value ==
-                                      controller.totalSteps - 1
-                                  ? Icons.check
-                                  : Icons.arrow_forward,
-                              size: 20,
-                            ),
-                          ],
-                        ),
+                        child: const Text('Anterior'),
                       ),
                     ),
-                  ],
-                ),
+                  if (controller.currentStep.value > 0)
+                    const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _handleNextButton(controller),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 8,
+                        shadowColor: primaryColor.withValues(alpha: 0.25),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            controller.currentStep.value ==
+                                    controller.totalSteps - 1
+                                ? 'Guardar'
+                                : 'Siguiente',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            controller.currentStep.value ==
+                                    controller.totalSteps - 1
+                                ? Icons.check
+                                : Icons.arrow_forward,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+
+    // Solo aplicar PopScope si se accede directamente (no desde navbar)
+    if (showPopScope) {
+      return PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (!didPop) {
+            _showCancelDialog(context, controller);
+          }
+        },
+        child: child,
+      );
+    }
+
+    return child;
   }
 
   Widget _buildStep(int index) {
@@ -217,26 +206,12 @@ class VaccinationFormWrapper extends StatelessWidget {
     }
   }
 
-  String _getStepTitle(int step) {
-    switch (step) {
-      case 0:
-        return 'Datos Básicos';
-      case 1:
-        return 'Datos Adicionales';
-      case 2:
-        return 'Vacunas';
-      case 3:
-        return 'Revisión';
-      default:
-        return 'Registro';
-    }
-  }
-
   void _showCancelDialog(
     BuildContext context,
     PatientFormController controller,
   ) {
     final bool isEditMode = controller.isEditMode.value;
+    final navController = Get.find<NavigationController>();
 
     showDialog(
       context: context,
@@ -270,8 +245,8 @@ class VaccinationFormWrapper extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                Get.back();
                 Get.delete<PatientFormController>();
+                navController.goToHome();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: errorColor,

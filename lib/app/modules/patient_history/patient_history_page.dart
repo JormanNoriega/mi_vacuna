@@ -17,28 +17,6 @@ class PatientHistoryPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: backgroundMedium,
-      appBar: AppBar(
-        backgroundColor: cardBackground,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
-          onPressed: () => Get.back(),
-        ),
-        title: const Text(
-          'Historial de Pacientes',
-          style: TextStyle(
-            color: textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: textPrimary),
-            onPressed: () => controller.refreshPatients(),
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // Barra de búsqueda
@@ -403,7 +381,7 @@ class PatientHistoryPage extends StatelessWidget {
     final formController = Get.put(PatientFormController());
     formController.loadPatientData(patient);
 
-    Get.to(() => const VaccinationFormWrapper())?.then((_) {
+    Get.to(() => const VaccinationFormWrapper(showPopScope: true))?.then((_) {
       // Recargar la lista cuando regrese
       final historyController = Get.find<PatientHistoryController>();
       historyController.loadPatients();

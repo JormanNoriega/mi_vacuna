@@ -28,7 +28,8 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // Versión actualizada para UUID en patients
+      version:
+          4, // Versión actualizada para corregir esquema de nurses con UUID
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -40,18 +41,16 @@ class DatabaseHelper {
     // ==================== TABLA: NURSES ====================
     await db.execute('''
       CREATE TABLE nurses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY NOT NULL,
         idType TEXT NOT NULL,
         idNumber TEXT NOT NULL,
         firstName TEXT NOT NULL,
         lastName TEXT NOT NULL,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         phone TEXT NOT NULL,
         institution TEXT NOT NULL,
         password TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        UNIQUE(email),
-        UNIQUE(idNumber)
+        createdAt TEXT NOT NULL
       )
     ''');
 
@@ -624,6 +623,31 @@ class DatabaseHelper {
       );
 
       print('✅ Migración a UUID completada (datos eliminados)');
+    }
+
+    if (oldVersion < 4) {
+      // Migración de v3 a v4: Corregir esquema de nurses si existe el problema
+      print('🔄 Corrigiendo esquema de nurses (v3 -> v4)...');
+
+      // Recrear nurses con el esquema correcto
+      await db.execute('DROP TABLE IF EXISTS nurses');
+
+      await db.execute('''
+        CREATE TABLE nurses (
+          id TEXT PRIMARY KEY NOT NULL,
+          idType TEXT NOT NULL,
+          idNumber TEXT NOT NULL,
+          firstName TEXT NOT NULL,
+          lastName TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          phone TEXT NOT NULL,
+          institution TEXT NOT NULL,
+          password TEXT NOT NULL,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+
+      print('✅ Esquema de nurses corregido (datos de nurses eliminados)');
     }
   }
 

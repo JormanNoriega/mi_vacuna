@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/export_controller.dart';
 import '../../theme/colors.dart';
+import '../../widgets/stat_card.dart';
 
 /// Página para exportar registros de vacunación
 class ExportPage extends StatelessWidget {
@@ -44,9 +45,9 @@ class ExportPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: primaryColor.withOpacity(0.3)),
+                border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -101,45 +102,67 @@ class ExportPage extends StatelessWidget {
                 );
               }
 
+              final startDateStr = controller.startDate.value != null
+                  ? DateFormat('dd/MM/yyyy').format(controller.startDate.value!)
+                  : 'No seleccionada';
+              final endDateStr = controller.endDate.value != null
+                  ? DateFormat('dd/MM/yyyy').format(controller.endDate.value!)
+                  : 'No seleccionada';
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Resumen',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.people,
-                          label: 'Pacientes',
-                          value: controller.totalPatients.value.toString(),
-                          color: primaryColor,
+                      Text(
+                        'Resumen',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.vaccines,
-                          label: 'Dosis',
-                          value: controller.totalDoses.value.toString(),
-                          color: Colors.green,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$startDateStr - $endDateStr',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: primaryColor,
+                          ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  StatCard(
+                    title: 'PACIENTES EN EL RANGO',
+                    value: controller.totalPatients.value.toString(),
+                    icon: Icons.people,
+                    iconColor: const Color(0xFF4CAF50),
+                  ),
                   const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.medical_services,
-                    label: 'Tipos de vacunas',
+                  StatCard(
+                    title: 'DOSIS APLICADAS',
+                    value: controller.totalDoses.value.toString(),
+                    icon: Icons.vaccines,
+                    iconColor: const Color(0xFF2196F3),
+                  ),
+                  const SizedBox(height: 12),
+                  StatCard(
+                    title: 'TIPOS DE VACUNAS USADAS',
                     value: controller.totalVaccines.value.toString(),
-                    color: Colors.orange,
+                    icon: Icons.medical_services,
+                    iconColor: const Color(0xFFFF9800),
                   ),
                 ],
               );
@@ -255,38 +278,6 @@ class ExportPage extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: textSecondary)),
-        ],
       ),
     );
   }
