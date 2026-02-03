@@ -17,6 +17,8 @@ class PatientFormController extends GetxController {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final isEditMode = false.obs;
+  final isModalMode =
+      false.obs; // Indica si se abrió como modal desde patient_history
   String? editingPatientId; // Cambiado de int? a String? para UUID
 
   // ==================== CONTROL DE NAVEGACIÓN ====================
@@ -203,7 +205,7 @@ class PatientFormController extends GetxController {
   }
 
   // ==================== NAVEGACIÓN ====================
-  void nextStep() {
+  void nextStep({PageController? customPageController}) {
     if (currentStep.value < totalSteps - 1) {
       // Validar paso actual antes de avanzar
       if (currentStep.value == 0 && !validateStep1()) {
@@ -215,26 +217,29 @@ class PatientFormController extends GetxController {
 
       currentStep.value++;
       // Usar jumpToPage para transición instantánea sin lag
-      pageController.jumpToPage(currentStep.value);
+      final controllerToUse = customPageController ?? pageController;
+      controllerToUse.jumpToPage(currentStep.value);
     } else {
       // Último paso - guardar
       submitForm();
     }
   }
 
-  void previousStep() {
+  void previousStep({PageController? customPageController}) {
     if (currentStep.value > 0) {
       currentStep.value--;
       // Usar jumpToPage para transición instantánea sin lag
-      pageController.jumpToPage(currentStep.value);
+      final controllerToUse = customPageController ?? pageController;
+      controllerToUse.jumpToPage(currentStep.value);
     }
   }
 
-  void goToStep(int step) {
+  void goToStep(int step, {PageController? customPageController}) {
     if (step >= 0 && step < totalSteps) {
       currentStep.value = step;
       // Usar jumpToPage para transición instantánea sin lag
-      pageController.jumpToPage(step);
+      final controllerToUse = customPageController ?? pageController;
+      controllerToUse.jumpToPage(step);
     }
   }
 
@@ -242,12 +247,19 @@ class PatientFormController extends GetxController {
   void resetForm() {
     currentStep.value = 0;
     isEditMode.value = false;
+    isModalMode.value = false;
     editingPatientId = null;
 
     // Resetear el PageController si ya está inicializado
     if (pageController.hasClients) {
       pageController.jumpToPage(0);
     }
+  }
+
+  /// Verifica si hay datos sin guardar en el formulario
+  bool hasUnsavedData() {
+    // Validación simplificada: solo verificar si hay texto en el campo de ID
+    return idNumberController.text.trim().isNotEmpty;
   }
 
   /// Busca un paciente por número de identificación
@@ -261,9 +273,23 @@ class PatientFormController extends GetxController {
 
   // ==================== M\u00c9TODO PARA CARGAR DATOS EXISTENTES ====================
   /// Carga los datos de un paciente existente para edici\u00f3n
-  void loadPatientData(Patient patient) async {
+  /// Carga los datos de un paciente para edición
+  /// [isModal] indica si se abrió como modal desde patient_history (true) o desde detección en Step1 (false)
+  void loadPatientData(
+    Patient patient, {
+    bool isModal = false,
+    PageController? customPageController,
+  }) async {
     isEditMode.value = true;
+    isModalMode.value = isModal;
     editingPatientId = patient.id;
+
+    // Resetear navegación al inicio
+    currentStep.value = 0;
+    final controllerToUse = customPageController ?? pageController;
+    if (controllerToUse.hasClients) {
+      controllerToUse.jumpToPage(0);
+    }
 
     // Paso 1: Datos b\u00e1sicos
     selectedIdType.value = patient.idType;
@@ -828,12 +854,35 @@ class PatientFormController extends GetxController {
         await _saveAppliedDoses(patientId, nurseId);
         print('✅ Vacunas guardadas exitosamente');
 
-        Get.back();
-        CustomSnackbar.showSuccess(
-          isEditMode.value
-              ? 'Paciente actualizado correctamente'
-              : 'Paciente y vacunas registrados correctamente',
-        );
+        // Guardar el modo antes de proceder
+        final wasEditMode = isEditMode.value;
+        final wasModal = isModalMode.value;
+
+        // Mostrar mensaje de éxito SOLO si NO es modal
+        if (!wasModal) {
+          CustomSnackbar.showSuccess(
+            wasEditMode
+                ? 'Paciente actualizado correctamente'
+                : 'Paciente y vacunas registrados correctamente',
+          );
+        }
+
+        // Limpiar formulario después de un pequeño delay
+        Future.delayed(const Duration(milliseconds: 50), () {
+          clearForm();
+          resetForm();
+        });
+
+        // Manejar navegación según el modo
+        if (wasModal) {
+          // Modal: el wrapper se encarga de cerrar y mostrar snackbar
+          // No hacemos nada aquí
+        } else if (wasEditMode) {
+          // Tab edición: ya se limpiará con el delay
+        } else {
+          // Tab creación: navegar al home
+          Get.back();
+        }
       } else {
         throw Exception('No se pudo crear el paciente');
       }

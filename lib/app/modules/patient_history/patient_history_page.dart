@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../theme/colors.dart';
 import '../../models/patient_model.dart';
 import '../../controllers/patient_form_controller.dart';
-import '../../controllers/vaccine_selection_controller.dart';
 import '../vaccination_record/vaccination_form_wrapper.dart';
 import '../../controllers/patient_history_controller.dart';
 
@@ -369,20 +368,68 @@ class PatientHistoryPage extends StatelessWidget {
 
   /// Navega al formulario de edición del paciente
   void _editPatient(Patient patient) {
-    // Eliminar instancias previas para empezar limpio
+    // Verificar si hay datos sin guardar
     if (Get.isRegistered<PatientFormController>()) {
-      Get.delete<PatientFormController>();
-    }
-    if (Get.isRegistered<VaccineSelectionController>()) {
-      Get.delete<VaccineSelectionController>();
+      final currentFormController = Get.find<PatientFormController>();
+      if (currentFormController.hasUnsavedData()) {
+        // Mostrar diálogo de advertencia
+        Get.dialog(
+          AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+                SizedBox(width: 12),
+                Text('Datos sin guardar'),
+              ],
+            ),
+            content: const Text(
+              '¿Deseas descartar el registro actual y editar este paciente?\n\nSe perderán todos los datos no guardados.',
+              style: TextStyle(fontSize: 15),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back(); // Cerrar diálogo
+                  _proceedWithEdit(patient); // Continuar con edición
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Descartar y editar'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
     }
 
-    // Crear nuevo controlador y cargar datos
-    final formController = Get.put(PatientFormController());
-    formController.loadPatientData(patient);
+    // Si no hay datos sin guardar, proceder directamente
+    _proceedWithEdit(patient);
+  }
 
+  void _proceedWithEdit(Patient patient) {
+    // Obtener el controlador existente
+    final formController = Get.find<PatientFormController>();
+
+    // Cargar los datos del paciente EN MODO MODAL
+    formController.loadPatientData(patient, isModal: true);
+
+    // Abrir en modo edición como modal
     Get.to(() => const VaccinationFormWrapper(showPopScope: true))?.then((_) {
-      // Recargar la lista cuando regrese
+      // Recargar la lista al regresar
       final historyController = Get.find<PatientHistoryController>();
       historyController.loadPatients();
     });

@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "Flutter (lib\\app\\modules\\patient_history\\patient_history_page.dart)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib\\app\\modules\\patient_history\\patient_history_page.dart"
+        }
+    ]
+}

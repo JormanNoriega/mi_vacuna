@@ -20,9 +20,12 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   final NavigationController navController = Get.put(NavigationController());
 
-  final List<Widget> _pages = [
+  // Key para forzar reconstrucción del formulario cuando sea necesario
+  Key _formKey = UniqueKey();
+
+  List<Widget> get _pages => [
     const HomePage(),
-    const VaccinationFormWrapper(),
+    VaccinationFormWrapper(key: _formKey),
     const PatientHistoryPage(),
     const VaccineManagementPage(),
     const SettingsPage(),
@@ -111,28 +114,33 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           index: navController.currentIndex.value,
           children: _pages,
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: backgroundLight,
-            border: Border(
-              top: BorderSide(
-                color: Colors.grey.withValues(alpha: 0.2),
-                width: 0.5,
+        bottomNavigationBar: Material(
+          color: backgroundLight,
+          surfaceTintColor: Colors.transparent,
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.1),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.withValues(alpha: 0.2),
+                  width: 0.5,
+                ),
               ),
             ),
-          ),
-          child: SafeArea(
-            child: SizedBox(
-              height: isTablet ? 70 : 60,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(
-                  _destinations.length,
-                  (index) => _buildNavItem(
-                    index: index,
-                    destination: _destinations[index],
-                    isSelected: navController.currentIndex.value == index,
-                    isTablet: isTablet,
+            child: SafeArea(
+              child: SizedBox(
+                height: isTablet ? 70 : 60,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(
+                    _destinations.length,
+                    (index) => _buildNavItem(
+                      index: index,
+                      destination: _destinations[index],
+                      isSelected: navController.currentIndex.value == index,
+                      isTablet: isTablet,
+                    ),
                   ),
                 ),
               ),

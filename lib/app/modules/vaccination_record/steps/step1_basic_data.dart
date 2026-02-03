@@ -326,11 +326,15 @@ class _Step1BasicDataState extends State<Step1BasicData>
 
     // Crear un nuevo timer con debounce de 800ms
     _debounceTimer = Timer(const Duration(milliseconds: 800), () async {
+      // Verificar que el widget siga montado antes de continuar
+      if (!mounted) return;
+
       _lastCheckedId = value;
 
       // Buscar paciente
       final patient = await controller.findPatientByIdNumber(value);
 
+      // Verificar nuevamente que el widget siga montado después del await
       if (patient != null && mounted) {
         _showLoadPatientDialog(patient, controller);
       }
@@ -429,9 +433,10 @@ class _Step1BasicDataState extends State<Step1BasicData>
           ElevatedButton(
             onPressed: () {
               Get.back();
-              controller.loadPatientData(patient);
+              // Cargar en modo edición pero NO modal (isModal: false)
+              controller.loadPatientData(patient, isModal: false);
               CustomSnackbar.showSuccess(
-                'Datos del paciente cargados correctamente',
+                'Paciente encontrado. Modo edición activado.',
               );
             },
             style: ElevatedButton.styleFrom(

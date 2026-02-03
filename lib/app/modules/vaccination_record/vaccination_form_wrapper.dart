@@ -2,18 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/patient_form_controller.dart';
 import '../../controllers/vaccine_selection_controller.dart';
-import '../../controllers/navigation_controller.dart';
 import '../../theme/colors.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'steps/step1_basic_data.dart';
 import 'steps/step2_additional_data.dart';
 import 'steps/step3_vaccines.dart';
 import 'steps/step4_review.dart';
 
-class VaccinationFormWrapper extends StatelessWidget {
+class VaccinationFormWrapper extends StatefulWidget {
   final bool showPopScope;
 
   const VaccinationFormWrapper({Key? key, this.showPopScope = false})
     : super(key: key);
+
+  @override
+  State<VaccinationFormWrapper> createState() => _VaccinationFormWrapperState();
+}
+
+class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
+  PageController? _localPageController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Si es modal, crear PageController local
+    if (widget.showPopScope) {
+      _localPageController = PageController();
+    }
+  }
+
+  @override
+  void dispose() {
+    // Liberar PageController local si existe
+    _localPageController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +45,39 @@ class VaccinationFormWrapper extends StatelessWidget {
         ? Get.find<PatientFormController>()
         : Get.put(PatientFormController());
 
-    final child = Scaffold(
+    // Determinar qué PageController usar
+    final pageController = widget.showPopScope
+        ? _localPageController! // Modal: usar local
+        : controller.pageController; // Tab: usar del controlador compartido
+
+    final scaffold = Scaffold(
       backgroundColor: backgroundLight,
+      appBar: widget.showPopScope
+          ? AppBar(
+              backgroundColor: cardBackground,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
+                onPressed: () => Get.back(),
+              ),
+              title: Obx(
+                () => Text(
+                  controller.isEditMode.value
+                      ? 'Editar Paciente'
+                      : 'Nuevo Registro',
+                  style: const TextStyle(
+                    color: textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(color: borderColor, height: 1),
+              ),
+            )
+          : null,
       body: Column(
         children: [
           // Progress Indicator
@@ -73,7 +127,7 @@ class VaccinationFormWrapper extends StatelessWidget {
           // PageView con los pasos
           Expanded(
             child: PageView.builder(
-              controller: controller.pageController,
+              controller: pageController, // Usar el PageController apropiado
               physics: const NeverScrollableScrollPhysics(),
               itemCount: controller.totalSteps,
               itemBuilder: (context, index) {
@@ -98,7 +152,9 @@ class VaccinationFormWrapper extends StatelessWidget {
                   if (controller.currentStep.value > 0)
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: controller.previousStep,
+                        onPressed: () => controller.previousStep(
+                          customPageController: pageController,
+                        ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: const BorderSide(color: primaryColor),
@@ -113,7 +169,8 @@ class VaccinationFormWrapper extends StatelessWidget {
                     const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _handleNextButton(controller),
+                      onPressed: () =>
+                          _handleNextButton(controller, pageController),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
@@ -157,20 +214,7 @@ class VaccinationFormWrapper extends StatelessWidget {
       ),
     );
 
-    // Solo aplicar PopScope si se accede directamente (no desde navbar)
-    if (showPopScope) {
-      return PopScope(
-        canPop: false,
-        onPopInvoked: (didPop) {
-          if (!didPop) {
-            _showCancelDialog(context, controller);
-          }
-        },
-        child: child,
-      );
-    }
-
-    return child;
+    return scaffold;
   }
 
   Widget _buildStep(int index) {
@@ -188,80 +232,43 @@ class VaccinationFormWrapper extends StatelessWidget {
     }
   }
 
-  void _handleNextButton(PatientFormController controller) {
+  void _handleNextButton(
+    PatientFormController controller,
+    PageController pageController,
+  ) async {
     final step = controller.currentStep.value;
     if (step == 0) {
       if (controller.validateStep1()) {
-        controller.nextStep();
+        controller.nextStep(customPageController: pageController);
       }
     } else if (step == 1) {
-      controller.nextStep();
+      controller.nextStep(customPageController: pageController);
     } else if (step == 2) {
       final vaccineController = Get.find<VaccineSelectionController>();
       if (vaccineController.validate()) {
-        controller.nextStep();
+        controller.nextStep(customPageController: pageController);
       }
     } else if (step == 3) {
-      controller.submitForm();
+      // Guardar el modo ANTES de ejecutar submitForm
+      final wasModal = controller.isModalMode.value;
+      final wasEditMode = controller.isEditMode.value;
+
+      // Ejecutar guardado (sin mostrar snackbar en el controller si es modal)
+      await controller.submitForm();
+
+      // Si era modal, cerrar PRIMERO y luego mostrar snackbar
+      if (wasModal && widget.showPopScope) {
+        Get.back();
+        // Mostrar snackbar después de cerrar usando CustomSnackbar
+        Future.delayed(const Duration(milliseconds: 300), () {
+          CustomSnackbar.showSuccess(
+            wasEditMode
+                ? 'Paciente actualizado correctamente'
+                : 'Paciente y vacunas registrados correctamente',
+          );
+        });
+      }
+      // En modo tab, el snackbar ya se mostró en el controller
     }
-  }
-
-  void _showCancelDialog(
-    BuildContext context,
-    PatientFormController controller,
-  ) {
-    final bool isEditMode = controller.isEditMode.value;
-    final navController = Get.find<NavigationController>();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text(
-            isEditMode ? '¿Cancelar edición?' : '¿Cancelar registro?',
-            style: const TextStyle(
-              color: textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Text(
-            isEditMode
-                ? 'Si sales ahora, perderás todos los cambios realizados. ¿Estás seguro de que deseas cancelar la edición?'
-                : 'Si sales ahora, perderás todos los datos ingresados. ¿Estás seguro de que deseas cancelar?',
-            style: const TextStyle(color: textSecondary, fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                isEditMode ? 'Continuar editando' : 'Continuar registrando',
-                style: const TextStyle(color: textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Get.delete<PatientFormController>();
-                navController.goToHome();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: errorColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Sí, cancelar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
