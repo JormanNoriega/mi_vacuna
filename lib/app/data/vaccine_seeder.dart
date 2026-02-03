@@ -63,6 +63,10 @@ class VaccineSeeder {
     await _insertOptions(db, vaccineId, 'dose', [
       'Primera dosis',
       'Segunda dosis',
+      'Unica',
+      'Refuerzo',
+      '2do refuerzo - Res419',
+      '2do refuerzo',
     ]);
 
     // Laboratorios
@@ -148,7 +152,8 @@ class VaccineSeeder {
       'RECIEN NACIDO',
       'Primera dosis',
       'Segunda dosis',
-      'Adicional',
+      'Tercera dosis',
+      'Adiccional',
     ]);
 
     // Jeringas
@@ -864,10 +869,8 @@ class VaccineSeeder {
     // Dosis
     await _insertOptions(db, vaccineId, 'dose', [
       'Primera dosis',
-      'Primera dosis y Segunda dosis',
       'Segunda dosis',
       'Tercera dosis',
-      'Tercera dosis y Cuarta dosis',
       'Cuarta dosis',
     ]);
 

@@ -58,7 +58,7 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
-                onPressed: () => Get.back(),
+                onPressed: () => _handleBackButton(context, controller),
               ),
               title: Obx(
                 () => Text(
@@ -214,6 +214,18 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
       ),
     );
 
+    // Envolver con PopScope si es modal para interceptar gestos de retroceso
+    if (widget.showPopScope) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          _showCancelDialog(context, controller);
+        },
+        child: scaffold,
+      );
+    }
+
     return scaffold;
   }
 
@@ -270,5 +282,76 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
       }
       // En modo tab, el snackbar ya se mostró en el controller
     }
+  }
+
+  void _handleBackButton(
+    BuildContext context,
+    PatientFormController controller,
+  ) {
+    _showCancelDialog(context, controller);
+  }
+
+  void _showCancelDialog(
+    BuildContext context,
+    PatientFormController controller,
+  ) {
+    final bool isEditMode = controller.isEditMode.value;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            isEditMode ? '¿Cancelar edición?' : '¿Cancelar registro?',
+            style: const TextStyle(
+              color: textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            isEditMode
+                ? 'Si sales ahora, perderás todos los cambios realizados. ¿Estás seguro de que deseas cancelar la edición?'
+                : 'Si sales ahora, perderás todos los datos ingresados. ¿Estás seguro de que deseas cancelar?',
+            style: const TextStyle(color: textSecondary, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                isEditMode ? 'Continuar editando' : 'Continuar registrando',
+                style: const TextStyle(color: textSecondary),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Cerrar diálogo
+                Navigator.of(context).pop();
+
+                // Limpiar formulario antes de cerrar
+                controller.clearForm();
+                controller.resetForm();
+
+                // Cerrar el modal
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: errorColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Sí, cancelar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

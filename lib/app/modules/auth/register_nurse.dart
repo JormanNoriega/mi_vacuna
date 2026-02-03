@@ -149,35 +149,7 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                 placeholder: 'Repite tu contraseña',
                 required: true,
               ),
-              const SizedBox(height: 16),
-              // Mensaje de error
-              Obx(() {
-                if (authController.errorMessage.value.isNotEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authController.errorMessage.value,
-                            style: TextStyle(color: Colors.red.shade700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
               // Register button
               Obx(
                 () => SizedBox(
@@ -275,6 +247,16 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                                 'Cuenta creada exitosamente. Bienvenido ${authController.currentNurse.value!.fullName}',
                               );
                               Get.offAll(() => const MainNavigationPage());
+                            } else {
+                              // Mostrar error con CustomSnackbar
+                              if (authController
+                                  .errorMessage
+                                  .value
+                                  .isNotEmpty) {
+                                CustomSnackbar.showError(
+                                  authController.errorMessage.value,
+                                );
+                              }
                             }
                           },
                     child: authController.isLoading.value
