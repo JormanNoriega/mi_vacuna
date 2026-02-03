@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../data/database_helper.dart';
 import '../models/applied_dose.dart';
 
@@ -11,18 +12,22 @@ import '../models/applied_dose.dart';
 /// - Control de sincronización offline
 class AppliedDoseService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  static const _uuid = Uuid();
 
   // ==================== CRUD BÁSICO ====================
 
   /// Registra una nueva dosis aplicada
   /// Retorna el ID de la dosis creada
-  Future<int> createDose(AppliedDose dose) async {
+  Future<String> createDose(AppliedDose dose) async {
     final db = await _dbHelper.database;
-    return await db.insert('applied_doses', dose.toMap());
+    // Generar UUID si no existe
+    dose.id ??= _uuid.v4();
+    await db.insert('applied_doses', dose.toMap());
+    return dose.id!;
   }
 
   /// Obtiene una dosis por su ID
-  Future<AppliedDose?> getDoseById(int id) async {
+  Future<AppliedDose?> getDoseById(String id) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'applied_doses',
@@ -74,7 +79,7 @@ class AppliedDoseService {
   }
 
   /// Elimina una dosis por su ID
-  Future<int> deleteDose(int id) async {
+  Future<int> deleteDose(String id) async {
     final db = await _dbHelper.database;
     return await db.delete('applied_doses', where: 'id = ?', whereArgs: [id]);
   }
@@ -94,7 +99,7 @@ class AppliedDoseService {
   }
 
   /// Obtiene todas las dosis de una vacuna específica
-  Future<List<AppliedDose>> getDosesByVaccine(int vaccineId) async {
+  Future<List<AppliedDose>> getDosesByVaccine(String vaccineId) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'applied_doses',
@@ -106,7 +111,7 @@ class AppliedDoseService {
   }
 
   /// Obtiene todas las dosis aplicadas por una enfermera
-  Future<List<AppliedDose>> getDosesByNurse(int nurseId) async {
+  Future<List<AppliedDose>> getDosesByNurse(String nurseId) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'applied_doses',
@@ -135,7 +140,7 @@ class AppliedDoseService {
   /// Obtiene dosis de un paciente para una vacuna específica
   Future<List<AppliedDose>> getDosesByPatientAndVaccine(
     String patientId,
-    int vaccineId,
+    String vaccineId,
   ) async {
     final db = await _dbHelper.database;
     final result = await db.query(
@@ -202,7 +207,7 @@ class AppliedDoseService {
   }
 
   /// Obtiene el detalle completo de una dosis aplicada
-  Future<Map<String, dynamic>?> getDoseDetail(int doseId) async {
+  Future<Map<String, dynamic>?> getDoseDetail(String doseId) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
       '''
@@ -241,7 +246,7 @@ class AppliedDoseService {
   /// Filtra dosis por múltiples criterios
   Future<List<AppliedDose>> filterDoses({
     String? patientId,
-    int? vaccineId,
+    String? vaccineId,
     String? nurseId,
     DateTime? startDate,
     DateTime? endDate,
@@ -321,7 +326,7 @@ class AppliedDoseService {
   }
 
   /// Marca una dosis como sincronizada
-  Future<int> markAsSynced(int doseId) async {
+  Future<int> markAsSynced(String doseId) async {
     final db = await _dbHelper.database;
     return await db.update(
       'applied_doses',
@@ -332,7 +337,7 @@ class AppliedDoseService {
   }
 
   /// Marca múltiples dosis como sincronizadas
-  Future<int> markMultipleAsSynced(List<int> doseIds) async {
+  Future<int> markMultipleAsSynced(List<String> doseIds) async {
     final db = await _dbHelper.database;
     final ids = doseIds.join(',');
     return await db.rawUpdate(
@@ -367,7 +372,7 @@ class AppliedDoseService {
   }
 
   /// Cuenta dosis por enfermera
-  Future<int> countDosesByNurse(int nurseId) async {
+  Future<int> countDosesByNurse(String nurseId) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM applied_doses WHERE nurse_id = ?',
@@ -425,7 +430,7 @@ class AppliedDoseService {
   /// Verifica si un paciente ya recibió todas las dosis de una vacuna
   Future<bool> hasCompletedVaccineScheme(
     String patientId,
-    int vaccineId,
+    String vaccineId,
   ) async {
     final db = await _dbHelper.database;
 
@@ -454,7 +459,7 @@ class AppliedDoseService {
   /// Obtiene el número de dosis aplicadas de una vacuna a un paciente
   Future<int> countDosesForPatientVaccine(
     String patientId,
-    int vaccineId,
+    String vaccineId,
   ) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
@@ -467,7 +472,7 @@ class AppliedDoseService {
   /// Obtiene la última dosis aplicada de una vacuna a un paciente
   Future<AppliedDose?> getLastDoseForPatientVaccine(
     String patientId,
-    int vaccineId,
+    String vaccineId,
   ) async {
     final db = await _dbHelper.database;
     final result = await db.query(

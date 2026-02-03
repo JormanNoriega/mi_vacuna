@@ -9,15 +9,15 @@ import '../widgets/custom_snackbar.dart';
 
 /// Modelo para almacenar la información de UNA DOSIS específica
 class DoseData {
-  final int doseOptionId;
+  final String doseOptionId;
   String doseValue; // Valor de la dosis para guardar
   String doseDisplayName; // Nombre para mostrar
 
-  int? selectedLaboratoryId;
-  int? selectedSyringeId;
-  int? selectedDropperId;
-  int? selectedPneumococcalTypeId;
-  int? selectedObservationId;
+  String? selectedLaboratoryId;
+  String? selectedSyringeId;
+  String? selectedDropperId;
+  String? selectedPneumococcalTypeId;
+  String? selectedObservationId;
   DateTime? applicationDate;
 
   // Campos de texto libre
@@ -57,13 +57,13 @@ class DoseData {
 
 /// Modelo para almacenar la información de una vacuna seleccionada
 class SelectedVaccineData {
-  final int vaccineId;
+  final String vaccineId;
 
   // Mapa de dosis: doseOptionId -> DoseData
-  final Map<int, DoseData> doses = {};
+  final Map<String, DoseData> doses = {};
 
   // Dosis activas (pueden ser múltiples)
-  final Set<int> activeDoses = {};
+  final Set<String> activeDoses = {};
 
   // Verifica si tiene dosis bloqueadas
   bool get hasLockedDoses => doses.values.any((d) => d.isLocked);
@@ -84,7 +84,7 @@ class SelectedVaccineData {
 
   /// Obtiene o crea una dosis
   DoseData getOrCreateDose(
-    int doseOptionId,
+    String doseOptionId,
     String doseValue,
     String doseDisplayName, {
     bool isLocked = false,
@@ -101,16 +101,17 @@ class SelectedVaccineData {
   }
 
   /// Verifica si una dosis existe
-  bool hasDose(int doseOptionId) => doses.containsKey(doseOptionId);
+  bool hasDose(String doseOptionId) => doses.containsKey(doseOptionId);
 
   /// Verifica si una dosis está bloqueada
-  bool isDoseLocked(int doseOptionId) => doses[doseOptionId]?.isLocked ?? false;
+  bool isDoseLocked(String doseOptionId) =>
+      doses[doseOptionId]?.isLocked ?? false;
 
   /// Verifica si una dosis está activa
-  bool isDoseActive(int doseOptionId) => activeDoses.contains(doseOptionId);
+  bool isDoseActive(String doseOptionId) => activeDoses.contains(doseOptionId);
 
   /// Verifica si una dosis tiene datos completados (no vacía)
-  bool hasDoseWithData(int doseOptionId) {
+  bool hasDoseWithData(String doseOptionId) {
     final dose = doses[doseOptionId];
     if (dose == null) return false;
     // Una dosis tiene datos si tiene fecha y lote
@@ -131,15 +132,16 @@ class VaccineSelectionController extends GetxController {
   final availableVaccines = <Vaccine>[].obs;
 
   // Vacunas seleccionadas (ID de vacuna -> datos)
-  final selectedVaccines = <int, SelectedVaccineData>{}.obs;
+  final selectedVaccines = <String, SelectedVaccineData>{}.obs;
 
   // Cache de opciones de configuración
-  final _doseOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
-  final _laboratoryOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
-  final _syringeOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
-  final _dropperOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
-  final _pneumococcalTypeOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
-  final _observationOptionsCache = <int, List<VaccineConfigOption>>{}.obs;
+  final _doseOptionsCache = <String, List<VaccineConfigOption>>{}.obs;
+  final _laboratoryOptionsCache = <String, List<VaccineConfigOption>>{}.obs;
+  final _syringeOptionsCache = <String, List<VaccineConfigOption>>{}.obs;
+  final _dropperOptionsCache = <String, List<VaccineConfigOption>>{}.obs;
+  final _pneumococcalTypeOptionsCache =
+      <String, List<VaccineConfigOption>>{}.obs;
+  final _observationOptionsCache = <String, List<VaccineConfigOption>>{}.obs;
 
   @override
   void onClose() {
@@ -169,7 +171,7 @@ class VaccineSelectionController extends GetxController {
   }
 
   /// Alterna la selección de una vacuna
-  Future<void> toggleVaccineSelection(int vaccineId) async {
+  Future<void> toggleVaccineSelection(String vaccineId) async {
     if (selectedVaccines.containsKey(vaccineId)) {
       final vaccineData = selectedVaccines[vaccineId];
 
@@ -193,12 +195,12 @@ class VaccineSelectionController extends GetxController {
   }
 
   /// Verifica si una vacuna está seleccionada
-  bool isVaccineSelected(int vaccineId) {
+  bool isVaccineSelected(String vaccineId) {
     return selectedVaccines.containsKey(vaccineId);
   }
 
   /// Carga todas las opciones de configuración de una vacuna
-  Future<void> _loadVaccineOptions(int vaccineId) async {
+  Future<void> _loadVaccineOptions(String vaccineId) async {
     final vaccine = availableVaccines.firstWhereOrNull(
       (v) => v.id == vaccineId,
     );
@@ -239,7 +241,7 @@ class VaccineSelectionController extends GetxController {
   // ==================== MANEJO DE DOSIS ====================
 
   /// Alterna el estado activo de una dosis
-  void toggleDoseSelection(int vaccineId, int doseOptionId) {
+  void toggleDoseSelection(String vaccineId, String doseOptionId) {
     final vaccineData = selectedVaccines[vaccineId];
     if (vaccineData == null) return;
 
@@ -282,7 +284,7 @@ class VaccineSelectionController extends GetxController {
   }
 
   /// Establece valores predeterminados para una dosis
-  void _setDefaultValuesForDose(int vaccineId, int doseOptionId) {
+  void _setDefaultValuesForDose(String vaccineId, String doseOptionId) {
     final vaccineData = selectedVaccines[vaccineId];
     if (vaccineData == null) return;
 
@@ -453,48 +455,48 @@ class VaccineSelectionController extends GetxController {
 
   // ==================== GETTERS ====================
 
-  List<VaccineConfigOption> getDoseOptions(int vaccineId) {
+  List<VaccineConfigOption> getDoseOptions(String vaccineId) {
     return _doseOptionsCache[vaccineId] ?? [];
   }
 
-  List<VaccineConfigOption> getLaboratoryOptions(int vaccineId) {
+  List<VaccineConfigOption> getLaboratoryOptions(String vaccineId) {
     return _laboratoryOptionsCache[vaccineId] ?? [];
   }
 
-  List<VaccineConfigOption> getSyringeOptions(int vaccineId) {
+  List<VaccineConfigOption> getSyringeOptions(String vaccineId) {
     return _syringeOptionsCache[vaccineId] ?? [];
   }
 
-  List<VaccineConfigOption> getDropperOptions(int vaccineId) {
+  List<VaccineConfigOption> getDropperOptions(String vaccineId) {
     return _dropperOptionsCache[vaccineId] ?? [];
   }
 
-  List<VaccineConfigOption> getPneumococcalTypeOptions(int vaccineId) {
+  List<VaccineConfigOption> getPneumococcalTypeOptions(String vaccineId) {
     return _pneumococcalTypeOptionsCache[vaccineId] ?? [];
   }
 
-  List<VaccineConfigOption> getObservationOptions(int vaccineId) {
+  List<VaccineConfigOption> getObservationOptions(String vaccineId) {
     return _observationOptionsCache[vaccineId] ?? [];
   }
 
-  bool isDoseActive(int vaccineId, int doseOptionId) {
+  bool isDoseActive(String vaccineId, String doseOptionId) {
     return selectedVaccines[vaccineId]?.isDoseActive(doseOptionId) ?? false;
   }
 
-  bool isDoseLocked(int vaccineId, int doseOptionId) {
+  bool isDoseLocked(String vaccineId, String doseOptionId) {
     return selectedVaccines[vaccineId]?.isDoseLocked(doseOptionId) ?? false;
   }
 
-  bool hasDoseData(int vaccineId, int doseOptionId) {
+  bool hasDoseData(String vaccineId, String doseOptionId) {
     return selectedVaccines[vaccineId]?.hasDoseWithData(doseOptionId) ?? false;
   }
 
-  Set<int> getActiveDoses(int vaccineId) {
+  Set<String> getActiveDoses(String vaccineId) {
     return selectedVaccines[vaccineId]?.activeDoses ?? {};
   }
 
   // Getters para valores seleccionados por dosis
-  String? getSelectedLaboratory(int vaccineId, int doseOptionId) {
+  String? getSelectedLaboratory(String vaccineId, String doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     print(
       '🔍 getSelectedLaboratory - VaccineID: $vaccineId, DoseID: $doseOptionId',
@@ -513,7 +515,7 @@ class VaccineSelectionController extends GetxController {
     return option?.displayName;
   }
 
-  String? getSelectedSyringe(int vaccineId, int doseOptionId) {
+  String? getSelectedSyringe(String vaccineId, String doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData?.selectedSyringeId == null) return null;
 
@@ -524,7 +526,7 @@ class VaccineSelectionController extends GetxController {
     return option?.displayName;
   }
 
-  String? getSelectedDropper(int vaccineId, int doseOptionId) {
+  String? getSelectedDropper(String vaccineId, String doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData?.selectedDropperId == null) return null;
 
@@ -535,7 +537,7 @@ class VaccineSelectionController extends GetxController {
     return option?.displayName;
   }
 
-  String? getSelectedPneumococcalType(int vaccineId, int doseOptionId) {
+  String? getSelectedPneumococcalType(String vaccineId, String doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData?.selectedPneumococcalTypeId == null) return null;
 
@@ -546,7 +548,7 @@ class VaccineSelectionController extends GetxController {
     return option?.displayName;
   }
 
-  String? getSelectedObservation(int vaccineId, int doseOptionId) {
+  String? getSelectedObservation(String vaccineId, String doseOptionId) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData?.selectedObservationId == null) return null;
 
@@ -557,30 +559,36 @@ class VaccineSelectionController extends GetxController {
     return option?.displayName;
   }
 
-  DateTime? getApplicationDate(int vaccineId, int doseOptionId) {
+  DateTime? getApplicationDate(String vaccineId, String doseOptionId) {
     return selectedVaccines[vaccineId]?.doses[doseOptionId]?.applicationDate;
   }
 
-  TextEditingController? getLotController(int vaccineId, int doseOptionId) {
+  TextEditingController? getLotController(
+    String vaccineId,
+    String doseOptionId,
+  ) {
     return selectedVaccines[vaccineId]?.doses[doseOptionId]?.lotController;
   }
 
   TextEditingController? getSyringeLotController(
-    int vaccineId,
-    int doseOptionId,
+    String vaccineId,
+    String doseOptionId,
   ) {
     return selectedVaccines[vaccineId]
         ?.doses[doseOptionId]
         ?.syringeLotController;
   }
 
-  TextEditingController? getDiluentController(int vaccineId, int doseOptionId) {
+  TextEditingController? getDiluentController(
+    String vaccineId,
+    String doseOptionId,
+  ) {
     return selectedVaccines[vaccineId]?.doses[doseOptionId]?.diluentController;
   }
 
   TextEditingController? getVialCountController(
-    int vaccineId,
-    int doseOptionId,
+    String vaccineId,
+    String doseOptionId,
   ) {
     return selectedVaccines[vaccineId]
         ?.doses[doseOptionId]
@@ -589,7 +597,11 @@ class VaccineSelectionController extends GetxController {
 
   // ==================== SETTERS ====================
 
-  void setSelectedLaboratory(int vaccineId, int doseOptionId, int optionId) {
+  void setSelectedLaboratory(
+    String vaccineId,
+    String doseOptionId,
+    String optionId,
+  ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
       doseData.selectedLaboratoryId = optionId;
@@ -597,7 +609,11 @@ class VaccineSelectionController extends GetxController {
     }
   }
 
-  void setSelectedSyringe(int vaccineId, int doseOptionId, int optionId) {
+  void setSelectedSyringe(
+    String vaccineId,
+    String doseOptionId,
+    String optionId,
+  ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
       doseData.selectedSyringeId = optionId;
@@ -605,7 +621,11 @@ class VaccineSelectionController extends GetxController {
     }
   }
 
-  void setSelectedDropper(int vaccineId, int doseOptionId, int optionId) {
+  void setSelectedDropper(
+    String vaccineId,
+    String doseOptionId,
+    String optionId,
+  ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
       doseData.selectedDropperId = optionId;
@@ -614,9 +634,9 @@ class VaccineSelectionController extends GetxController {
   }
 
   void setSelectedPneumococcalType(
-    int vaccineId,
-    int doseOptionId,
-    int optionId,
+    String vaccineId,
+    String doseOptionId,
+    String optionId,
   ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
@@ -625,7 +645,11 @@ class VaccineSelectionController extends GetxController {
     }
   }
 
-  void setSelectedObservation(int vaccineId, int doseOptionId, int optionId) {
+  void setSelectedObservation(
+    String vaccineId,
+    String doseOptionId,
+    String optionId,
+  ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
       doseData.selectedObservationId = optionId;
@@ -633,7 +657,11 @@ class VaccineSelectionController extends GetxController {
     }
   }
 
-  void setApplicationDate(int vaccineId, int doseOptionId, DateTime date) {
+  void setApplicationDate(
+    String vaccineId,
+    String doseOptionId,
+    DateTime date,
+  ) {
     final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
     if (doseData != null && !doseData.isLocked) {
       doseData.applicationDate = date;

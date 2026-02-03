@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/vaccine.dart';
 import '../../models/vaccine_config_option.dart';
 import '../../services/vaccine_service.dart';
@@ -43,7 +44,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
   // Opciones de configuración
   final Map<ConfigFieldType, List<VaccineConfigOption>> _configOptions = {};
   bool _isLoading = false;
-  int? _vaccineId;
+  String? _vaccineId;
 
   @override
   void initState() {
@@ -649,8 +650,31 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
       );
 
       if (_vaccineId == null) {
-        // Crear nueva
-        _vaccineId = await db.insert('vaccines', vaccine.toMap());
+        // Crear nueva - generar UUID
+        const uuid = Uuid();
+        _vaccineId = uuid.v4();
+        final vaccineWithId = Vaccine(
+          id: _vaccineId,
+          name: vaccine.name,
+          code: vaccine.code,
+          category: vaccine.category,
+          maxDoses: vaccine.maxDoses,
+          minMonths: vaccine.minMonths,
+          maxMonths: vaccine.maxMonths,
+          hasLaboratory: vaccine.hasLaboratory,
+          hasLot: vaccine.hasLot,
+          hasSyringe: vaccine.hasSyringe,
+          hasSyringeLot: vaccine.hasSyringeLot,
+          hasDiluent: vaccine.hasDiluent,
+          hasDropper: vaccine.hasDropper,
+          hasPneumococcalType: vaccine.hasPneumococcalType,
+          hasVialCount: vaccine.hasVialCount,
+          hasObservation: vaccine.hasObservation,
+          isActive: vaccine.isActive,
+          createdAt: vaccine.createdAt,
+          updatedAt: vaccine.updatedAt,
+        );
+        await db.insert('vaccines', vaccineWithId.toMap());
         Get.snackbar(
           'Éxito',
           'Vacuna creada correctamente',
@@ -767,8 +791,10 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
 
               try {
                 final db = await DatabaseHelper.instance.database;
+                const uuid = Uuid();
                 final name = nameController.text.trim();
                 final option = VaccineConfigOption(
+                  id: uuid.v4(),
                   vaccineId: _vaccineId!,
                   fieldType: fieldType,
                   value: name,
@@ -935,7 +961,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
     );
   }
 
-  Future<void> _deleteConfigOption(int optionId) async {
+  Future<void> _deleteConfigOption(String optionId) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Confirmar'),

@@ -279,8 +279,14 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
                 : 'Paciente y vacunas registrados correctamente',
           );
         });
+      } else {
+        // Modo tab: mostrar snackbar directamente
+        CustomSnackbar.showSuccess(
+          wasEditMode
+              ? 'Paciente actualizado correctamente'
+              : 'Paciente y vacunas registrados correctamente',
+        );
       }
-      // En modo tab, el snackbar ya se mostró en el controller
     }
   }
 

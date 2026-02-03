@@ -1,11 +1,10 @@
 // Modelo de Dosis Aplicada - Registro de cada vacuna aplicada a un paciente
 
 class AppliedDose {
-  int? id;
-  String uuid; // Identificador global único (para sincronización)
+  String? id; // UUID
   String patientId; // FK -> patients (UUID)
   String nurseId; // FK -> nurses (UUID)
-  int vaccineId; // FK -> vaccines
+  String vaccineId; // FK -> vaccines (UUID)
   DateTime applicationDate; // Fecha de aplicación (OBLIGATORIO)
 
   // Campos genéricos (se llenan según configuración de vaccine)
@@ -33,7 +32,6 @@ class AppliedDose {
 
   AppliedDose({
     this.id,
-    String? uuid,
     required this.patientId,
     required this.nurseId,
     required this.vaccineId,
@@ -53,21 +51,12 @@ class AppliedDose {
     this.syncStatus = 'local',
     DateTime? createdAt,
     this.updatedAt,
-  }) : uuid = uuid ?? _generateUuid(),
-       createdAt = createdAt ?? DateTime.now();
-
-  // Generar UUID simple (en producción usa package:uuid)
-  static String _generateUuid() {
-    final now = DateTime.now();
-    final random = now.microsecondsSinceEpoch.toString();
-    return 'dose_$random';
-  }
+  }) : createdAt = createdAt ?? DateTime.now();
 
   // Convertir a Map para SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'uuid': uuid,
       'patient_id': patientId,
       'nurse_id': nurseId,
       'vaccine_id': vaccineId,
@@ -94,7 +83,6 @@ class AppliedDose {
   factory AppliedDose.fromMap(Map<String, dynamic> map) {
     return AppliedDose(
       id: map['id'],
-      uuid: map['uuid'],
       patientId: map['patient_id'],
       nurseId: map['nurse_id'],
       vaccineId: map['vaccine_id'],
@@ -125,7 +113,6 @@ class AppliedDose {
   AppliedDose markAsSynced() {
     return AppliedDose(
       id: id,
-      uuid: uuid,
       patientId: patientId,
       nurseId: nurseId,
       vaccineId: vaccineId,
@@ -153,5 +140,5 @@ class AppliedDose {
 
   @override
   String toString() =>
-      'AppliedDose{id: $id, uuid: $uuid, vaccineId: $vaccineId, date: $applicationDate}';
+      'AppliedDose{id: $id, vaccineId: $vaccineId, date: $applicationDate}';
 }

@@ -54,69 +54,24 @@ class ExportService {
   /// Genera la fila de categorías (primera fila de encabezados)
   List<String> _getCategoryHeaders() {
     return [
-      '', '', // Consecutivo, Fecha atención
-      'DATOS BÁSICOS',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'DATOS COMPLEMENTARIOS',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'ANTECEDENTES MÉDICOS', '', '', '',
-      'CONDICIÓN USUARIA', '', '', '', '',
-      'HISTÓRICO DE ANTECEDENTES', '', '', '',
-      'DATOS DE LA MADRE', '', '', '', '', '', '', '', '', '', '', '',
-      'DATOS DEL CUIDADOR', '', '', '', '', '', '', '', '', '',
-      'DATOS DOSIS APLICADA',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'DATOS ENFERMERA', '',
+      // DATOS BÁSICOS (18 campos)
+      ...List.filled(18, 'DATOS BÁSICOS'),
+      // DATOS COMPLEMENTARIOS (24 campos)
+      ...List.filled(24, 'DATOS COMPLEMENTARIOS'),
+      // ANTECEDENTES MÉDICOS (4 campos)
+      ...List.filled(4, 'ANTECEDENTES MÉDICOS'),
+      // CONDICIÓN USUARIA (5 campos)
+      ...List.filled(5, 'CONDICIÓN USUARIA'),
+      // HISTÓRICO DE ANTECEDENTES (4 campos)
+      ...List.filled(4, 'HISTÓRICO DE ANTECEDENTES'),
+      // DATOS DE LA MADRE (12 campos)
+      ...List.filled(12, 'DATOS DE LA MADRE'),
+      // DATOS DEL CUIDADOR (10 campos)
+      ...List.filled(10, 'DATOS DEL CUIDADOR'),
+      // DATOS ENFERMERA (5 campos)
+      ...List.filled(5, 'DATOS ENFERMERA'),
+      // DATOS DOSIS APLICADA (16 campos)
+      ...List.filled(16, 'VACUNAS'),
     ];
   }
 
@@ -169,7 +124,7 @@ class ExportService {
 
       // ANTECEDENTES MÉDICOS (4 campos)
       '¿Sufre o ha sufrido algún evento o enfermedad que contraindique la vacunación?',
-      'Cuál contraindication',
+      'Cuál contraindicación',
       '¿Ha presentado reacción moderada o severa a biológicos anteriores?',
       'Cuál reacción',
 
@@ -212,6 +167,13 @@ class ExportService {
       'Teléfono fijo cuidador',
       'Celular cuidador',
 
+      // DATOS ENFERMERA (5 campos)
+      'Nombre Enfermera',
+      'Documento Enfermera',
+      'Correo electrónico Enfermera',
+      'Teléfono Enfermera',
+      'Registro Profesional Enfermera',
+
       // DATOS DOSIS APLICADA (16 campos)
       'Nombre Vacuna',
       'Código Vacuna',
@@ -229,10 +191,6 @@ class ExportService {
       'Cantidad Frascos',
       'Observación',
       'Observación Personalizada',
-
-      // DATOS ENFERMERA (2 campos)
-      'Nombre Enfermera',
-      'Documento Enfermera',
     ];
   }
 
@@ -368,7 +326,7 @@ class ExportService {
     // Convertir cada registro a una fila del CSV
     return results.map((row) {
       return [
-        // DATOS BÁSICOS
+        // DATOS BÁSICOS (18 campos)
         row['consecutivo']?.toString() ?? '',
         row['attention_date']?.toString() ?? '',
         row['id_type']?.toString() ?? '',
@@ -388,7 +346,7 @@ class ExportService {
         row['sexual_orientation']?.toString() ?? '',
         row['gestational_age']?.toString() ?? '',
 
-        // DATOS COMPLEMENTARIOS
+        // DATOS COMPLEMENTARIOS (24 campos)
         row['birth_country']?.toString() ?? '',
         row['migration_status']?.toString() ?? '',
         row['birth_place']?.toString() ?? '',
@@ -412,26 +370,26 @@ class ExportService {
         row['authorize_calls'] == 1 ? 'Sí' : 'No',
         row['authorize_email'] == 1 ? 'Sí' : 'No',
 
-        // ANTECEDENTES MÉDICOS
+        // ANTECEDENTES MÉDICOS (4 campos)
         row['has_contraindication'] == 1 ? 'Sí' : 'No',
         row['contraindication_details']?.toString() ?? '',
         row['has_previous_reaction'] == 1 ? 'Sí' : 'No',
         row['reaction_details']?.toString() ?? '',
 
-        // CONDICIÓN USUARIA
+        // CONDICIÓN USUARIA (5 campos)
         row['user_condition']?.toString() ?? '',
         row['last_menstrual_date']?.toString() ?? '',
         row['gestation_weeks']?.toString() ?? '',
         row['probable_delivery_date']?.toString() ?? '',
         row['previous_pregnancies']?.toString() ?? '',
 
-        // HISTÓRICO DE ANTECEDENTES
+        // HISTÓRICO DE ANTECEDENTES (4 campos)
         row['history_record_date']?.toString() ?? '',
         row['history_type']?.toString() ?? '',
         row['history_description']?.toString() ?? '',
         row['special_observations']?.toString() ?? '',
 
-        // DATOS DE LA MADRE
+        // DATOS DE LA MADRE (12 campos)
         row['mother_id_type']?.toString() ?? '',
         row['mother_id_number']?.toString() ?? '',
         row['mother_first_name']?.toString() ?? '',
@@ -445,7 +403,7 @@ class ExportService {
         row['mother_ethnicity']?.toString() ?? '',
         row['mother_displaced'] == 1 ? 'Sí' : 'No',
 
-        // DATOS DEL CUIDADOR
+        // DATOS DEL CUIDADOR (10 campos)
         row['caregiver_id_type']?.toString() ?? '',
         row['caregiver_id_number']?.toString() ?? '',
         row['caregiver_first_name']?.toString() ?? '',
@@ -457,7 +415,14 @@ class ExportService {
         row['caregiver_landline']?.toString() ?? '',
         row['caregiver_cellphone']?.toString() ?? '',
 
-        // DATOS DOSIS APLICADA
+        // DATOS ENFERMERA (5 campos)
+        row['nurse_name']?.toString() ?? '',
+        row['nurse_document']?.toString() ?? '',
+        row['nurse_email']?.toString() ?? '',
+        row['nurse_phone']?.toString() ?? '',
+        row['nurse_professional_registration']?.toString() ?? '',
+
+        // DATOS DOSIS APLICADA (16 campos)
         row['vaccine_name']?.toString() ?? '',
         row['vaccine_code']?.toString() ?? '',
         row['vaccine_category']?.toString() ?? '',
@@ -474,10 +439,6 @@ class ExportService {
         row['vial_count']?.toString() ?? '',
         row['selected_observation']?.toString() ?? '',
         row['custom_observation']?.toString() ?? '',
-
-        // DATOS ENFERMERA
-        row['nurse_name']?.toString() ?? '',
-        row['nurse_document']?.toString() ?? '',
       ];
     }).toList();
   }

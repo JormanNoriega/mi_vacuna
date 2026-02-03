@@ -32,10 +32,16 @@ class _Step3VaccinesState extends State<Step3Vaccines>
 
   Future<void> _initializeData() async {
     final patientController = Get.find<PatientFormController>();
-    final vaccineController = Get.put(VaccineSelectionController());
+
+    // Usar find si ya existe, put si no
+    final vaccineController = Get.isRegistered<VaccineSelectionController>()
+        ? Get.find<VaccineSelectionController>()
+        : Get.put(VaccineSelectionController());
 
     // Cargar vacunas disponibles según la edad del paciente
-    vaccineController.loadAvailableVaccines(patientController.birthDate.value);
+    await vaccineController.loadAvailableVaccines(
+      patientController.birthDate.value,
+    );
 
     // Si está en modo edición y aún no se han cargado las vacunas
     if (patientController.isEditMode.value &&
@@ -51,7 +57,11 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final vaccineController = Get.put(VaccineSelectionController());
+
+    // Usar find si ya existe, put si no
+    final vaccineController = Get.isRegistered<VaccineSelectionController>()
+        ? Get.find<VaccineSelectionController>()
+        : Get.put(VaccineSelectionController());
 
     return SingleChildScrollView(
       child: Padding(
@@ -592,7 +602,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildDoseForm(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Column(
@@ -703,7 +713,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildLaboratoryDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {
@@ -739,7 +749,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildSyringeDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {
@@ -775,7 +785,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildDropperDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {
@@ -811,7 +821,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildPneumococcalTypeDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {
@@ -847,7 +857,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildObservationDropdownForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {
@@ -883,7 +893,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildLotFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     final textController = controller.getLotController(
@@ -903,7 +913,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildSyringeLotFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     final textController = controller.getSyringeLotController(
@@ -923,7 +933,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildDiluentFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     final textController = controller.getDiluentController(
@@ -943,7 +953,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildVialCountFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     final textController = controller.getVialCountController(
@@ -964,7 +974,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget _buildDateFieldForDose(
     Vaccine vaccine,
     VaccineSelectionController controller,
-    int doseOptionId,
+    String doseOptionId,
     bool isLocked,
   ) {
     return Obx(() {

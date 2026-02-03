@@ -961,7 +961,7 @@ class PatientFormController extends GetxController {
 
   /// Helper para obtener el displayName de una opción por su ID
   String? _getOptionDisplayName(
-    int? optionId,
+    String? optionId,
     VaccineSelectionController controller,
   ) {
     if (optionId == null) return null;
@@ -1003,7 +1003,7 @@ class PatientFormController extends GetxController {
     // Ubicación
     birthCountryController.text = 'Colombia';
     birthPlaceController.clear();
-    residenceCountryController.clear();
+    residenceCountryController.text = 'Colombia';
     residenceDepartmentController.clear();
     residenceMunicipalityController.clear();
     communeController.clear();
@@ -1016,13 +1016,13 @@ class PatientFormController extends GetxController {
     authorizeCalls.value = false;
     authorizeEmail.value = false;
 
-    // Demográficos
+    // Demográficos - Resetear a valores por defecto
     selectedGender.value = null;
     selectedSexualOrientation.value = null;
-    selectedMigratoryStatus.value = null;
+    selectedMigratoryStatus.value = EstatusMigratorio.regular;
     selectedEthnicity.value = PertenenciaEtnica.ninguno;
     selectedHealthRegime.value = null;
-    selectedArea.value = null;
+    selectedArea.value = Area.urbana;
 
     // Salud
     insurerController.clear();
@@ -1035,7 +1035,7 @@ class PatientFormController extends GetxController {
     armedConflictVictim.value = false;
     currentlyStudying.value = null;
 
-    // Madre
+    // Madre - Resetear completamente
     showMotherData.value = false;
     selectedMotherIdType.value = null;
     motherIdNumberController.clear();
@@ -1050,7 +1050,7 @@ class PatientFormController extends GetxController {
     selectedMotherEthnicity.value = null;
     motherDisplaced.value = null;
 
-    // Cuidador
+    // Cuidador - Resetear completamente
     showCaregiverData.value = false;
     selectedCaregiverIdType.value = null;
     caregiverIdNumberController.clear();
@@ -1063,7 +1063,7 @@ class PatientFormController extends GetxController {
     caregiverLandlineController.clear();
     caregiverCellphoneController.clear();
 
-    // Antecedentes médicos
+    // Antecedentes médicos - Resetear completamente
     hasContraindication.value = false;
     contraindicationDetailsController.clear();
     hasPreviousReaction.value = false;
@@ -1075,8 +1075,8 @@ class PatientFormController extends GetxController {
     historyDescriptionController.clear();
     specialObservationsController.clear();
 
-    // Condición usuaria
-    selectedUserCondition.value = null;
+    // Condición usuaria - Resetear completamente
+    selectedUserCondition.value = CondicionUsuaria.noAplica;
     lastMenstrualDate.value = null;
     gestationWeeksController.clear();
     probableDeliveryDate.value = null;

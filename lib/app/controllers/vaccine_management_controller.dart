@@ -122,7 +122,7 @@ class VaccineManagementController extends GetxController {
   }
 
   /// Elimina una vacuna
-  Future<bool> deleteVaccine(int vaccineId) async {
+  Future<bool> deleteVaccine(String vaccineId) async {
     try {
       final db = await DatabaseHelper.instance.database;
 

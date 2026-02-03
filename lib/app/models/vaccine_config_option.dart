@@ -10,8 +10,8 @@ enum ConfigFieldType {
 }
 
 class VaccineConfigOption {
-  int? id;
-  int vaccineId; // FK -> vaccines
+  String? id; // UUID
+  String vaccineId; // FK -> vaccines (UUID)
   ConfigFieldType fieldType; // Tipo de campo
   String value; // Valor de la opción (para guardar en BD)
   String displayName; // Nombre para mostrar en UI

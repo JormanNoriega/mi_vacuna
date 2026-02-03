@@ -76,7 +76,7 @@ class VaccineService {
   }
 
   /// Obtiene una vacuna por su ID
-  Future<Vaccine?> getVaccineById(int id) async {
+  Future<Vaccine?> getVaccineById(String id) async {
     final db = await _dbHelper.database;
     final result = await db.query(
       'vaccines',
@@ -113,7 +113,7 @@ class VaccineService {
 
   /// Obtiene todas las opciones de configuración de una vacuna
   Future<List<VaccineConfigOption>> getOptions(
-    int vaccineId, {
+    String vaccineId, {
     ConfigFieldType? fieldType,
   }) async {
     final db = await _dbHelper.database;
@@ -137,38 +137,40 @@ class VaccineService {
   }
 
   /// Obtiene las dosis disponibles de una vacuna
-  Future<List<VaccineConfigOption>> getDoses(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getDoses(String vaccineId) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.dose);
   }
 
   /// Obtiene los laboratorios disponibles de una vacuna
-  Future<List<VaccineConfigOption>> getLaboratories(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getLaboratories(String vaccineId) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.laboratory);
   }
 
   /// Obtiene las jeringas disponibles de una vacuna
-  Future<List<VaccineConfigOption>> getSyringes(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getSyringes(String vaccineId) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.syringe);
   }
 
   /// Obtiene los goteros disponibles de una vacuna
-  Future<List<VaccineConfigOption>> getDroppers(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getDroppers(String vaccineId) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.dropper);
   }
 
   /// Obtiene los tipos de neumococo disponibles
-  Future<List<VaccineConfigOption>> getPneumococcalTypes(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getPneumococcalTypes(
+    String vaccineId,
+  ) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.pneumococcalType);
   }
 
   /// Obtiene las observaciones predefinidas de una vacuna
-  Future<List<VaccineConfigOption>> getObservations(int vaccineId) async {
+  Future<List<VaccineConfigOption>> getObservations(String vaccineId) async {
     return getOptions(vaccineId, fieldType: ConfigFieldType.observation);
   }
 
   /// Obtiene la opción marcada como predeterminada para un campo específico
   Future<VaccineConfigOption?> getDefaultOption(
-    int vaccineId,
+    String vaccineId,
     ConfigFieldType fieldType,
   ) async {
     final db = await _dbHelper.database;
@@ -297,7 +299,7 @@ class VaccineService {
   }
 
   /// Verifica si una vacuna tiene configuraciones dinámicas
-  Future<bool> hasConfigOptions(int vaccineId) async {
+  Future<bool> hasConfigOptions(String vaccineId) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM vaccine_config_options WHERE vaccine_id = ? AND is_active = 1',

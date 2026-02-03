@@ -1,7 +1,7 @@
 // Modelo de Vacuna - Catálogo configurable
 
 class Vaccine {
-  int? id;
+  String? id; // UUID
   String name; // "COVID-19", "BCG", "Hepatitis B"
   String code; // "covid19", "bcg", "hepatitis_b"
   String category; // "infantil", "adulto", "especial", "todas"

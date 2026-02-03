@@ -63,6 +63,10 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildUserHeader(dynamic nurse, bool isTablet) {
+    final now = DateTime.now();
+    final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'es_ES');
+    final formattedDate = dateFormat.format(now);
+
     return Container(
       padding: EdgeInsets.all(isTablet ? 24 : 20),
       decoration: BoxDecoration(
@@ -96,7 +100,7 @@ class HomePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  nurse.fullName,
+                  'Hola, ${nurse.firstName}',
                   style: TextStyle(
                     fontSize: isTablet ? 24 : 20,
                     fontWeight: FontWeight.bold,
@@ -105,10 +109,26 @@ class HomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
+                  formattedDate,
+                  style: TextStyle(
+                    fontSize: isTablet ? 14 : 13,
+                    color: const Color(0xFF616F89),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
                   nurse.institution,
                   style: TextStyle(
-                    fontSize: isTablet ? 15 : 14,
+                    fontSize: isTablet ? 14 : 13,
                     color: const Color(0xFF616F89),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'ID: ${nurse.idNumber}',
+                  style: TextStyle(
+                    fontSize: isTablet ? 13 : 12,
+                    color: const Color(0xFF9CA3AF),
                   ),
                 ),
               ],
