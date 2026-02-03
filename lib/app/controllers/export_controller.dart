@@ -33,7 +33,7 @@ class ExportController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    // Cargar estadísticas cuando el controlador está listo
+    // Cargar estadísticas solo aquí, no en onInit
     updateStatistics();
   }
 

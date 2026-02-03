@@ -11,16 +11,8 @@ class ExportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Recrear el controlador cada vez que se abre la página
-    final controller = Get.put(
-      ExportController(),
-      tag: DateTime.now().toString(),
-    );
-
-    // Cargar estadísticas al iniciar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.updateStatistics();
-    });
+    // Usar una sola instancia del controlador
+    final controller = Get.put(ExportController());
 
     return Scaffold(
       backgroundColor: backgroundMedium,

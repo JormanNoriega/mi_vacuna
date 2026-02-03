@@ -382,6 +382,45 @@ class PatientFormController extends GetxController {
     previousPregnanciesController.text =
         patient.previousPregnancies?.toString() ?? '';
 
+    // Datos de la madre
+    if (patient.motherIdType != null && patient.motherIdType!.isNotEmpty) {
+      showMotherData.value = true;
+      selectedMotherIdType.value = patient.motherIdType!;
+      motherIdNumberController.text = patient.motherIdNumber ?? '';
+      motherFirstNameController.text = patient.motherFirstName ?? '';
+      motherSecondNameController.text = patient.motherSecondName ?? '';
+      motherLastNameController.text = patient.motherLastName ?? '';
+      motherSecondLastNameController.text = patient.motherSecondLastName ?? '';
+      motherEmailController.text = patient.motherEmail ?? '';
+      motherLandlineController.text = patient.motherLandline ?? '';
+      motherCellphoneController.text = patient.motherCellphone ?? '';
+      if (patient.motherAffiliationRegime != null) {
+        selectedMotherAffiliationRegime.value = patient.motherAffiliationRegime;
+      }
+      if (patient.motherEthnicity != null) {
+        selectedMotherEthnicity.value = patient.motherEthnicity!;
+      }
+      motherDisplaced.value = patient.motherDisplaced;
+    }
+
+    // Datos del cuidador
+    if (patient.caregiverIdType != null &&
+        patient.caregiverIdType!.isNotEmpty) {
+      showCaregiverData.value = true;
+      selectedCaregiverIdType.value = patient.caregiverIdType!;
+      caregiverIdNumberController.text = patient.caregiverIdNumber ?? '';
+      caregiverFirstNameController.text = patient.caregiverFirstName ?? '';
+      caregiverSecondNameController.text = patient.caregiverSecondName ?? '';
+      caregiverLastNameController.text = patient.caregiverLastName ?? '';
+      caregiverSecondLastNameController.text =
+          patient.caregiverSecondLastName ?? '';
+      caregiverRelationshipController.text =
+          patient.caregiverRelationship ?? '';
+      caregiverEmailController.text = patient.caregiverEmail ?? '';
+      caregiverLandlineController.text = patient.caregiverLandline ?? '';
+      caregiverCellphoneController.text = patient.caregiverCellphone ?? '';
+    }
+
     // Ya no intentamos cargar vacunas aquí, se cargarán cuando el usuario llegue al Step 3
   }
 
