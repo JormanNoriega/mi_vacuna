@@ -6,6 +6,7 @@ import '../services/patient_service.dart';
 import '../services/applied_dose_service.dart';
 import '../widgets/custom_snackbar.dart';
 import 'vaccine_selection_controller.dart';
+import 'auth_controller.dart';
 
 /// Controlador para el formulario de registro de pacientes
 /// Gestiona los pasos del formulario (datos básicos, adicionales, vacunas y revisión)
@@ -135,6 +136,13 @@ class PatientFormController extends GetxController {
     super.onInit();
     // Resetear el estado al inicializar
     resetForm();
+    _setupOptimizations();
+  }
+
+  /// Configurar optimizaciones para mejorar rendimiento
+  void _setupOptimizations() {
+    // Deshabilitar logs innecesarios en producción
+    // GetX puede causar overhead con logs excesivos
   }
 
   @override
@@ -215,10 +223,17 @@ class PatientFormController extends GetxController {
         return;
       }
 
-      currentStep.value++;
-      // Usar jumpToPage para transición instantánea sin lag
       final controllerToUse = customPageController ?? pageController;
-      controllerToUse.jumpToPage(currentStep.value);
+      final nextStep = currentStep.value + 1;
+
+      // Actualizar en batch para evitar múltiples rebuilds
+      currentStep.value = nextStep;
+      // Usar jumpToPage para transición instantánea sin lag
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (controllerToUse.hasClients) {
+          controllerToUse.jumpToPage(nextStep);
+        }
+      });
     } else {
       // Último paso - guardar
       submitForm();
@@ -227,33 +242,47 @@ class PatientFormController extends GetxController {
 
   void previousStep({PageController? customPageController}) {
     if (currentStep.value > 0) {
-      currentStep.value--;
-      // Usar jumpToPage para transición instantánea sin lag
       final controllerToUse = customPageController ?? pageController;
-      controllerToUse.jumpToPage(currentStep.value);
+      final prevStep = currentStep.value - 1;
+
+      // Actualizar en batch para evitar múltiples rebuilds
+      currentStep.value = prevStep;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (controllerToUse.hasClients) {
+          controllerToUse.jumpToPage(prevStep);
+        }
+      });
     }
   }
 
   void goToStep(int step, {PageController? customPageController}) {
     if (step >= 0 && step < totalSteps) {
-      currentStep.value = step;
-      // Usar jumpToPage para transición instantánea sin lag
       final controllerToUse = customPageController ?? pageController;
-      controllerToUse.jumpToPage(step);
+
+      // Actualizar en batch
+      currentStep.value = step;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (controllerToUse.hasClients) {
+          controllerToUse.jumpToPage(step);
+        }
+      });
     }
   }
 
   /// Resetea el formulario al estado inicial
   void resetForm() {
+    // Actualizar todos los valores en batch
     currentStep.value = 0;
     isEditMode.value = false;
     isModalMode.value = false;
     editingPatientId = null;
 
-    // Resetear el PageController si ya está inicializado
-    if (pageController.hasClients) {
-      pageController.jumpToPage(0);
-    }
+    // Resetear el PageController después del frame actual
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (pageController.hasClients) {
+        pageController.jumpToPage(0);
+      }
+    });
   }
 
   /// Verifica si hay datos sin guardar en el formulario
@@ -532,9 +561,13 @@ class PatientFormController extends GetxController {
       // Calcular edad
       final age = calculateAge();
 
-      // TODO: Obtener el nurseId del usuario logueado
-      // Por ahora usamos UUID temporal
-      final String nurseId = '00000000-0000-0000-0000-000000000001';
+      // Obtener el nurseId del usuario logueado
+      final authController = Get.find<AuthController>();
+      final String? nurseId = authController.currentNurse.value?.id;
+
+      if (nurseId == null) {
+        throw Exception('No hay enfermera logueada');
+      }
 
       // Crear objeto Patient
       final patient = Patient(

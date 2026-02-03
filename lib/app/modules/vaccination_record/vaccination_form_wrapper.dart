@@ -72,145 +72,36 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
                   ),
                 ),
               ),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(1),
-                child: Container(color: borderColor, height: 1),
+              bottom: const PreferredSize(
+                preferredSize: Size.fromHeight(1),
+                child: Divider(height: 1, color: borderColor),
               ),
             )
           : null,
       body: Column(
         children: [
-          // Progress Indicator
-          Container(
-            color: cardBackground,
-            padding: const EdgeInsets.all(16),
-            child: Obx(
-              () => Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Registro de Vacunación',
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Paso ${controller.currentStep.value + 1} de ${controller.totalSteps}',
-                        style: const TextStyle(
-                          color: textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: controller.progress,
-                      backgroundColor: borderColor,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        primaryColor,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Progress Indicator (optimizado para no reconstruir todo)
+          _ProgressIndicator(controller: controller),
 
           // PageView con los pasos
           Expanded(
-            child: PageView.builder(
-              controller: pageController, // Usar el PageController apropiado
+            child: PageView(
+              controller: pageController,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.totalSteps,
-              itemBuilder: (context, index) {
-                // Lazy loading - solo construir la página cuando se necesita
-                return RepaintBoundary(child: _buildStep(index));
-              },
+              children: const [
+                Step1BasicData(),
+                Step2AdditionalData(),
+                Step3Vaccines(),
+                Step4Review(),
+              ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: cardBackground,
-          border: Border(top: BorderSide(color: borderColor, width: 1)),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Obx(
-              () => Row(
-                children: [
-                  if (controller.currentStep.value > 0)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => controller.previousStep(
-                          customPageController: pageController,
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: primaryColor),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Anterior'),
-                      ),
-                    ),
-                  if (controller.currentStep.value > 0)
-                    const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _handleNextButton(controller, pageController),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 8,
-                        shadowColor: primaryColor.withValues(alpha: 0.25),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            controller.currentStep.value ==
-                                    controller.totalSteps - 1
-                                ? 'Guardar'
-                                : 'Siguiente',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            controller.currentStep.value ==
-                                    controller.totalSteps - 1
-                                ? Icons.check
-                                : Icons.arrow_forward,
-                            size: 20,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      bottomNavigationBar: _BottomNavigationButtons(
+        controller: controller,
+        pageController: pageController,
+        onNext: _handleNextButton,
       ),
     );
 
@@ -227,21 +118,6 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
     }
 
     return scaffold;
-  }
-
-  Widget _buildStep(int index) {
-    switch (index) {
-      case 0:
-        return const Step1BasicData();
-      case 1:
-        return const Step2AdditionalData();
-      case 2:
-        return const Step3Vaccines();
-      case 3:
-        return const Step4Review();
-      default:
-        return const SizedBox.shrink();
-    }
   }
 
   void _handleNextButton(
@@ -358,6 +234,144 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
           ],
         );
       },
+    );
+  }
+}
+
+// Widget optimizado para el indicador de progreso
+class _ProgressIndicator extends StatelessWidget {
+  final PatientFormController controller;
+
+  const _ProgressIndicator({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: cardBackground,
+      padding: const EdgeInsets.all(16),
+      child: Obx(() {
+        final step = controller.currentStep.value;
+        final progress = controller.progress;
+        return Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Registro de Vacunación',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Paso ${step + 1} de ${controller.totalSteps}',
+                  style: const TextStyle(color: textSecondary, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: borderColor,
+                valueColor: const AlwaysStoppedAnimation<Color>(primaryColor),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+// Widget optimizado para los botones de navegación
+class _BottomNavigationButtons extends StatelessWidget {
+  final PatientFormController controller;
+  final PageController pageController;
+  final Function(PatientFormController, PageController) onNext;
+
+  const _BottomNavigationButtons({
+    required this.controller,
+    required this.pageController,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: cardBackground,
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Obx(() {
+            final currentStep = controller.currentStep.value;
+            final isLastStep = currentStep == controller.totalSteps - 1;
+            final showBackButton = currentStep > 0;
+
+            return Row(
+              children: [
+                if (showBackButton) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => controller.previousStep(
+                        customPageController: pageController,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: primaryColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Anterior'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => onNext(controller, pageController),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 8,
+                      shadowColor: primaryColor.withValues(alpha: 0.25),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isLastStep ? 'Guardar' : 'Siguiente',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          isLastStep ? Icons.check : Icons.arrow_forward,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
     );
   }
 }

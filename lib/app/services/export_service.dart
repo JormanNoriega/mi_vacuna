@@ -54,24 +54,53 @@ class ExportService {
   /// Genera la fila de categorías (primera fila de encabezados)
   List<String> _getCategoryHeaders() {
     return [
-      // DATOS BÁSICOS (18 campos)
-      ...List.filled(18, 'DATOS BÁSICOS'),
-      // DATOS COMPLEMENTARIOS (24 campos)
-      ...List.filled(24, 'DATOS COMPLEMENTARIOS'),
+      // DATOS BÁSICOS (18 campos) - Solo la primera celda con el título
+      'DATOS BÁSICOS',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      // DATOS COMPLEMENTARIOS (22 campos)
+      'DATOS COMPLEMENTARIOS',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       // ANTECEDENTES MÉDICOS (4 campos)
-      ...List.filled(4, 'ANTECEDENTES MÉDICOS'),
+      'ANTECEDENTES MÉDICOS',
+      '', '', '',
       // CONDICIÓN USUARIA (5 campos)
-      ...List.filled(5, 'CONDICIÓN USUARIA'),
+      'CONDICIÓN USUARIA',
+      '', '', '', '',
       // HISTÓRICO DE ANTECEDENTES (4 campos)
-      ...List.filled(4, 'HISTÓRICO DE ANTECEDENTES'),
+      'HISTÓRICO DE ANTECEDENTES',
+      '', '', '',
       // DATOS DE LA MADRE (12 campos)
-      ...List.filled(12, 'DATOS DE LA MADRE'),
+      'DATOS DE LA MADRE',
+      '', '', '', '', '', '', '', '', '', '', '',
       // DATOS DEL CUIDADOR (10 campos)
-      ...List.filled(10, 'DATOS DEL CUIDADOR'),
+      'DATOS DEL CUIDADOR',
+      '', '', '', '', '', '', '', '', '',
       // DATOS ENFERMERA (5 campos)
-      ...List.filled(5, 'DATOS ENFERMERA'),
-      // DATOS DOSIS APLICADA (16 campos)
-      ...List.filled(16, 'VACUNAS'),
+      'DATOS ENFERMERA',
+      '', '', '', '',
+      // VACUNAS (16 campos)
+      'VACUNAS',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
     ];
   }
 
@@ -172,7 +201,7 @@ class ExportService {
       'Documento Enfermera',
       'Correo electrónico Enfermera',
       'Teléfono Enfermera',
-      'Registro Profesional Enfermera',
+      'Institución Enfermera',
 
       // DATOS DOSIS APLICADA (16 campos)
       'Nombre Vacuna',
@@ -306,12 +335,15 @@ class ExportService {
         
         -- DATOS ENFERMERA
         n.firstName || ' ' || n.lastName as nurse_name,
-        n.idNumber as nurse_document
+        n.idNumber as nurse_document,
+        n.email as nurse_email,
+        n.phone as nurse_phone,
+        n.institution as nurse_institution
         
       FROM applied_doses ad
       INNER JOIN patients p ON ad.patient_id = p.id
       INNER JOIN vaccines v ON ad.vaccine_id = v.id
-      LEFT JOIN nurses n ON ad.nurse_id = n.idNumber
+      LEFT JOIN nurses n ON ad.nurse_id = n.id
       WHERE date(ad.application_date) BETWEEN date(?) AND date(?)
       ORDER BY ad.application_date DESC, p.last_name ASC, p.first_name ASC
     ''',
@@ -420,7 +452,7 @@ class ExportService {
         row['nurse_document']?.toString() ?? '',
         row['nurse_email']?.toString() ?? '',
         row['nurse_phone']?.toString() ?? '',
-        row['nurse_professional_registration']?.toString() ?? '',
+        row['nurse_institution']?.toString() ?? '',
 
         // DATOS DOSIS APLICADA (16 campos)
         row['vaccine_name']?.toString() ?? '',
@@ -457,6 +489,9 @@ class ExportService {
         COUNT(ad.id) as total_doses,
         COUNT(DISTINCT ad.vaccine_id) as total_vaccines
       FROM applied_doses ad
+      INNER JOIN patients p ON ad.patient_id = p.id
+      INNER JOIN vaccines v ON ad.vaccine_id = v.id
+      INNER JOIN nurses n ON ad.nurse_id = n.id
       WHERE date(ad.application_date) BETWEEN date(?) AND date(?)
     ''',
       [

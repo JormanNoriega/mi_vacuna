@@ -30,6 +30,13 @@ class ExportController extends GetxController {
     startDate.value = DateTime(now.year, now.month - 1, now.day);
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    // Cargar estadísticas cuando el controlador está listo
+    updateStatistics();
+  }
+
   /// Actualiza las estadísticas cuando cambian las fechas
   Future<void> updateStatistics() async {
     if (startDate.value == null || endDate.value == null) {

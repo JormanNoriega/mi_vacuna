@@ -408,7 +408,14 @@ class AppliedDoseService {
   ) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM applied_doses WHERE application_date BETWEEN ? AND ?',
+      '''
+      SELECT COUNT(ad.id) as count 
+      FROM applied_doses ad
+      INNER JOIN patients p ON ad.patient_id = p.id
+      INNER JOIN vaccines v ON ad.vaccine_id = v.id
+      INNER JOIN nurses n ON ad.nurse_id = n.id
+      WHERE ad.application_date BETWEEN ? AND ?
+      ''',
       [startDate.toIso8601String(), endDate.toIso8601String()],
     );
     return Sqflite.firstIntValue(result) ?? 0;

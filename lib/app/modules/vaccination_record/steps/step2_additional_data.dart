@@ -751,8 +751,18 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     ),
                   ),
                   value: controller.hasContraindication.value,
-                  onChanged: (value) =>
-                      controller.hasContraindication.value = value,
+                  onChanged: (value) {
+                    controller.hasContraindication.value = value;
+                    // Establecer valor por defecto cuando se activa
+                    if (value &&
+                        controller
+                            .contraindicationDetailsController
+                            .text
+                            .isEmpty) {
+                      controller.contraindicationDetailsController.text =
+                          'Adultos';
+                    }
+                  },
                   activeColor: primaryColor,
                 ),
               ),
@@ -821,8 +831,15 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     ),
                   ),
                   value: controller.hasPreviousReaction.value,
-                  onChanged: (value) =>
-                      controller.hasPreviousReaction.value = value,
+                  onChanged: (value) {
+                    controller.hasPreviousReaction.value = value;
+                    // Establecer valor por defecto cuando se activa
+                    if (value &&
+                        controller.reactionDetailsController.text.isEmpty) {
+                      controller.reactionDetailsController.text =
+                          'Convulsiones';
+                    }
+                  },
                   activeColor: primaryColor,
                 ),
               ),

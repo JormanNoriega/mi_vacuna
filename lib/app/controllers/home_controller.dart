@@ -42,7 +42,7 @@ class HomeController extends GetxController {
       // Cargar estadísticas en paralelo
       final results = await Future.wait([
         _countPatientsToday(startOfDay, endOfDay),
-        _doseService.countDosesByDateRange(startOfDay, endOfDay),
+        _countDosesToday(startOfDay, endOfDay),
         _vaccineService.getAllActiveVaccines(),
         _doseService.getDosesWithVaccineInfo(limit: 5),
       ]);
@@ -58,7 +58,7 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Cuenta pacientes únicos atendidos hoy
+  /// Cuenta pacientes únicos atendidos hoy (solo pacientes que existen en BD)
   Future<int> _countPatientsToday(DateTime start, DateTime end) async {
     try {
       final db = await _patientService.getAllPatients();
@@ -70,6 +70,17 @@ class HomeController extends GetxController {
       return patientsToday;
     } catch (e) {
       print('Error counting patients today: $e');
+      return 0;
+    }
+  }
+
+  /// Cuenta dosis aplicadas hoy (solo dosis con pacientes válidos)
+  Future<int> _countDosesToday(DateTime start, DateTime end) async {
+    try {
+      // Usar el mismo método que el export para consistencia
+      return await _doseService.countDosesByDateRange(start, end);
+    } catch (e) {
+      print('Error counting doses today: $e');
       return 0;
     }
   }
