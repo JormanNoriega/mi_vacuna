@@ -214,11 +214,8 @@ class PatientFormController extends GetxController {
       }
 
       currentStep.value++;
-      pageController.animateToPage(
-        currentStep.value,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // Usar jumpToPage para transición instantánea sin lag
+      pageController.jumpToPage(currentStep.value);
     } else {
       // Último paso - guardar
       submitForm();
@@ -228,22 +225,16 @@ class PatientFormController extends GetxController {
   void previousStep() {
     if (currentStep.value > 0) {
       currentStep.value--;
-      pageController.animateToPage(
-        currentStep.value,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // Usar jumpToPage para transición instantánea sin lag
+      pageController.jumpToPage(currentStep.value);
     }
   }
 
   void goToStep(int step) {
     if (step >= 0 && step < totalSteps) {
       currentStep.value = step;
-      pageController.animateToPage(
-        step,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // Usar jumpToPage para transición instantánea sin lag
+      pageController.jumpToPage(step);
     }
   }
 

@@ -7,11 +7,21 @@ import '../../../widgets/form_fields.dart';
 import '../../../widgets/colombia_location_selector.dart';
 import '../../../theme/colors.dart';
 
-class Step2AdditionalData extends StatelessWidget {
+class Step2AdditionalData extends StatefulWidget {
   const Step2AdditionalData({Key? key}) : super(key: key);
 
   @override
+  State<Step2AdditionalData> createState() => _Step2AdditionalDataState();
+}
+
+class _Step2AdditionalDataState extends State<Step2AdditionalData>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final controller = Get.find<PatientFormController>();
 
     return Container(

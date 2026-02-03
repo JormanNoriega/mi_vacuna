@@ -353,7 +353,7 @@ class ExportService {
       FROM applied_doses ad
       INNER JOIN patients p ON ad.patient_id = p.id
       INNER JOIN vaccines v ON ad.vaccine_id = v.id
-      LEFT JOIN nurses n ON ad.nurse_id = n.id
+      LEFT JOIN nurses n ON ad.nurse_id = n.idNumber
       WHERE date(ad.application_date) BETWEEN date(?) AND date(?)
       ORDER BY ad.application_date DESC, p.last_name ASC, p.first_name ASC
     ''',

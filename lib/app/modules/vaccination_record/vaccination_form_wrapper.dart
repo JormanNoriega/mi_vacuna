@@ -18,164 +18,185 @@ class VaccinationFormWrapper extends StatelessWidget {
         ? Get.find<PatientFormController>()
         : Get.put(PatientFormController());
 
-    return Scaffold(
-      backgroundColor: backgroundLight,
-      appBar: AppBar(
-        backgroundColor: cardBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
-          onPressed: () => _showCancelDialog(context, controller),
-        ),
-        title: Obx(
-          () => Text(
-            _getStepTitle(controller.currentStep.value),
-            style: const TextStyle(
-              color: textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        _showCancelDialog(context, controller);
+      },
+      child: Scaffold(
+        backgroundColor: backgroundLight,
+        appBar: AppBar(
+          backgroundColor: cardBackground,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: textPrimary),
+            onPressed: () => _showCancelDialog(context, controller),
           ),
-        ),
-
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: borderColor, height: 1),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Progress Indicator
-          Container(
-            color: cardBackground,
-            padding: const EdgeInsets.all(16),
-            child: Obx(
-              () => Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Registro de Vacunación',
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Paso ${controller.currentStep.value + 1} de ${controller.totalSteps}',
-                        style: const TextStyle(
-                          color: textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: controller.progress,
-                      backgroundColor: borderColor,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        primaryColor,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
-                ],
+          title: Obx(
+            () => Text(
+              _getStepTitle(controller.currentStep.value),
+              style: const TextStyle(
+                color: textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
 
-          // PageView con los pasos
-          Expanded(
-            child: PageView(
-              controller: controller.pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: const [
-                Step1BasicData(),
-                Step2AdditionalData(),
-                Step3Vaccines(),
-                Step4Review(),
-              ],
-            ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: borderColor, height: 1),
           ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: cardBackground,
-          border: Border(top: BorderSide(color: borderColor, width: 1)),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Obx(
-              () => Row(
-                children: [
-                  if (controller.currentStep.value > 0)
+        body: Column(
+          children: [
+            // Progress Indicator
+            Container(
+              color: cardBackground,
+              padding: const EdgeInsets.all(16),
+              child: Obx(
+                () => Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Registro de Vacunación',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Paso ${controller.currentStep.value + 1} de ${controller.totalSteps}',
+                          style: const TextStyle(
+                            color: textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: controller.progress,
+                        backgroundColor: borderColor,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          primaryColor,
+                        ),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // PageView con los pasos
+            Expanded(
+              child: PageView.builder(
+                controller: controller.pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.totalSteps,
+                itemBuilder: (context, index) {
+                  // Lazy loading - solo construir la página cuando se necesita
+                  return RepaintBoundary(child: _buildStep(index));
+                },
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: cardBackground,
+            border: Border(top: BorderSide(color: borderColor, width: 1)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Obx(
+                () => Row(
+                  children: [
+                    if (controller.currentStep.value > 0)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: controller.previousStep,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: const BorderSide(color: primaryColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Anterior'),
+                        ),
+                      ),
+                    if (controller.currentStep.value > 0)
+                      const SizedBox(width: 12),
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: controller.previousStep,
-                        style: OutlinedButton.styleFrom(
+                      child: ElevatedButton(
+                        onPressed: () => _handleNextButton(controller),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: primaryColor),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: 8,
+                          shadowColor: primaryColor.withValues(alpha: 0.25),
                         ),
-                        child: const Text('Anterior'),
-                      ),
-                    ),
-                  if (controller.currentStep.value > 0)
-                    const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _handleNextButton(controller),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 8,
-                        shadowColor: primaryColor.withValues(alpha: 0.25),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            controller.currentStep.value ==
-                                    controller.totalSteps - 1
-                                ? 'Guardar'
-                                : 'Siguiente',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              controller.currentStep.value ==
+                                      controller.totalSteps - 1
+                                  ? 'Guardar'
+                                  : 'Siguiente',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            controller.currentStep.value ==
-                                    controller.totalSteps - 1
-                                ? Icons.check
-                                : Icons.arrow_forward,
-                            size: 20,
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Icon(
+                              controller.currentStep.value ==
+                                      controller.totalSteps - 1
+                                  ? Icons.check
+                                  : Icons.arrow_forward,
+                              size: 20,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildStep(int index) {
+    switch (index) {
+      case 0:
+        return const Step1BasicData();
+      case 1:
+        return const Step2AdditionalData();
+      case 2:
+        return const Step3Vaccines();
+      case 3:
+        return const Step4Review();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   void _handleNextButton(PatientFormController controller) {
@@ -215,6 +236,8 @@ class VaccinationFormWrapper extends StatelessWidget {
     BuildContext context,
     PatientFormController controller,
   ) {
+    final bool isEditMode = controller.isEditMode.value;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -222,24 +245,26 @@ class VaccinationFormWrapper extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          title: const Text(
-            '¿Cancelar registro?',
-            style: TextStyle(
+          title: Text(
+            isEditMode ? '¿Cancelar edición?' : '¿Cancelar registro?',
+            style: const TextStyle(
               color: textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
           ),
-          content: const Text(
-            'Si sales ahora, perderás todos los datos ingresados. ¿Estás seguro de que deseas cancelar?',
-            style: TextStyle(color: textSecondary, fontSize: 14),
+          content: Text(
+            isEditMode
+                ? 'Si sales ahora, perderás todos los cambios realizados. ¿Estás seguro de que deseas cancelar la edición?'
+                : 'Si sales ahora, perderás todos los datos ingresados. ¿Estás seguro de que deseas cancelar?',
+            style: const TextStyle(color: textSecondary, fontSize: 14),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Continuar editando',
-                style: TextStyle(color: textSecondary),
+              child: Text(
+                isEditMode ? 'Continuar editando' : 'Continuar registrando',
+                style: const TextStyle(color: textSecondary),
               ),
             ),
             ElevatedButton(

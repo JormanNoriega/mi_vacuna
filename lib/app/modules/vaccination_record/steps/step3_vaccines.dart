@@ -13,8 +13,12 @@ class Step3Vaccines extends StatefulWidget {
   State<Step3Vaccines> createState() => _Step3VaccinesState();
 }
 
-class _Step3VaccinesState extends State<Step3Vaccines> {
+class _Step3VaccinesState extends State<Step3Vaccines>
+    with AutomaticKeepAliveClientMixin {
   bool _hasLoadedEditData = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -46,6 +50,7 @@ class _Step3VaccinesState extends State<Step3Vaccines> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final vaccineController = Get.put(VaccineSelectionController());
 
     return SingleChildScrollView(

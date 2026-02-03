@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../../../controllers/patient_form_controller.dart';
 import '../../../widgets/form_fields.dart';
 import '../../../widgets/custom_snackbar.dart';
@@ -13,11 +14,23 @@ class Step1BasicData extends StatefulWidget {
   State<Step1BasicData> createState() => _Step1BasicDataState();
 }
 
-class _Step1BasicDataState extends State<Step1BasicData> {
+class _Step1BasicDataState extends State<Step1BasicData>
+    with AutomaticKeepAliveClientMixin {
   String? _lastCheckedId;
+  Timer? _debounceTimer;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final controller = Get.find<PatientFormController>();
 
     return Container(
@@ -297,43 +310,31 @@ class _Step1BasicDataState extends State<Step1BasicData> {
   }
 
   /// Verifica si existe un paciente con el ID ingresado
-  void _checkExistingPatient(
-    String value,
-    PatientFormController controller,
-  ) async {
-    print('🔍 Verificando ID: $value (Longitud: ${value.length})');
+  void _checkExistingPatient(String value, PatientFormController controller) {
+    // Cancelar el timer anterior si existe
+    _debounceTimer?.cancel();
 
     // Solo verificar si el valor tiene al menos 4 dígitos y no está en modo edición
-    if (value.length < 4) {
-      print('❌ ID muy corto');
-      return;
-    }
-
-    if (controller.isEditMode.value) {
-      print('❌ Modo edición activo');
+    if (value.length < 4 || controller.isEditMode.value) {
       return;
     }
 
     // Evitar verificar el mismo ID múltiples veces
     if (_lastCheckedId == value) {
-      print('⏭️  ID ya verificado');
       return;
     }
 
-    _lastCheckedId = value;
-    print('🔎 Buscando paciente con ID: $value');
+    // Crear un nuevo timer con debounce de 800ms
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () async {
+      _lastCheckedId = value;
 
-    // Buscar paciente
-    final patient = await controller.findPatientByIdNumber(value);
+      // Buscar paciente
+      final patient = await controller.findPatientByIdNumber(value);
 
-    if (patient != null) {
-      print('✅ Paciente encontrado: ${patient.firstName} ${patient.lastName}');
-      if (mounted) {
+      if (patient != null && mounted) {
         _showLoadPatientDialog(patient, controller);
       }
-    } else {
-      print('❌ Paciente no encontrado');
-    }
+    });
   }
 
   /// Muestra diálogo para cargar datos del paciente existente

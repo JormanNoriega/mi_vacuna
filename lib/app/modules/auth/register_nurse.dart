@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../widgets/form_fields.dart';
+import '../../widgets/custom_snackbar.dart';
 import '../../theme/colors.dart';
 import '../home/home_page.dart';
 
@@ -198,101 +199,61 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                             // Validaciones
                             if (selectedIdType == null ||
                                 selectedIdType == '') {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'Selecciona un tipo de identificación',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (idController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'Ingresa tu número de identificación',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (firstNameController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Error',
-                                'Ingresa tu nombre',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
+                              CustomSnackbar.showError('Ingresa tu nombre');
                               return;
                             }
 
                             if (lastNameController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Error',
-                                'Ingresa tu apellido',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
+                              CustomSnackbar.showError('Ingresa tu apellido');
                               return;
                             }
 
                             if (!emailController.text.contains('@')) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'Ingresa un correo válido',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (phoneController.text.length != 10) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'El teléfono debe tener 10 dígitos',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (institutionController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'Ingresa tu institución de salud',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (passwordController.text.length < 6) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'La contraseña debe tener al menos 6 caracteres',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
 
                             if (passwordController.text !=
                                 confirmPasswordController.text) {
-                              Get.snackbar(
-                                'Error',
+                              CustomSnackbar.showError(
                                 'Las contraseñas no coinciden',
-                                backgroundColor: Colors.red.shade100,
-                                colorText: Colors.red.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               return;
                             }
@@ -310,12 +271,8 @@ class _RegisterNursePageState extends State<RegisterNursePage> {
                             );
 
                             if (success) {
-                              Get.snackbar(
-                                'Éxito',
+                              CustomSnackbar.showSuccess(
                                 'Cuenta creada exitosamente. Bienvenido ${authController.currentNurse.value!.fullName}',
-                                backgroundColor: Colors.green.shade100,
-                                colorText: Colors.green.shade900,
-                                snackPosition: SnackPosition.BOTTOM,
                               );
                               Get.offAll(() => const HomePage());
                             }

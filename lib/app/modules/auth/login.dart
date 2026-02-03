@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../widgets/form_fields.dart';
+import '../../widgets/custom_snackbar.dart';
 import '../../theme/colors.dart';
 import '../home/home_page.dart';
 import 'register_nurse.dart';
@@ -146,12 +147,8 @@ class LoginPage extends StatelessWidget {
                               );
 
                               if (success) {
-                                Get.snackbar(
-                                  'Éxito',
+                                CustomSnackbar.showSuccess(
                                   'Bienvenido ${authController.currentNurse.value!.fullName}',
-                                  backgroundColor: Colors.green.shade100,
-                                  colorText: Colors.green.shade900,
-                                  snackPosition: SnackPosition.BOTTOM,
                                 );
                                 Get.offAll(() => const HomePage());
                               }
