@@ -16,88 +16,100 @@ class Step2AdditionalData extends StatefulWidget {
 
 class _Step2AdditionalDataState extends State<Step2AdditionalData>
     with AutomaticKeepAliveClientMixin {
+  late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  
   @override
   bool get wantKeepAlive => true;
+
+  // Getter para exponer el formKey desde Step2
+  GlobalKey<FormState> get formKey => _formKey;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final controller = Get.find<PatientFormController>();
 
-    return Container(
-      color: backgroundMedium,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 80),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
+    // ✅ Registrar formKey en el siguiente frame para que el wrapper pueda acceder
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.registerStep2FormKey(_formKey);
+    });
 
-              // ===== SECCIÓN 1: DATOS DEMOGRÁFICOS =====
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  'Datos Demográficos',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+    return Form(
+      key: _formKey,
+      child: Container(
+        color: backgroundMedium,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 80),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                // ===== SECCIÓN 1: DATOS DEMOGRÁFICOS =====
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    'Datos Demográficos',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
 
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sexo - Con botones
-                    const Text(
-                      'Sexo *',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Sexo - Con botones
+                      const Text(
+                        'Sexo *',
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Obx(
-                      () => Row(
-                        children: [
-                          Expanded(
-                            child: _buildSexButton(
-                              controller: controller,
-                              label: 'Mujer',
-                              icon: Icons.female,
-                              value: 'Mujer',
+                      const SizedBox(height: 8),
+                      Obx(
+                        () => Row(
+                          children: [
+                            Expanded(
+                              child: _buildSexButton(
+                                controller: controller,
+                                label: 'Mujer',
+                                icon: Icons.female,
+                                value: 'Mujer',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSexButton(
-                              controller: controller,
-                              label: 'Hombre',
-                              icon: Icons.male,
-                              value: 'Hombre',
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSexButton(
+                                controller: controller,
+                                label: 'Hombre',
+                                icon: Icons.male,
+                                value: 'Hombre',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSexButton(
-                              controller: controller,
-                              label: 'Indeterminado',
-                              icon: Icons.question_mark,
-                              value: 'Indeterminado',
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSexButton(
+                                controller: controller,
+                                label: 'Indeterminado',
+                                icon: Icons.question_mark,
+                                value: 'Indeterminado',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -387,6 +399,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -922,6 +935,18 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                       initialDate: DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
+                      locale: const Locale('es'),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF135BEC),
+                              secondary: Color(0xFF135BEC),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (date != null) {
                       controller.historyRecordDate.value = date;
@@ -1063,6 +1088,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                     const Duration(days: 280),
                                   ),
                                   lastDate: DateTime.now(),
+                                  locale: const Locale('es'),
                                 );
                                 if (date != null) {
                                   controller.lastMenstrualDate.value = date;

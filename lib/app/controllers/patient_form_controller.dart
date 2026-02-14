@@ -28,6 +28,21 @@ class PatientFormController extends GetxController {
   final int totalSteps =
       4; // Paso 1 (básicos), Paso 2 (adicionales), Paso 3 (vacunas), Paso 4 (revisión)
 
+  // ==================== REFERENCIAS DE WIDGETS ====================
+  // formKey de Step 1 para validar desde el wrapper
+  Rx<GlobalKey<FormState>?> step1FormKey = Rx<GlobalKey<FormState>?>(null);
+
+  void registerStep1FormKey(GlobalKey<FormState> key) {
+    step1FormKey.value = key;
+  }
+
+  // formKey de Step 2 para validar desde el wrapper
+  Rx<GlobalKey<FormState>?> step2FormKey = Rx<GlobalKey<FormState>?>(null);
+
+  void registerStep2FormKey(GlobalKey<FormState> key) {
+    step2FormKey.value = key;
+  }
+
   // ==================== PASO 1: DATOS BÁSICOS ====================
   // Controllers de texto
   final idNumberController = TextEditingController();
@@ -42,6 +57,7 @@ class PatientFormController extends GetxController {
   final birthDate = Rx<DateTime?>(null);
   final attentionDate = Rx<DateTime>(DateTime.now());
   final completeScheme = false.obs;
+  final schemeSelected = false.obs; // Track if user selected something
 
   // ==================== PASO 2: DATOS ADICIONALES ====================
   // Datos demográficos
@@ -1071,6 +1087,7 @@ class PatientFormController extends GetxController {
     birthDate.value = null;
     attentionDate.value = DateTime.now();
     completeScheme.value = false;
+    schemeSelected.value = false;
 
     // Ubicación
     birthCountryController.text = 'Colombia';

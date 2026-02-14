@@ -28,6 +28,10 @@ class PatientHistoryController extends GetxController {
     try {
       isLoading.value = true;
       final result = await _patientService.getAllPatients();
+      
+      // Ordenar por attentionDate (más reciente primero)
+      result.sort((a, b) => b.attentionDate.compareTo(a.attentionDate));
+      
       patients.value = result;
 
       // Cargar vacunas para cada paciente

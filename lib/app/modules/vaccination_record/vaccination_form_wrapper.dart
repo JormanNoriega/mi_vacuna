@@ -126,11 +126,27 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
   ) async {
     final step = controller.currentStep.value;
     if (step == 0) {
-      if (controller.validateStep1()) {
-        controller.nextStep(customPageController: pageController);
+      // ✅ Primero validar el FORM (para mostrar errores en rojo en los campos)
+      final step1FormKey = controller.step1FormKey.value;
+      
+      if (step1FormKey != null && step1FormKey.currentState!.validate()) {
+        // El Form es válido, ahora validar lógica de negocio del controller
+        if (controller.validateStep1()) {
+          controller.nextStep(customPageController: pageController);
+        }
       }
+      // Si hay errores en el Form, se muestran automáticamente en rojo
     } else if (step == 1) {
-      controller.nextStep(customPageController: pageController);
+      // ✅ Primero validar el FORM (para mostrar errores en rojo en los campos)
+      final step2FormKey = controller.step2FormKey.value;
+      
+      if (step2FormKey != null && step2FormKey.currentState!.validate()) {
+        // El Form es válido, ahora validar lógica de negocio del controller
+        if (controller.validateStep2()) {
+          controller.nextStep(customPageController: pageController);
+        }
+      }
+      // Si hay errores en el Form, se muestran automáticamente en rojo
     } else if (step == 2) {
       final vaccineController = Get.find<VaccineSelectionController>();
       if (vaccineController.validate()) {

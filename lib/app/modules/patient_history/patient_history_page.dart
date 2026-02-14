@@ -310,7 +310,7 @@ class PatientHistoryPage extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         DateFormat(
-                          'dd MMM yyyy',
+                          'dd MMM yyyy - HH:mm',
                           'es',
                         ).format(patient.attentionDate),
                         style: const TextStyle(

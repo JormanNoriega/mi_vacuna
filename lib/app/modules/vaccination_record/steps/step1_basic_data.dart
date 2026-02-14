@@ -16,6 +16,7 @@ class Step1BasicData extends StatefulWidget {
 
 class _Step1BasicDataState extends State<Step1BasicData>
     with AutomaticKeepAliveClientMixin {
+  late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? _lastCheckedId;
   Timer? _debounceTimer;
 
@@ -33,7 +34,14 @@ class _Step1BasicDataState extends State<Step1BasicData>
     super.build(context);
     final controller = Get.find<PatientFormController>();
 
-    return Container(
+    // ✅ Registrar formKey en el siguiente frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.registerStep1FormKey(_formKey);
+    });
+
+    return Form(
+      key: _formKey,
+      child: Container(
       color: backgroundMedium,
       child: SingleChildScrollView(
         child: Padding(
@@ -174,6 +182,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
                         label: 'Fecha de Nacimiento',
                         value: controller.birthDate.value,
                         icon: Icons.cake,
+                        required: true,
                         onTap: () async {
                           final date = await showDatePicker(
                             context: context,
@@ -182,6 +191,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
                             ),
                             firstDate: DateTime(1900),
                             lastDate: DateTime.now(),
+                            locale: const Locale('es'),
                           );
                           if (date != null) {
                             controller.birthDate.value = date;
@@ -267,37 +277,67 @@ class _Step1BasicDataState extends State<Step1BasicData>
                     const SizedBox(height: 16),
 
                     // Esquema Completo
-                    const Text(
-                      '¿Esquema Completo? *',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Obx(
-                      () => Row(
-                        children: [
-                          Expanded(
-                            child: _buildSchemeButton(
-                              controller: controller,
-                              label: 'Sí',
-                              icon: Icons.check_circle,
-                              value: true,
+                    FormField<bool>(
+                      initialValue: controller.schemeSelected.value,
+                      validator: (val) {
+                        if (!controller.schemeSelected.value) {
+                          return '¿Esquema Completo? es requerido';
+                        }
+                        return null;
+                      },
+                      builder: (FormFieldState<bool> field) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '¿Esquema Completo? *',
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildSchemeButton(
-                              controller: controller,
-                              label: 'No',
-                              icon: Icons.cancel,
-                              value: false,
+                            const SizedBox(height: 8),
+                            Obx(
+                              () => Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildSchemeButton(
+                                      controller: controller,
+                                      label: 'Sí',
+                                      icon: Icons.check_circle,
+                                      value: true,
+                                      hasError: field.hasError,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildSchemeButton(
+                                      controller: controller,
+                                      label: 'No',
+                                      icon: Icons.cancel,
+                                      value: false,
+                                      hasError: field.hasError,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            if (field.hasError)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, top: 6),
+                                child: Text(
+                                  field.errorText ?? '',
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -305,6 +345,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -461,11 +502,15 @@ class _Step1BasicDataState extends State<Step1BasicData>
     required String label,
     required IconData icon,
     required bool value,
+    bool hasError = false,
   }) {
     final isSelected = controller.completeScheme.value == value;
 
     return InkWell(
-      onTap: () => controller.completeScheme.value = value,
+      onTap: () {
+        controller.completeScheme.value = value;
+        controller.schemeSelected.value = true; // Marcar que se seleccionó
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -473,8 +518,10 @@ class _Step1BasicDataState extends State<Step1BasicData>
           color: isSelected ? primaryColor : cardBackground,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? primaryColor : borderColor,
-            width: 1,
+            color: hasError && !isSelected
+                ? Colors.red
+                : (isSelected ? primaryColor : borderColor),
+            width: hasError && !isSelected ? 2 : 1,
           ),
         ),
         child: Row(
