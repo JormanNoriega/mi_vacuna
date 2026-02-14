@@ -25,6 +25,11 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
   GlobalKey<FormState> get formKey => _formKey;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     final controller = Get.find<PatientFormController>();
@@ -117,20 +122,28 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     // Género - Dropdown
                     FormFields.buildDropdownField(
                       label: 'Género',
-                      value: controller.selectedGender.value?.name ?? 'N/A',
+                      value: _getDisplayValue(controller.selectedGender.value?.name),
                       items: const [
-                        'N/A',
-                        'masculino',
-                        'femenino',
-                        'transgenero',
-                        'indeterminado',
+                        'No Aplica',
+                        'Masculino',
+                        'Femenino',
+                        'Transgénero',
+                        'Indeterminado',
                       ],
                       onChanged: (value) {
-                        if (value == 'N/A') {
+                        final enumMap = {
+                          'No Aplica': null,
+                          'Masculino': 'masculino',
+                          'Femenino': 'femenino',
+                          'Transgénero': 'transgenero',
+                          'Indeterminado': 'indeterminado',
+                        };
+                        final enumValue = enumMap[value];
+                        if (enumValue == null) {
                           controller.selectedGender.value = null;
                         } else {
                           controller.selectedGender.value = Genero.values
-                              .firstWhere((e) => e.name == value);
+                              .firstWhere((e) => e.name == enumValue);
                         }
                       },
                     ),
@@ -139,35 +152,61 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     // Orientación Sexual
                     FormFields.buildDropdownField(
                       label: 'Orientación Sexual',
-                      value:
-                          controller.selectedSexualOrientation.value?.name ??
-                          'N/A',
+                      value: _getDisplayValue(controller.selectedSexualOrientation.value?.name),
                       items: const [
-                        'N/A',
-                        'heterosexual',
-                        'homosexual',
-                        'bisexual',
-                        'noSabeNoAplica',
+                        'No Aplica',
+                        'Heterosexual',
+                        'Homosexual',
+                        'Bisexual',
+                        'No Sabe / No Aplica',
                       ],
                       onChanged: (value) {
-                        if (value == 'N/A') {
+                        final enumMap = {
+                          'No Aplica': null,
+                          'Heterosexual': 'heterosexual',
+                          'Homosexual': 'homosexual',
+                          'Bisexual': 'bisexual',
+                          'No Sabe / No Aplica': 'noSabeNoAplica',
+                        };
+                        final enumValue = enumMap[value];
+                        if (enumValue == null) {
                           controller.selectedSexualOrientation.value = null;
                         } else {
                           controller.selectedSexualOrientation.value =
                               OrientacionSexual.values.firstWhere(
-                                (e) => e.name == value,
+                                (e) => e.name == enumValue,
                               );
                         }
                       },
                     ),
                     const SizedBox(height: 16),
 
-                    // Edad Gestacional
-                    FormFields.buildTextField(
-                      label: 'Edad Gestacional (semanas)',
-                      controller: controller.gestationalAgeController,
-                      placeholder: 'Ej: 12',
-                      keyboardType: TextInputType.number,
+                    // Pertenencia Étnica
+                    FormFields.buildDropdownField(
+                      label: 'Pertenencia Étnica',
+                      value: _getEthnicityDisplay(controller.selectedEthnicity.value.name),
+                      items: const [
+                        'Ninguno',
+                        'Indígena',
+                        'Rom',
+                        'Raizal',
+                        'Palenquero',
+                        'Negro Afrocolombiano',
+                      ],
+                      onChanged: (value) {
+                        final enumMap = {
+                          'Ninguno': 'ninguno',
+                          'Indígena': 'indigena',
+                          'Rom': 'rom',
+                          'Raizal': 'raizal',
+                          'Palenquero': 'palenquero',
+                          'Negro Afrocolombiano': 'negroAfrocolombiano',
+                        };
+                        final enumValue = enumMap[value]!;
+                        controller.selectedEthnicity.value = PertenenciaEtnica
+                            .values
+                            .firstWhere((e) => e.name == enumValue);
+                      },
                       required: false,
                     ),
                   ],
@@ -296,36 +335,36 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Lugar de Atención del Parto
-                    FormFields.buildTextField(
-                      label: 'Lugar de Atención del Parto',
-                      controller: controller.birthPlaceController,
-                      placeholder: 'Ej: Hospital San Vicente',
-                      required: true,
-                    ),
-                    const SizedBox(height: 16),
-
                     // Régimen de Afiliación
                     FormFields.buildDropdownField(
                       label: 'Régimen de Afiliación',
-                      value:
-                          controller.selectedHealthRegime.value?.name ?? 'N/A',
+                      value: _getDisplayValue(controller.selectedHealthRegime.value?.name),
                       items: const [
-                        'N/A',
-                        'contributivo',
-                        'subsidiado',
-                        'poblacionPobreNoAsegurada',
-                        'especial',
-                        'excepcion',
-                        'noAsegurado',
+                        'No Aplica',
+                        'Contributivo',
+                        'Subsidiado',
+                        'Población Pobre No Asegurada',
+                        'Especial',
+                        'Excepción',
+                        'No Asegurado',
                       ],
                       onChanged: (value) {
-                        if (value == 'N/A') {
+                        final enumMap = {
+                          'No Aplica': null,
+                          'Contributivo': 'contributivo',
+                          'Subsidiado': 'subsidiado',
+                          'Población Pobre No Asegurada': 'poblacionPobreNoAsegurada',
+                          'Especial': 'especial',
+                          'Excepción': 'excepcion',
+                          'No Asegurado': 'noAsegurado',
+                        };
+                        final enumValue = enumMap[value];
+                        if (enumValue == null) {
                           controller.selectedHealthRegime.value = null;
                         } else {
                           controller.selectedHealthRegime.value =
                               RegimenAfiliacion.values.firstWhere(
-                                (e) => e.name == value,
+                                (e) => e.name == enumValue,
                               );
                         }
                       },
@@ -340,27 +379,6 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                       placeholder: 'Ej: Sura EPS',
                       required: true,
                     ),
-                    const SizedBox(height: 16),
-
-                    // Pertenencia Étnica
-                    FormFields.buildDropdownField(
-                      label: 'Pertenencia Étnica',
-                      value: controller.selectedEthnicity.value.name,
-                      items: const [
-                        'ninguno',
-                        'indigena',
-                        'rom',
-                        'raizal',
-                        'palenquero',
-                        'negroAfrocolombiano',
-                      ],
-                      onChanged: (value) {
-                        controller.selectedEthnicity.value = PertenenciaEtnica
-                            .values
-                            .firstWhere((e) => e.name == value);
-                      },
-                      required: true,
-                    ),
                   ],
                 ),
               ),
@@ -372,27 +390,23 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
 
               const SizedBox(height: 24),
 
-              // ===== SECCIÓN 5: CONDICIONES ESPECIALES =====
-              _buildSpecialConditionsSection(controller),
-
-              const SizedBox(height: 24),
-
-              // ===== SECCIÓN 6: ANTECEDENTES MÉDICOS =====
+              // ===== SECCIÓN 5: ANTECEDENTES MÉDICOS =====
               _buildMedicalHistorySection(controller),
 
               const SizedBox(height: 24),
 
-              // ===== SECCIÓN 7: CONDICIÓN USUARIA (solo mujeres) =====
+              // ===== SECCIÓN 6: CONDICIÓN CLÍNICA ESPECIAL (solo mujeres >= 9 años) =====
+              // Incluye: Datos obstétricos, Historia de parto y Condiciones especiales
               _buildUserConditionSection(controller),
 
               const SizedBox(height: 24),
 
-              // ===== SECCIÓN 8: DATOS DE LA MADRE =====
+              // ===== SECCIÓN 7: DATOS DE LA MADRE =====
               _buildMotherSection(controller),
 
               const SizedBox(height: 24),
 
-              // ===== SECCIÓN 9: DATOS DEL CUIDADOR =====
+              // ===== SECCIÓN 8: DATOS DEL CUIDADOR =====
               _buildCaregiverSection(controller),
 
               const SizedBox(height: 80),
@@ -614,110 +628,88 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
     );
   }
 
-  // Sección de condiciones especiales
-  Widget _buildSpecialConditionsSection(PatientFormController controller) {
+  // Widget helper para mostrar condiciones especiales
+  Widget _buildSpecialConditionsSubsection(
+      PatientFormController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            'Condiciones Especiales',
-            style: TextStyle(
-              color: textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+        const Divider(),
+        const SizedBox(height: 16),
+        const Text(
+          'Condiciones Especiales que Apliquen',
+          style: TextStyle(
+            color: textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor),
+        const SizedBox(height: 8),
+        Obx(
+          () => CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Desplazado',
+              style: TextStyle(color: textPrimary, fontSize: 14),
+            ),
+            value: controller.displaced.value,
+            onChanged: (value) => controller.displaced.value = value ?? false,
+            activeColor: primaryColor,
+            controlAffinity: ListTileControlAffinity.leading,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Seleccione las condiciones que apliquen:',
-                style: TextStyle(color: textSecondary, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Obx(
-                () => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Desplazado',
-                    style: TextStyle(color: textPrimary, fontSize: 14),
-                  ),
-                  value: controller.displaced.value,
-                  onChanged: (value) =>
-                      controller.displaced.value = value ?? false,
-                  activeColor: primaryColor,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ),
-              Obx(
-                () => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Discapacitado',
-                    style: TextStyle(color: textPrimary, fontSize: 14),
-                  ),
-                  value: controller.disabled.value,
-                  onChanged: (value) =>
-                      controller.disabled.value = value ?? false,
-                  activeColor: primaryColor,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ),
-              Obx(
-                () => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Fallecido',
-                    style: TextStyle(color: textPrimary, fontSize: 14),
-                  ),
-                  value: controller.deceased.value,
-                  onChanged: (value) =>
-                      controller.deceased.value = value ?? false,
-                  activeColor: primaryColor,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ),
-              Obx(
-                () => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Víctima del conflicto armado',
-                    style: TextStyle(color: textPrimary, fontSize: 14),
-                  ),
-                  value: controller.armedConflictVictim.value,
-                  onChanged: (value) =>
-                      controller.armedConflictVictim.value = value ?? false,
-                  activeColor: primaryColor,
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ),
-              Obx(
-                () => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Estudia actualmente',
-                    style: TextStyle(color: textPrimary, fontSize: 14),
-                  ),
-                  value: controller.currentlyStudying.value ?? false,
-                  onChanged: (value) =>
-                      controller.currentlyStudying.value = value,
-                  activeColor: primaryColor,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  tristate: true,
-                ),
-              ),
-            ],
+        ),
+        Obx(
+          () => CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Discapacitado',
+              style: TextStyle(color: textPrimary, fontSize: 14),
+            ),
+            value: controller.disabled.value,
+            onChanged: (value) => controller.disabled.value = value ?? false,
+            activeColor: primaryColor,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ),
+        Obx(
+          () => CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Fallecido',
+              style: TextStyle(color: textPrimary, fontSize: 14),
+            ),
+            value: controller.deceased.value,
+            onChanged: (value) => controller.deceased.value = value ?? false,
+            activeColor: primaryColor,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ),
+        Obx(
+          () => CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Víctima del conflicto armado',
+              style: TextStyle(color: textPrimary, fontSize: 14),
+            ),
+            value: controller.armedConflictVictim.value,
+            onChanged: (value) =>
+                controller.armedConflictVictim.value = value ?? false,
+            activeColor: primaryColor,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ),
+        Obx(
+          () => CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Estudia actualmente',
+              style: TextStyle(color: textPrimary, fontSize: 14),
+            ),
+            value: controller.currentlyStudying.value ?? false,
+            onChanged: (value) => controller.currentlyStudying.value = value,
+            activeColor: primaryColor,
+            controlAffinity: ListTileControlAffinity.leading,
+            tristate: true,
           ),
         ),
       ],
@@ -988,7 +980,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
     );
   }
 
-  // Sección de condición usuaria (solo mujeres >= 9 años)
+  // Sección de condición clínica especial (solo mujeres >= 9 años)
   Widget _buildUserConditionSection(PatientFormController controller) {
     return Obx(() {
       // Solo mostrar si el sexo es mujer
@@ -1013,10 +1005,10 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Condición de la Usuaria',
+              'Condición Clínica Especial',
               style: TextStyle(
                 color: textPrimary,
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1032,7 +1024,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Condición usuaria
+                // Condición de la Usuaria (dropdown)
                 FormFields.buildDropdownField(
                   label: 'Condición de la Usuaria',
                   value: _getUserConditionLabel(
@@ -1040,22 +1032,19 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                   ),
                   items: const [
                     'No Aplica',
-                    'Mujer en Edad Fértil',
+                    'Mujer En Edad Fértil',
                     'Gestante',
-                    'Mujer Mayor de 50 Años',
+                    'Mujer Mayor De 50 Años',
                   ],
                   onChanged: (value) {
-                    // Mapear etiqueta a valor del enum
                     final conditionMap = {
                       'No Aplica': CondicionUsuaria.noAplica,
-                      'Mujer en Edad Fértil': CondicionUsuaria.mujerEdadFertil,
+                      'Mujer En Edad Fértil': CondicionUsuaria.mujerEdadFertil,
                       'Gestante': CondicionUsuaria.gestante,
-                      'Mujer Mayor de 50 Años': CondicionUsuaria.mujerMayor50,
+                      'Mujer Mayor De 50 Años': CondicionUsuaria.mujerMayor50,
                     };
 
-                    controller.selectedUserCondition.value =
-                        conditionMap[value]!;
-
+                    controller.selectedUserCondition.value = conditionMap[value]!;
                     // Si cambia de gestante a otro valor, limpiar campos
                     if (value != 'Gestante') {
                       controller.lastMenstrualDate.value = null;
@@ -1068,13 +1057,24 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                 ),
                 const SizedBox(height: 16),
 
-                // Si es gestante, mostrar campos adicionales
+                // ===== SUBSECCIÓN: DATOS OBSTÉTRICOS (solo si es gestante) =====
                 Obx(
                   () =>
                       controller.selectedUserCondition.value ==
                           CondicionUsuaria.gestante
                       ? Column(
                           children: [
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Datos Obstétricos',
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             // Fecha de última menstruación
                             FormFields.buildDatePickerField(
                               label: 'Fecha de Última Menstruación *',
@@ -1147,6 +1147,60 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                         )
                       : const SizedBox.shrink(),
                 ),
+
+                // ===== SUBSECCIÓN: DATOS DE PARTO (condicional para todas mujeres) =====
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Historia de Parto',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Obx(
+                  () => SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      '¿Ha dado a luz?',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    value: controller.hasGivenBirth.value,
+                    onChanged: (value) {
+                      controller.hasGivenBirth.value = value;
+                      if (!value) {
+                        controller.birthPlaceController.clear();
+                      }
+                    },
+                    activeColor: primaryColor,
+                  ),
+                ),
+                Obx(
+                  () => controller.hasGivenBirth.value
+                      ? Column(
+                          children: [
+                            const SizedBox(height: 16),
+                            FormFields.buildTextField(
+                              label: 'Lugar de Atención del Parto',
+                              controller: controller.birthPlaceController,
+                              placeholder: 'Ej: Hospital San Vicente',
+                              required: false,
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+
+                // ===== SUBSECCIÓN: CONDICIONES ESPECIALES =====
+                const SizedBox(height: 16),
+                _buildSpecialConditionsSubsection(controller),
               ],
             ),
           ),
@@ -1389,31 +1443,40 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           FormFields.buildDropdownField(
                             label: 'Régimen de Afiliación',
                             value:
-                                controller
-                                    .selectedMotherAffiliationRegime
-                                    .value
-                                    ?.name ??
-                                'N/A',
+                                _getDisplayValue(
+                                    controller
+                                        .selectedMotherAffiliationRegime
+                                        .value
+                                        ?.name),
                             items: const [
-                              'N/A',
-                              'contributivo',
-                              'subsidiado',
-                              'poblacionPobreNoAsegurada',
-                              'especial',
-                              'excepcion',
-                              'noAsegurado',
+                              'No Aplica',
+                              'Contributivo',
+                              'Subsidiado',
+                              'Población Pobre No Asegurada',
+                              'Especial',
+                              'Excepción',
+                              'No Asegurado',
                             ],
                             onChanged: (value) {
-                              if (value == 'N/A') {
+                              final enumMap = {
+                                'No Aplica': null,
+                                'Contributivo': 'contributivo',
+                                'Subsidiado': 'subsidiado',
+                                'Población Pobre No Asegurada': 'poblacionPobreNoAsegurada',
+                                'Especial': 'especial',
+                                'Excepción': 'excepcion',
+                                'No Asegurado': 'noAsegurado',
+                              };
+                              final enumValue = enumMap[value];
+                              if (enumValue == null) {
                                 controller
-                                        .selectedMotherAffiliationRegime
-                                        .value =
-                                    null;
+                                    .selectedMotherAffiliationRegime
+                                    .value = null;
                               } else {
                                 controller
                                     .selectedMotherAffiliationRegime
                                     .value = RegimenAfiliacion.values
-                                    .firstWhere((e) => e.name == value);
+                                    .firstWhere((e) => e.name == enumValue);
                               }
                             },
                             required: false,
@@ -1424,23 +1487,33 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           FormFields.buildDropdownField(
                             label: 'Pertenencia Étnica',
                             value:
-                                controller
-                                    .selectedMotherEthnicity
-                                    .value
-                                    ?.name ??
-                                'ninguno',
+                                _getEthnicityDisplay(
+                                    controller
+                                        .selectedMotherEthnicity
+                                        .value
+                                        ?.name ??
+                                    'ninguno'),
                             items: const [
-                              'ninguno',
-                              'indigena',
-                              'rom',
-                              'raizal',
-                              'palenquero',
-                              'negroAfrocolombiano',
+                              'Ninguno',
+                              'Indígena',
+                              'Rom',
+                              'Raizal',
+                              'Palenquero',
+                              'Negro Afrocolombiano',
                             ],
                             onChanged: (value) {
+                              final enumMap = {
+                                'Ninguno': 'ninguno',
+                                'Indígena': 'indigena',
+                                'Rom': 'rom',
+                                'Raizal': 'raizal',
+                                'Palenquero': 'palenquero',
+                                'Negro Afrocolombiano': 'negroAfrocolombiano',
+                              };
+                              final enumValue = enumMap[value]!;
                               controller.selectedMotherEthnicity.value =
                                   PertenenciaEtnica.values.firstWhere(
-                                    (e) => e.name == value,
+                                    (e) => e.name == enumValue,
                                   );
                             },
                             required: false,
@@ -1788,11 +1861,51 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
       case CondicionUsuaria.noAplica:
         return 'No Aplica';
       case CondicionUsuaria.mujerEdadFertil:
-        return 'Mujer en Edad Fértil';
+        return 'Mujer En Edad Fértil';
       case CondicionUsuaria.gestante:
         return 'Gestante';
       case CondicionUsuaria.mujerMayor50:
-        return 'Mujer Mayor de 50 Años';
+        return 'Mujer Mayor De 50 Años';
     }
+  }
+
+  // Helper para convertir nombre de enum a display value con mayúscula
+  String _getDisplayValue(String? enumName) {
+    if (enumName == null) return 'No Aplica';
+    
+    final displayMap = {
+      'contributivo': 'Contributivo',
+      'subsidiado': 'Subsidiado',
+      'poblacionPobreNoAsegurada': 'Población Pobre No Asegurada',
+      'especial': 'Especial',
+      'excepcion': 'Excepción',
+      'noAsegurado': 'No Asegurado',
+      'masculino': 'Masculino',
+      'femenino': 'Femenino',
+      'transgenero': 'Transgénero',
+      'indeterminado': 'Indeterminado',
+      'heterosexual': 'Heterosexual',
+      'homosexual': 'Homosexual',
+      'bisexual': 'Bisexual',
+      'noSabeNoAplica': 'No Sabe / No Aplica',
+    };
+    
+    return displayMap[enumName] ?? enumName;
+  }
+
+  // Helper para convertir nombre de etnicity enum a display value
+  String _getEthnicityDisplay(String? enumName) {
+    if (enumName == null) return 'Ninguno';
+    
+    final displayMap = {
+      'ninguno': 'Ninguno',
+      'indigena': 'Indígena',
+      'rom': 'Rom',
+      'raizal': 'Raizal',
+      'palenquero': 'Palenquero',
+      'negroAfrocolombiano': 'Negro Afrocolombiano',
+    };
+    
+    return displayMap[enumName] ?? enumName;
   }
 }

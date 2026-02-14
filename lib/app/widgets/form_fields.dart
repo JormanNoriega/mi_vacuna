@@ -269,6 +269,8 @@ class FormFields {
     bool enabled = true,
     ValueChanged<String>? onChanged,
     String? Function(String?)? customValidator,
+    int maxLines = 1,
+    int minLines = 1,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -305,6 +307,8 @@ class FormFields {
             keyboardType: keyboardType,
             enabled: enabled,
             onChanged: onChanged,
+            maxLines: maxLines,
+            minLines: minLines,
             style: TextStyle(
               color: enabled ? textPrimary : textSecondary,
               fontSize: 16,
@@ -402,6 +406,7 @@ class FormFields {
     return FormField<DateTime?>(
       initialValue: value,
       validator: (val) {
+        // Validar usando val (el valor actual del FormField), no value
         if (required && val == null) {
           return '$label es requerido';
         }

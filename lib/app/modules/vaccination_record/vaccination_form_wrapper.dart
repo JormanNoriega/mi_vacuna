@@ -126,7 +126,7 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
   ) async {
     final step = controller.currentStep.value;
     if (step == 0) {
-      // ✅ Primero validar el FORM (para mostrar errores en rojo en los campos)
+      // ✅ Validar el FORM (para mostrar errores en rojo en los campos)
       final step1FormKey = controller.step1FormKey.value;
       
       if (step1FormKey != null && step1FormKey.currentState!.validate()) {
@@ -137,7 +137,7 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
       }
       // Si hay errores en el Form, se muestran automáticamente en rojo
     } else if (step == 1) {
-      // ✅ Primero validar el FORM (para mostrar errores en rojo en los campos)
+      // ✅ Validar el FORM (para mostrar errores en rojo en los campos)
       final step2FormKey = controller.step2FormKey.value;
       
       if (step2FormKey != null && step2FormKey.currentState!.validate()) {

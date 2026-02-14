@@ -142,6 +142,7 @@ class PatientFormController extends GetxController {
   final gestationWeeksController = TextEditingController();
   final probableDeliveryDate = Rx<DateTime?>(null);
   final previousPregnanciesController = TextEditingController();
+  final hasGivenBirth = false.obs; // Flag para mostrar/ocultar "Lugar de Parto"
 
   // ==================== PROPIEDADES CALCULADAS ====================
   double get progress => (currentStep.value + 1) / totalSteps;
@@ -238,6 +239,17 @@ class PatientFormController extends GetxController {
       if (currentStep.value == 1 && !validateStep2()) {
         return;
       }
+      // Validar paso 2 (vacunas) - verificar que todas las dosis activas tengan campos completos
+      if (currentStep.value == 2) {
+        if (Get.isRegistered<VaccineSelectionController>()) {
+          final vaccineController = Get.find<VaccineSelectionController>();
+          final validationError = vaccineController.validateAllActiveDoses();
+          if (validationError != null) {
+            CustomSnackbar.showError(validationError);
+            return;
+          }
+        }
+      }
 
       final controllerToUse = customPageController ?? pageController;
       final nextStep = currentStep.value + 1;
@@ -293,6 +305,10 @@ class PatientFormController extends GetxController {
     isModalMode.value = false;
     editingPatientId = null;
 
+    // Resetear FormKey para evitar conflictos
+    step1FormKey.value = null;
+    step2FormKey.value = null;
+
     // Resetear el PageController después del frame actual
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (pageController.hasClients) {
@@ -328,6 +344,10 @@ class PatientFormController extends GetxController {
     isEditMode.value = true;
     isModalMode.value = isModal;
     editingPatientId = patient.id;
+
+    // Resetear FormKey para evitar conflictos
+    step1FormKey.value = null;
+    step2FormKey.value = null;
 
     // Resetear navegación al inicio
     currentStep.value = 0;
@@ -398,10 +418,24 @@ class PatientFormController extends GetxController {
     previousPregnanciesController.text =
         patient.previousPregnancies?.toString() ?? '';
 
+    // ✅ CARGAR: Historia de Parto - hasGivenBirth
+    hasGivenBirth.value = patient.birthPlace != null && patient.birthPlace!.isNotEmpty;
+
     // Datos de la madre
-    if (patient.motherIdType != null && patient.motherIdType!.isNotEmpty) {
+    final hasMotherData = patient.motherIdType != null || 
+        patient.motherIdNumber != null ||
+        patient.motherFirstName != null ||
+        patient.motherLastName != null ||
+        patient.motherEmail != null ||
+        patient.motherLandline != null ||
+        patient.motherCellphone != null ||
+        patient.motherAffiliationRegime != null ||
+        patient.motherEthnicity != null ||
+        patient.motherDisplaced != null;
+    
+    if (hasMotherData) {
       showMotherData.value = true;
-      selectedMotherIdType.value = patient.motherIdType!;
+      selectedMotherIdType.value = patient.motherIdType;
       motherIdNumberController.text = patient.motherIdNumber ?? '';
       motherFirstNameController.text = patient.motherFirstName ?? '';
       motherSecondNameController.text = patient.motherSecondName ?? '';
@@ -416,14 +450,22 @@ class PatientFormController extends GetxController {
       if (patient.motherEthnicity != null) {
         selectedMotherEthnicity.value = patient.motherEthnicity!;
       }
-      motherDisplaced.value = patient.motherDisplaced;
+      motherDisplaced.value = patient.motherDisplaced ?? false;
     }
 
     // Datos del cuidador
-    if (patient.caregiverIdType != null &&
-        patient.caregiverIdType!.isNotEmpty) {
+    final hasCaregiverData = patient.caregiverIdType != null ||
+        patient.caregiverIdNumber != null ||
+        patient.caregiverFirstName != null ||
+        patient.caregiverLastName != null ||
+        patient.caregiverRelationship != null ||
+        patient.caregiverEmail != null ||
+        patient.caregiverLandline != null ||
+        patient.caregiverCellphone != null;
+    
+    if (hasCaregiverData) {
       showCaregiverData.value = true;
-      selectedCaregiverIdType.value = patient.caregiverIdType!;
+      selectedCaregiverIdType.value = patient.caregiverIdType;
       caregiverIdNumberController.text = patient.caregiverIdNumber ?? '';
       caregiverFirstNameController.text = patient.caregiverFirstName ?? '';
       caregiverSecondNameController.text = patient.caregiverSecondName ?? '';
@@ -543,8 +585,8 @@ class PatientFormController extends GetxController {
       return false;
     }
 
-    // Lugar de Atención del Parto (requerido)
-    if (birthPlaceController.text.trim().isEmpty) {
+    // Lugar de Atención del Parto (solo requerido si ha dado a luz)
+    if (hasGivenBirth.value && birthPlaceController.text.trim().isEmpty) {
       CustomSnackbar.showError('El lugar de atención del parto es requerido');
       return false;
     }
@@ -1037,6 +1079,9 @@ class PatientFormController extends GetxController {
             vaccineData['observation_option_id'],
             vaccineController,
           ),
+          customObservation: vaccineData['custom_observation']?.isEmpty == false
+              ? vaccineData['custom_observation']
+              : null,
         );
 
         await _appliedDoseService.createDose(appliedDose);
@@ -1170,6 +1215,7 @@ class PatientFormController extends GetxController {
     gestationWeeksController.clear();
     probableDeliveryDate.value = null;
     previousPregnanciesController.clear();
+    hasGivenBirth.value = false;
 
     // Resetear navegación
     currentStep.value = 0;

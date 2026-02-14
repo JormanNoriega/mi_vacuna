@@ -25,6 +25,7 @@ class DoseData {
   final TextEditingController syringeLotController = TextEditingController();
   final TextEditingController diluentController = TextEditingController();
   final TextEditingController vialCountController = TextEditingController();
+  final TextEditingController customObservationController = TextEditingController(); // Campo de observación libre
 
   // Estado de la dosis
   bool isLocked; // Ya registrada previamente (solo lectura)
@@ -45,12 +46,42 @@ class DoseData {
     syringeLotController.dispose();
     diluentController.dispose();
     vialCountController.dispose();
+    customObservationController.dispose();
   }
 
   /// Valida que la dosis tenga todos los campos requeridos
   bool validate(Vaccine vaccine) {
+    // ❌ CAMPOS OBLIGATORIOS BÁSICOS
     if (applicationDate == null) return false;
     if (lotController.text.trim().isEmpty) return false;
+    
+    // ❌ CAMPOS OBLIGATORIOS SEGÚN CONFIGURACIÓN DE LA VACUNA
+    if (vaccine.hasLaboratory && (selectedLaboratoryId == null || selectedLaboratoryId!.isEmpty)) {
+      return false;
+    }
+    if (vaccine.hasSyringe && (selectedSyringeId == null || selectedSyringeId!.isEmpty)) {
+      return false;
+    }
+    if (vaccine.hasSyringeLot && syringeLotController.text.trim().isEmpty) {
+      return false;
+    }
+    if (vaccine.hasDiluent && diluentController.text.trim().isEmpty) {
+      return false;
+    }
+    if (vaccine.hasDropper && (selectedDropperId == null || selectedDropperId!.isEmpty)) {
+      return false;
+    }
+    if (vaccine.hasPneumococcalType && (selectedPneumococcalTypeId == null || selectedPneumococcalTypeId!.isEmpty)) {
+      return false;
+    }
+    if (vaccine.hasObservation && (selectedObservationId == null || selectedObservationId!.isEmpty)) {
+      return false;
+    }
+    if (vaccine.hasVialCount && vialCountController.text.trim().isEmpty) {
+      return false;
+    }
+    
+    // ✅ customObservation es opcional
     return true;
   }
 }
@@ -444,6 +475,11 @@ class VaccineSelectionController extends GetxController {
               doseData.selectedObservationId = obsOption.id;
             }
           }
+
+          // Cargar observación personalizada si existe
+          if (appliedDose.customObservation != null && appliedDose.customObservation!.isNotEmpty) {
+            doseData.customObservationController.text = appliedDose.customObservation!;
+          }
         }
       }
       selectedVaccines.refresh();
@@ -686,7 +722,7 @@ class VaccineSelectionController extends GetxController {
 
       if (vaccine == null) continue;
 
-      // Verificar que tenga al menos una dosis activa
+      // Verificar que tenga al menos una dosis (activa o locked)
       if (vaccineData.activeDoses.isEmpty && !vaccineData.hasLockedDoses) {
         CustomSnackbar.showError(
           'Debes seleccionar al menos una dosis para ${vaccine.name}',
@@ -694,15 +730,26 @@ class VaccineSelectionController extends GetxController {
         return false;
       }
 
-      // Validar cada dosis activa
-      for (var doseId in vaccineData.activeDoses) {
-        final doseData = vaccineData.doses[doseId];
-        if (doseData != null && !doseData.isLocked) {
-          if (!doseData.validate(vaccine)) {
+      // ⚠️ IMPORTANTE: Si hay dosis activas, TODAS deben estar completadas
+      if (vaccineData.activeDoses.isNotEmpty) {
+        for (var doseId in vaccineData.activeDoses) {
+          final doseData = vaccineData.doses[doseId];
+          
+          if (doseData == null) {
             CustomSnackbar.showError(
-              'Completa todos los campos requeridos de ${doseData.doseDisplayName} para ${vaccine.name}',
+              'Error: No se encontraron datos para una dosis de ${vaccine.name}',
             );
             return false;
+          }
+
+          // Si la dosis NO está locked (es nueva), validarla completamente
+          if (!doseData.isLocked) {
+            if (!doseData.validate(vaccine)) {
+              CustomSnackbar.showError(
+                'Completa todos los campos requeridos de ${doseData.doseDisplayName} para ${vaccine.name}',
+              );
+              return false;
+            }
           }
         }
       }
@@ -748,6 +795,7 @@ class VaccineSelectionController extends GetxController {
             'syringe_lot': doseData.syringeLotController.text.trim(),
             'diluent': doseData.diluentController.text.trim(),
             'vial_count': doseData.vialCountController.text.trim(),
+            'custom_observation': doseData.customObservationController.text.trim(),
           });
         } else {
           print('      ⏭️ Saltando dosis (bloqueada o inactiva)');
@@ -757,5 +805,53 @@ class VaccineSelectionController extends GetxController {
 
     print('📊 Total de dosis a guardar: ${result.length}');
     return result;
+  }
+
+  /// Valida que todas las dosis activas tengan los campos requeridos completados
+  /// Retorna un String con el error si hay validación fallida, null si todo está bien
+  String? validateAllActiveDoses() {
+    for (final vaccineEntry in selectedVaccines.entries) {
+      final vaccineId = vaccineEntry.key;
+      final vaccineData = vaccineEntry.value;
+
+      // Obtener la vacuna para verificar configuración de campos requeridos
+      final vaccine = availableVaccines.firstWhereOrNull((v) => v.id == vaccineId);
+      if (vaccine == null) continue;
+
+      // Validar cada dosis activa (no bloqueada)
+      for (final doseEntry in vaccineData.doses.entries) {
+        final doseData = doseEntry.value;
+
+        // Solo validar dosis activas y no bloqueadas (nuevas o siendo editadas)
+        if (doseData.isActive && !doseData.isLocked) {
+          // Validar usando el método validate de DoseData
+          if (!doseData.validate(vaccine)) {
+            return 'Por favor completa todos los campos requeridos para ${vaccine.name} - ${doseData.doseDisplayName}';
+          }
+        }
+      }
+    }
+
+    return null; // Todas las dosis válidas
+  }
+
+  /// Obtiene el controlador de observación personalizada para una dosis
+  TextEditingController? getCustomObservationController(
+    String vaccineId,
+    String doseOptionId,
+  ) {
+    return selectedVaccines[vaccineId]?.doses[doseOptionId]?.customObservationController;
+  }
+
+  /// Establece la observación personalizada para una dosis
+  void setCustomObservation(
+    String vaccineId,
+    String doseOptionId,
+    String observation,
+  ) {
+    final doseData = selectedVaccines[vaccineId]?.doses[doseOptionId];
+    if (doseData != null) {
+      doseData.customObservationController.text = observation;
+    }
   }
 }

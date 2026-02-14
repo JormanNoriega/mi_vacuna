@@ -703,7 +703,16 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             doseOptionId,
             isLocked,
           ),
+          const SizedBox(height: 12),
         ],
+
+        // Observación personalizada (opcional, siempre disponible)
+        _buildCustomObservationFieldForDose(
+          vaccine,
+          controller,
+          doseOptionId,
+          isLocked,
+        ),
       ],
     );
   }
@@ -1056,5 +1065,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
         ),
       );
     });
+  }
+
+  Widget _buildCustomObservationFieldForDose(
+    Vaccine vaccine,
+    VaccineSelectionController controller,
+    String doseOptionId,
+    bool isLocked,
+  ) {
+    final textController = controller.getCustomObservationController(
+      vaccine.id!,
+      doseOptionId,
+    );
+    if (textController == null) return const SizedBox.shrink();
+
+    return FormFields.buildTextField(
+      label: 'Observaciones Adicionales (Opcional)',
+      controller: textController,
+      placeholder: 'Ingresa observaciones adicionales si es necesario...',
+      enabled: !isLocked,
+      maxLines: 3,
+      minLines: 2,
+    );
   }
 }

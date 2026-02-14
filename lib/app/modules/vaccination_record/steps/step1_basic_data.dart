@@ -280,9 +280,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
                     FormField<bool>(
                       initialValue: controller.schemeSelected.value,
                       validator: (val) {
-                        if (!controller.schemeSelected.value) {
-                          return '¿Esquema Completo? es requerido';
-                        }
+                        // Campo opcional - sin validación
                         return null;
                       },
                       builder: (FormFieldState<bool> field) {
@@ -290,7 +288,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              '¿Esquema Completo? *',
+                              '¿Esquema Completo?',
                               style: TextStyle(
                                 color: textSecondary,
                                 fontSize: 14,
