@@ -12,8 +12,7 @@ import 'steps/step4_review.dart';
 class VaccinationFormWrapper extends StatefulWidget {
   final bool showPopScope;
 
-  const VaccinationFormWrapper({Key? key, this.showPopScope = false})
-    : super(key: key);
+  const VaccinationFormWrapper({super.key, this.showPopScope = false});
 
   @override
   State<VaccinationFormWrapper> createState() => _VaccinationFormWrapperState();

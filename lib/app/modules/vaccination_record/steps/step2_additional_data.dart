@@ -8,7 +8,7 @@ import '../../../widgets/colombia_location_selector.dart';
 import '../../../theme/colors.dart';
 
 class Step2AdditionalData extends StatefulWidget {
-  const Step2AdditionalData({Key? key}) : super(key: key);
+  const Step2AdditionalData({super.key});
 
   @override
   State<Step2AdditionalData> createState() => _Step2AdditionalDataState();
@@ -24,10 +24,6 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
   // Getter para exponer el formKey desde Step2
   GlobalKey<FormState> get formKey => _formKey;
 
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -768,7 +764,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           'Adultos';
                     }
                   },
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                 ),
               ),
               Obx(
@@ -845,7 +841,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           'Convulsiones';
                     }
                   },
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                 ),
               ),
               Obx(
@@ -1179,7 +1175,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                         controller.birthPlaceController.clear();
                       }
                     },
-                    activeColor: primaryColor,
+                    activeThumbColor: primaryColor,
                   ),
                 ),
                 Obx(
@@ -1298,7 +1294,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                   ),
                   value: controller.showMotherData.value,
                   onChanged: (value) => controller.showMotherData.value = value,
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                 ),
               ),
 
@@ -1595,7 +1591,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                   value: controller.showCaregiverData.value,
                   onChanged: (value) =>
                       controller.showCaregiverData.value = value,
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                 ),
               ),
 

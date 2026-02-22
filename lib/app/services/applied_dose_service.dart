@@ -193,7 +193,7 @@ class AppliedDoseService {
     }
 
     if (conditions.isNotEmpty) {
-      query += ' WHERE ' + conditions.join(' AND ');
+      query += ' WHERE ${conditions.join(' AND ')}';
     }
 
     query += ' ORDER BY ad.application_date DESC';

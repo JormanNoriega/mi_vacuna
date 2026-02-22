@@ -402,6 +402,7 @@ class FormFields {
     required IconData icon,
     required VoidCallback onTap,
     bool required = false,
+    Function(FormFieldState<DateTime?>)? onFieldStateReady,
   }) {
     return FormField<DateTime?>(
       initialValue: value,
@@ -413,6 +414,13 @@ class FormFields {
         return null;
       },
       builder: (FormFieldState<DateTime?> field) {
+        // Llamar el callback para registrar el estado del field
+        if (onFieldStateReady != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            onFieldStateReady(field);
+          });
+        }
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
@@ -462,13 +470,13 @@ class FormFields {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            value != null
-                                ? DateFormat('dd/MM/yyyy').format(value)
+                            field.value != null
+                                ? DateFormat('dd/MM/yyyy').format(field.value!)
                                 : 'Seleccione una fecha',
                             style: TextStyle(
-                              color: value != null ? textPrimary : textHint,
+                              color: field.value != null ? textPrimary : textHint,
                               fontSize: 16,
-                              fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
+                              fontWeight: field.value != null ? FontWeight.w500 : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -477,7 +485,7 @@ class FormFields {
                         padding: const EdgeInsets.only(right: 16),
                         child: Icon(
                           icon,
-                          color: value != null ? primaryColor : textSecondary,
+                          color: field.value != null ? primaryColor : textSecondary,
                           size: 22,
                         ),
                       ),

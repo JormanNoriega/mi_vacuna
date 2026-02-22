@@ -7,7 +7,7 @@ import 'vaccine_form_page.dart';
 
 /// Gestión completa del catálogo de vacunas
 class VaccineManagementPage extends StatelessWidget {
-  const VaccineManagementPage({Key? key}) : super(key: key);
+  const VaccineManagementPage({super.key});
 
   @override
   Widget build(BuildContext context) {

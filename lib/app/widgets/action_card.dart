@@ -9,14 +9,14 @@ class ActionCard extends StatelessWidget {
   final bool isPrimary;
 
   const ActionCard({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     required this.icon,
     required this.onTap,
     this.iconColor,
     this.isPrimary = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

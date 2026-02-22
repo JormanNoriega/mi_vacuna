@@ -6,7 +6,7 @@ import '../../../controllers/vaccine_selection_controller.dart';
 import '../../../theme/colors.dart';
 
 class Step4Review extends StatelessWidget {
-  const Step4Review({Key? key}) : super(key: key);
+  const Step4Review({super.key});
 
   @override
   Widget build(BuildContext context) {

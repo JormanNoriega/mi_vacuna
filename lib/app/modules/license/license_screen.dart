@@ -5,8 +5,7 @@ import 'package:mi_vacuna/app/theme/colors.dart';
 class LicenseScreen extends StatefulWidget {
   final VoidCallback onLicenseVerified;
 
-  const LicenseScreen({Key? key, required this.onLicenseVerified})
-      : super(key: key);
+  const LicenseScreen({super.key, required this.onLicenseVerified});
 
   @override
   State<LicenseScreen> createState() => _LicenseScreenState();
@@ -197,30 +196,29 @@ class _LicenseScreenState extends State<LicenseScreen> {
                     onPressed: _isLoading ? null : _verifyPassword,
                     icon: _isLoading
                         ? const SizedBox(
-                            height: 20,
                             width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              color: Colors.white,
                               strokeWidth: 2,
                             ),
                           )
                         : const Icon(Icons.lock_open),
-                    label: Container(
-                      color: backgroundLight,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Text(
-                        _isLoading ? 'Desbloqueando...' : 'Desbloquear',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    label: Text(
+                      _isLoading ? 'Desbloqueando...' : 'Desbloquear',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      shadowColor: primaryColor.withOpacity(0.3),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),

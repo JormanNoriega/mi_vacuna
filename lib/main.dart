@@ -27,7 +27,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
 
 /// Widget que verifica si la app está desbloqueada
 class LicenseWrapper extends StatefulWidget {
-  const LicenseWrapper({Key? key}) : super(key: key);
+  const LicenseWrapper({super.key});
 
   @override
   State<LicenseWrapper> createState() => _LicenseWrapperState();

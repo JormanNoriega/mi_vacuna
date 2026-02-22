@@ -328,9 +328,7 @@ class VaccineSelectionController extends GetxController {
     if (vaccine == null) return;
 
     // Fecha por defecto: hoy
-    if (doseData.applicationDate == null) {
-      doseData.applicationDate = DateTime.now();
-    }
+    doseData.applicationDate ??= DateTime.now();
 
     // Establecer opciones predeterminadas
     final labOptions = _laboratoryOptionsCache[vaccineId] ?? [];

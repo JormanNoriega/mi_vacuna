@@ -8,7 +8,7 @@ import '../../../widgets/custom_snackbar.dart';
 import '../../../theme/colors.dart';
 
 class Step1BasicData extends StatefulWidget {
-  const Step1BasicData({Key? key}) : super(key: key);
+  const Step1BasicData({super.key});
 
   @override
   State<Step1BasicData> createState() => _Step1BasicDataState();
@@ -19,6 +19,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
   late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? _lastCheckedId;
   Timer? _debounceTimer;
+  FormFieldState<DateTime?>? _birthDateFieldState;
 
   @override
   bool get wantKeepAlive => true;
@@ -183,6 +184,9 @@ class _Step1BasicDataState extends State<Step1BasicData>
                         value: controller.birthDate.value,
                         icon: Icons.cake,
                         required: true,
+                        onFieldStateReady: (fieldState) {
+                          _birthDateFieldState = fieldState;
+                        },
                         onTap: () async {
                           final date = await showDatePicker(
                             context: context,
@@ -195,6 +199,9 @@ class _Step1BasicDataState extends State<Step1BasicData>
                           );
                           if (date != null) {
                             controller.birthDate.value = date;
+                            // Actualizar el estado del FormField para que valide
+                            _birthDateFieldState?.didChange(date);
+                            _birthDateFieldState?.validate();
                           }
                         },
                       ),
@@ -202,8 +209,9 @@ class _Step1BasicDataState extends State<Step1BasicData>
 
                     // Age Summary Card
                     Obx(() {
-                      if (controller.birthDate.value == null)
+                      if (controller.birthDate.value == null) {
                         return const SizedBox();
+                      }
                       final age = controller.calculateAge();
 
                       return Column(

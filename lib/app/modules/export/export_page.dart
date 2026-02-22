@@ -7,7 +7,7 @@ import '../../widgets/stat_card.dart';
 
 /// Página para exportar registros de vacunación
 class ExportPage extends StatelessWidget {
-  const ExportPage({Key? key}) : super(key: key);
+  const ExportPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class ExportPage extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Exporta los registros de vacunación en formato CSV para análisis o respaldo',
+                      'Exporta los registros de vacunación en formato Excel con encabezados categorizados y colores profesionales',
                       style: TextStyle(color: textPrimary, fontSize: 13),
                     ),
                   ),
@@ -186,7 +186,7 @@ class ExportPage extends StatelessWidget {
                 label: Text(
                   controller.isExporting.value
                       ? 'Exportando...'
-                      : 'Exportar y Compartir CSV',
+                      : 'Exportar y Compartir Excel',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -219,7 +219,7 @@ class ExportPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'El archivo se generará en formato CSV compatible con Excel y otras aplicaciones',
+                      'El archivo se generará en formato XLSX con encabezados organizados por categoría, colores diferenciados y datos completos de cada dosis',
                       style: TextStyle(fontSize: 12, color: textSecondary),
                     ),
                   ),
@@ -289,7 +289,20 @@ class ExportPage extends StatelessWidget {
           ? (controller.startDate.value ?? DateTime.now())
           : (controller.endDate.value ?? DateTime.now()),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: isStartDate
+          ? (controller.endDate.value ?? DateTime.now())
+          : DateTime.now(),
+      selectableDayPredicate: (DateTime day) {
+        // Si es fecha de inicio, no permitir fechas posteriores a la fecha de fin
+        if (isStartDate && controller.endDate.value != null) {
+          return !day.isAfter(controller.endDate.value!);
+        }
+        // Si es fecha de fin, no permitir fechas anteriores a la fecha de inicio
+        if (!isStartDate && controller.startDate.value != null) {
+          return !day.isBefore(controller.startDate.value!);
+        }
+        return true;
+      },
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(

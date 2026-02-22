@@ -1,110 +1,155 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import '../data/database_helper.dart';
 import 'package:intl/intl.dart';
 
-/// Servicio para exportar datos de vacunación a formato CSV
+/// Servicio para exportar datos de vacunación a formato Excel
 class ExportService {
   final DatabaseHelper _db = DatabaseHelper.instance;
 
-  /// Genera CSV de vacunación por rango de fechas
-  /// Una fila por cada dosis aplicada con todos los datos del paciente
+  // Paleta de colores profesionales por categoría (formato RGB en hex)
+  static const Map<String, String> categoryColors = {
+    'DATOS BÁSICOS': 'FF4472C4', // Azul
+    'DATOS COMPLEMENTARIOS': 'FF70AD47', // Verde
+    'ANTECEDENTES MÉDICOS': 'FFFFC000', // Naranja
+    'CONDICIÓN USUARIA': 'FFF4B084', // Naranja claro
+    'HISTÓRICO DE ANTECEDENTES': 'FF92D050', // Verde claro
+    'DATOS DE LA MADRE': 'FFE74C3C', // Rojo
+    'DATOS DEL CUIDADOR': 'FF9B59B6', // Púrpura
+    'DATOS ENFERMERA': 'FF3498DB', // Azul claro
+    'VACUNAS': 'FF1ABC9C', // Turquesa
+  };
+
+  /// Genera Excel de vacunación por rango de fechas
   Future<File> generateVaccinationReport({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    print('📊 Generando reporte de vacunación...');
+    print('📊 Generando reporte de vacunación en Excel...');
     print(
       '📅 Rango: ${DateFormat('yyyy-MM-dd').format(startDate)} a ${DateFormat('yyyy-MM-dd').format(endDate)}',
     );
 
-    // 1. Obtener datos de la BD filtrados por fecha
-    final data = await _getVaccinationData(startDate, endDate);
+    // Crear workbook
+    final excel = Excel.createExcel();
+    final sheet = excel['Sheet1'];
 
+    // 1. Obtener datos de la BD
+    final data = await _getVaccinationData(startDate, endDate);
     print('📋 Total de dosis aplicadas: ${data.length}');
 
-    // 2. Crear estructura CSV con dos filas de encabezados
-    List<List<dynamic>> csvData = [
-      // Fila 1: Categorías
-      _getCategoryHeaders(),
-      // Fila 2: Campos específicos
-      _getFieldHeaders(),
-      // Datos: Una fila por cada dosis aplicada
-      ...data,
-    ];
+    // 2. Crear encabezados merged
+    _createMergedHeaders(sheet);
 
-    // 3. Convertir a CSV
-    String csv = const ListToCsvConverter().convert(csvData);
+    // 3. Agregar datos
+    _addDataRows(sheet, data);
 
-    // 4. Guardar en archivo temporal
+    // 5. Guardar archivo
     final directory = await getTemporaryDirectory();
     final fileName =
-        'vacunacion_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv';
+        'reporte_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx';
     final file = File('${directory.path}/$fileName');
 
-    await file.writeAsString(csv, encoding: utf8);
+    await file.writeAsBytes(excel.encode()!);
 
-    print('✅ Archivo CSV generado: ${file.path}');
+    print('✅ Archivo Excel generado: ${file.path}');
 
     return file;
   }
 
-  /// Genera la fila de categorías (primera fila de encabezados)
-  List<String> _getCategoryHeaders() {
-    return [
-      // DATOS BÁSICOS (18 campos) - Solo la primera celda con el título
-      'DATOS BÁSICOS',
-      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-      // DATOS COMPLEMENTARIOS (22 campos)
-      'DATOS COMPLEMENTARIOS',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      // ANTECEDENTES MÉDICOS (4 campos)
-      'ANTECEDENTES MÉDICOS',
-      '', '', '',
-      // CONDICIÓN USUARIA (5 campos)
-      'CONDICIÓN USUARIA',
-      '', '', '', '',
-      // HISTÓRICO DE ANTECEDENTES (4 campos)
-      'HISTÓRICO DE ANTECEDENTES',
-      '', '', '',
-      // DATOS DE LA MADRE (12 campos)
-      'DATOS DE LA MADRE',
-      '', '', '', '', '', '', '', '', '', '', '',
-      // DATOS DEL CUIDADOR (10 campos)
-      'DATOS DEL CUIDADOR',
-      '', '', '', '', '', '', '', '', '',
-      // DATOS ENFERMERA (5 campos)
-      'DATOS ENFERMERA',
-      '', '', '', '',
-      // VACUNAS (16 campos)
-      'VACUNAS',
-      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+  /// Crea los encabezados merged con colores
+  void _createMergedHeaders(Sheet sheet) {
+    final categories = [
+      MapEntry('DATOS BÁSICOS', 18),
+      MapEntry('DATOS COMPLEMENTARIOS', 22),
+      MapEntry('ANTECEDENTES MÉDICOS', 4),
+      MapEntry('CONDICIÓN USUARIA', 5),
+      MapEntry('HISTÓRICO DE ANTECEDENTES', 4),
+      MapEntry('DATOS DE LA MADRE', 12),
+      MapEntry('DATOS DEL CUIDADOR', 10),
+      MapEntry('DATOS ENFERMERA', 5),
+      MapEntry('VACUNAS', 16),
     ];
+
+    int columnIndex = 0;
+    for (final entry in categories) {
+      final category = entry.key;
+      final fieldCount = entry.value;
+      final cellColorHex = categoryColors[category] ?? 'FFFFFFFF';
+
+      // Crear encabezado merged - Fila 0
+      for (int i = 0; i < fieldCount; i++) {
+        final cell = sheet.cell(CellIndex.indexByColumnRow(
+          columnIndex: columnIndex + i,
+          rowIndex: 0,
+        ));
+
+        if (i == 0) {
+          cell.value = category;
+        }
+
+        final cellStyle = CellStyle(
+          backgroundColorHex: cellColorHex,
+          fontColorHex: 'FFFFFFFF',
+          bold: true,
+        );
+        cell.cellStyle = cellStyle;
+      }
+
+      // Registrar el merge
+      sheet.merge(
+        CellIndex.indexByColumnRow(columnIndex: columnIndex, rowIndex: 0),
+        CellIndex.indexByColumnRow(
+          columnIndex: columnIndex + fieldCount - 1,
+          rowIndex: 0,
+        ),
+      );
+
+      columnIndex += fieldCount;
+    }
+
+    // Fila 1: Campos específicos
+    final fields = _getFieldHeaders();
+    for (int i = 0; i < fields.length; i++) {
+      final cell = sheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: i,
+        rowIndex: 1,
+      ));
+      cell.value = fields[i];
+
+      final cellStyle = CellStyle(
+        backgroundColorHex: 'FFE7E6E6',
+        bold: true,
+      );
+      cell.cellStyle = cellStyle;
+    }
   }
 
-  /// Genera la fila de campos específicos (segunda fila de encabezados)
+  /// Añade las filas de datos
+  void _addDataRows(Sheet sheet, List<List<dynamic>> data) {
+    for (int rowIndex = 0; rowIndex < data.length; rowIndex++) {
+      final row = data[rowIndex];
+      for (int colIndex = 0; colIndex < row.length; colIndex++) {
+        final cell = sheet.cell(CellIndex.indexByColumnRow(
+          columnIndex: colIndex,
+          rowIndex: rowIndex + 2, // +2 por las filas de encabezado
+        ));
+
+        cell.value = row[colIndex]?.toString() ?? '';
+
+        // Alternar colores de fila para mejor legibilidad
+        final backgroundColor = rowIndex % 2 == 0 ? 'FFFFFFFF' : 'FFF2F2F2';
+
+        final cellStyle = CellStyle(
+          backgroundColorHex: backgroundColor,
+        );
+        cell.cellStyle = cellStyle;
+      }
+    }
+  }
+
+  /// Lista de campos (encabezados de segunda fila)
   List<String> _getFieldHeaders() {
     return [
       // DATOS BÁSICOS (18 campos)
@@ -127,7 +172,7 @@ class ExportService {
       'Orientación sexual',
       'Edad gestacional (semanas)',
 
-      // DATOS COMPLEMENTARIOS (24 campos)
+      // DATOS COMPLEMENTARIOS (22 campos)
       'País de nacimiento',
       'Estatus Migratorio',
       'Lugar de atención del parto',
@@ -224,19 +269,16 @@ class ExportService {
   }
 
   /// Obtiene datos de vacunación por rango de fechas
-  /// Retorna una fila por cada dosis aplicada con todos los datos del paciente
   Future<List<List<dynamic>>> _getVaccinationData(
     DateTime startDate,
     DateTime endDate,
   ) async {
     final db = await _db.database;
 
-    // Consulta que une applied_doses + patients + vaccines + nurses
-    // Una fila por cada dosis aplicada
     final List<Map<String, dynamic>> results = await db.rawQuery(
       '''
       SELECT 
-        -- DATOS PACIENTE (todos los campos)
+        -- DATOS PACIENTE
         p.consecutivo,
         p.attention_date,
         p.id_type,
@@ -355,7 +397,6 @@ class ExportService {
 
     print('🔍 Dosis aplicadas encontradas: ${results.length}');
 
-    // Convertir cada registro a una fila del CSV
     return results.map((row) {
       return [
         // DATOS BÁSICOS (18 campos)
@@ -378,7 +419,7 @@ class ExportService {
         row['sexual_orientation']?.toString() ?? '',
         row['gestational_age']?.toString() ?? '',
 
-        // DATOS COMPLEMENTARIOS (24 campos)
+        // DATOS COMPLEMENTARIOS (22 campos)
         row['birth_country']?.toString() ?? '',
         row['migration_status']?.toString() ?? '',
         row['birth_place']?.toString() ?? '',
@@ -491,7 +532,7 @@ class ExportService {
       FROM applied_doses ad
       INNER JOIN patients p ON ad.patient_id = p.id
       INNER JOIN vaccines v ON ad.vaccine_id = v.id
-      INNER JOIN nurses n ON ad.nurse_id = n.id
+      LEFT JOIN nurses n ON ad.nurse_id = n.id
       WHERE date(ad.application_date) BETWEEN date(?) AND date(?)
     ''',
       [
@@ -501,9 +542,9 @@ class ExportService {
     );
 
     return {
-      'total_patients': result.first['total_patients'] ?? 0,
-      'total_doses': result.first['total_doses'] ?? 0,
-      'total_vaccines': result.first['total_vaccines'] ?? 0,
+      'total_patients': result.isNotEmpty ? result.first['total_patients'] ?? 0 : 0,
+      'total_doses': result.isNotEmpty ? result.first['total_doses'] ?? 0 : 0,
+      'total_vaccines': result.isNotEmpty ? result.first['total_vaccines'] ?? 0 : 0,
     };
   }
 }

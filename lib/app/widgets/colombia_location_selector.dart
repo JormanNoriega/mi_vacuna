@@ -11,13 +11,13 @@ class ColombiaLocationSelector extends StatefulWidget {
   final Function(String departamento, String municipio)? onLocationChanged;
 
   const ColombiaLocationSelector({
-    Key? key,
+    super.key,
     required this.departamentoController,
     required this.municipioController,
     this.departamentoInicial,
     this.municipioInicial,
     this.onLocationChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<ColombiaLocationSelector> createState() =>

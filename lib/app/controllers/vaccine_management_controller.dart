@@ -76,6 +76,7 @@ class VaccineManagementController extends GetxController {
   }
 
   /// Refresca la lista
+  @override
   Future<void> refresh() async {
     await loadVaccines();
   }

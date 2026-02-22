@@ -11,7 +11,7 @@ import '../vaccine_management/vaccine_management_page.dart';
 import '../settings/settings_page.dart';
 
 class MainNavigationPage extends StatefulWidget {
-  const MainNavigationPage({Key? key}) : super(key: key);
+  const MainNavigationPage({super.key});
 
   @override
   State<MainNavigationPage> createState() => _MainNavigationPageState();
@@ -21,7 +21,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   final NavigationController navController = Get.put(NavigationController());
 
   // Key para forzar reconstrucción del formulario cuando sea necesario
-  Key _formKey = UniqueKey();
+  final Key _formKey = UniqueKey();
 
   List<Widget> get _pages => [
     const HomePage(),
@@ -348,7 +348,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                         ),
                       ),
                     );
-                  }).toList(),
+                  }),
               ],
             ),
           );

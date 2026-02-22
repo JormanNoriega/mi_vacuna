@@ -86,6 +86,7 @@ class HomeController extends GetxController {
   }
 
   /// Refresca las estadísticas
+  @override
   Future<void> refresh() async {
     await loadStatistics();
   }

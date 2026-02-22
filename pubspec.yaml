@@ -49,6 +49,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   device_info_plus: ^10.0.0
   encrypt: ^5.0.3
+  excel: ^2.1.0
 
 dev_dependencies:
   flutter_test:

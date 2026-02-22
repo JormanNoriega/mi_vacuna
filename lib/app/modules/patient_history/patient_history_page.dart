@@ -8,7 +8,7 @@ import '../vaccination_record/vaccination_form_wrapper.dart';
 import '../../controllers/patient_history_controller.dart';
 
 class PatientHistoryPage extends StatelessWidget {
-  const PatientHistoryPage({Key? key}) : super(key: key);
+  const PatientHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -357,7 +357,7 @@ class PatientHistoryPage extends StatelessWidget {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ],

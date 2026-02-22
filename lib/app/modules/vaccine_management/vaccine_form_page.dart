@@ -11,7 +11,7 @@ import '../../theme/colors.dart';
 class VaccineFormPage extends StatefulWidget {
   final Vaccine? vaccine; // null = crear nueva, con datos = editar
 
-  const VaccineFormPage({Key? key, this.vaccine}) : super(key: key);
+  const VaccineFormPage({super.key, this.vaccine});
 
   @override
   State<VaccineFormPage> createState() => _VaccineFormPageState();
@@ -267,7 +267,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
                 style: TextStyle(color: textSecondary, fontSize: 12),
               ),
               value: _isActive,
-              activeColor: primaryColor,
+              activeThumbColor: primaryColor,
               onChanged: (value) => setState(() => _isActive = value),
             ),
           ),
@@ -437,7 +437,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
           style: const TextStyle(color: textSecondary, fontSize: 12),
         ),
         value: value,
-        activeColor: primaryColor,
+        activeThumbColor: primaryColor,
         onChanged: onChanged,
       ),
     );

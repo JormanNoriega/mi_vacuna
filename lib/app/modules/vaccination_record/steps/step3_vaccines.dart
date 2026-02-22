@@ -7,7 +7,7 @@ import '../../../theme/colors.dart';
 import '../../../widgets/form_fields.dart';
 
 class Step3Vaccines extends StatefulWidget {
-  const Step3Vaccines({Key? key}) : super(key: key);
+  const Step3Vaccines({super.key});
 
   @override
   State<Step3Vaccines> createState() => _Step3VaccinesState();

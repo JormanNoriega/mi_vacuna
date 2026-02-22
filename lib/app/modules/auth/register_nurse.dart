@@ -8,7 +8,7 @@ import '../../theme/colors.dart';
 import '../home/main_navigation_page.dart';
 
 class RegisterNursePage extends StatefulWidget {
-  const RegisterNursePage({Key? key}) : super(key: key);
+  const RegisterNursePage({super.key});
 
   @override
   State<RegisterNursePage> createState() => _RegisterNursePageState();
