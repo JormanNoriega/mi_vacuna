@@ -3,6 +3,7 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import '../data/database_helper.dart';
 import 'package:intl/intl.dart';
+import '../utils/age_calculator.dart';
 
 /// Servicio para exportar datos de vacunación a formato Excel
 class ExportService {
@@ -45,10 +46,17 @@ class ExportService {
     // 3. Agregar datos
     _addDataRows(sheet, data);
 
+    // 4. Generar nombre del archivo según el rango de fechas
+    final isSameDay = startDate.year == endDate.year && 
+                      startDate.month == endDate.month && 
+                      startDate.day == endDate.day;
+
+    final fileName = isSameDay
+        ? 'reporte_${DateFormat('yyyyMMdd').format(startDate)}.xlsx'
+        : 'reporte_${DateFormat('yyyyMMdd').format(startDate)}_${DateFormat('yyyyMMdd').format(endDate)}.xlsx';
+
     // 5. Guardar archivo
     final directory = await getTemporaryDirectory();
-    final fileName =
-        'reporte_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx';
     final file = File('${directory.path}/$fileName');
 
     await file.writeAsBytes(excel.encode()!);
@@ -288,10 +296,6 @@ class ExportService {
         p.last_name,
         p.second_last_name,
         p.birth_date,
-        p.years,
-        p.months,
-        p.days,
-        p.total_months,
         p.complete_scheme,
         p.sex,
         p.gender,
@@ -398,6 +402,10 @@ class ExportService {
     print('🔍 Dosis aplicadas encontradas: ${results.length}');
 
     return results.map((row) {
+      // Calcular la edad dinámicamente desde birth_date
+      final birthDate = DateTime.parse(row['birth_date'].toString());
+      final ageData = AgeCalculator.calculate(birthDate);
+
       return [
         // DATOS BÁSICOS (18 campos)
         row['consecutivo']?.toString() ?? '',
@@ -409,10 +417,10 @@ class ExportService {
         row['last_name']?.toString() ?? '',
         row['second_last_name']?.toString() ?? '',
         row['birth_date']?.toString() ?? '',
-        row['years']?.toString() ?? '',
-        row['months']?.toString() ?? '',
-        row['days']?.toString() ?? '',
-        row['total_months']?.toString() ?? '',
+        ageData['years'].toString(),  // AÑOS calculados dinámicamente
+        ageData['months'].toString(),  // MESES calculados dinámicamente
+        ageData['days'].toString(),  // DÍAS calculados dinámicamente
+        ageData['totalMonths'].toString(),  // Total meses calculado dinámicamente
         row['complete_scheme'] == 1 ? 'Sí' : 'No',
         row['sex']?.toString() ?? '',
         row['gender']?.toString() ?? '',

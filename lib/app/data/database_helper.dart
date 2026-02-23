@@ -164,7 +164,7 @@ class DatabaseHelper {
         nurse_id TEXT NOT NULL,
         
         -- DATOS BÁSICOS
-        consecutivo TEXT,
+        consecutivo INTEGER UNIQUE NOT NULL,
         attention_date TEXT NOT NULL,
         id_type TEXT NOT NULL,
         id_number TEXT NOT NULL,
@@ -173,10 +173,6 @@ class DatabaseHelper {
         last_name TEXT NOT NULL,
         second_last_name TEXT,
         birth_date TEXT NOT NULL,
-        years INTEGER,
-        months INTEGER,
-        days INTEGER,
-        total_months INTEGER,
         complete_scheme INTEGER DEFAULT 0,
         sex TEXT NOT NULL,
         gender TEXT,

@@ -1,3 +1,6 @@
+// Modelo del Paciente
+import '../utils/age_calculator.dart';
+
 // Enumeraciones para el modelo Patient
 
 enum Sexo { hombre, mujer, indeterminado }
@@ -38,7 +41,7 @@ class Patient {
   // ============================================
   // DATOS BÁSICOS DEL PACIENTE
   // ============================================
-  String? consecutivo;
+  int? consecutivo;  // Autoincremental único
   DateTime attentionDate;
   String idType;
   String idNumber;
@@ -46,11 +49,7 @@ class Patient {
   String? secondName;
   String lastName;
   String? secondLastName;
-  DateTime birthDate;
-  int? years;
-  int? months;
-  int? days;
-  int? totalMonths;
+  DateTime birthDate;  // De aquí se calculan years, months, days
   bool completeScheme;
   Sexo sex;
   Genero? gender;
@@ -156,10 +155,6 @@ class Patient {
     required this.lastName,
     this.secondLastName,
     required this.birthDate,
-    this.years,
-    this.months,
-    this.days,
-    this.totalMonths,
     this.completeScheme = false,
     required this.sex,
     this.gender,
@@ -243,10 +238,6 @@ class Patient {
       'last_name': lastName,
       'second_last_name': secondLastName,
       'birth_date': birthDate.toIso8601String(),
-      'years': years,
-      'months': months,
-      'days': days,
-      'total_months': totalMonths,
       'complete_scheme': completeScheme ? 1 : 0,
       'sex': sex.name,
       'gender': gender?.name,
@@ -341,10 +332,6 @@ class Patient {
       lastName: map['last_name'],
       secondLastName: map['second_last_name'],
       birthDate: DateTime.parse(map['birth_date']),
-      years: map['years'],
-      months: map['months'],
-      days: map['days'],
-      totalMonths: map['total_months'],
       completeScheme: map['complete_scheme'] == 1,
       sex: Sexo.values.byName(map['sex']),
       gender: map['gender'] != null
@@ -472,9 +459,27 @@ class Patient {
     ].where((name) => name != null && name.isNotEmpty).join(' ');
   }
 
-  int get currentAge {
-    return DateTime.now().difference(birthDate).inDays ~/ 365;
-  }
+  // ============================================
+  // GETTERS CALCULADOS (EDAD DINÁMICA)
+  // ============================================
+  /// Retorna un mapa con el cálculo de edad basado en la fecha de nacimiento
+  /// {years: int, months: int, days: int, totalMonths: int, totalDays: int}
+  Map<String, int> get ageMap => AgeCalculator.calculate(birthDate);
+
+  /// Años de edad
+  int get years => ageMap['years']!;
+
+  /// Meses dentro del año actual (0-11)
+  int get months => ageMap['months']!;
+
+  /// Días dentro del mes actual (0-31)
+  int get days => ageMap['days']!;
+
+  /// Total de meses desde el nacimiento
+  int get totalMonths => ageMap['totalMonths']!;
+
+  /// Total de días desde el nacimiento
+  int get totalDays => ageMap['totalDays']!;
 
   @override
   String toString() => 'Patient{id: $id, name: $fullName, idNumber: $idNumber}';

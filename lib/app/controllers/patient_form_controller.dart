@@ -5,6 +5,8 @@ import '../models/applied_dose.dart';
 import '../services/patient_service.dart';
 import '../services/applied_dose_service.dart';
 import '../widgets/custom_snackbar.dart';
+import '../utils/age_calculator.dart';
+import '../data/database_helper.dart';
 import 'vaccine_selection_controller.dart';
 import 'auth_controller.dart';
 
@@ -512,39 +514,33 @@ class PatientFormController extends GetxController {
 
   // ==================== CÁLCULOS ====================
   /// Calcula la edad del paciente basándose en la fecha de nacimiento
+  /// Retorna los valores dinámicamente usando AgeCalculator
   Map<String, int> calculateAge() {
     if (birthDate.value == null) {
       return {'years': 0, 'months': 0, 'days': 0, 'totalMonths': 0};
     }
+    return AgeCalculator.calculate(birthDate.value!);
+  }
 
-    final now = DateTime.now();
-    final birth = birthDate.value!;
-
-    int years = now.year - birth.year;
-    int months = now.month - birth.month;
-    int days = now.day - birth.day;
-
-    if (days < 0) {
-      months--;
-      final previousMonth = DateTime(now.year, now.month, 0);
-      days += previousMonth.day;
+  /// Obtiene el próximo número consecutivo disponible para un nuevo paciente
+  /// Consulta el consecutivo más alto existente y suma 1
+  Future<int> _getNextConsecutivo() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final result = await db.rawQuery(
+        'SELECT MAX(consecutivo) as maxConsecutivo FROM patients',
+      );
+      
+      final maxConsecutivo = result.isNotEmpty && result.first['maxConsecutivo'] != null
+          ? result.first['maxConsecutivo'] as int
+          : 0;
+      
+      return maxConsecutivo + 1;
+    } catch (e) {
+      print('⚠️ Error obteniendo próximo consecutivo: $e');
+      // Si hay error, usar timestamp como fallback
+      return DateTime.now().millisecondsSinceEpoch ~/ 1000;
     }
-
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
-    final totalMonths =
-        (now.year - birth.year) * 12 + (now.month - birth.month);
-    final totalDays = now.difference(birth).inDays;
-
-    return {
-      'years': years,
-      'months': months,
-      'days': totalDays,
-      'totalMonths': totalMonths.abs(),
-    };
   }
 
   // ==================== VALIDACIONES ====================
@@ -655,8 +651,9 @@ class PatientFormController extends GetxController {
       errorMessage.value = '';
       print('📝 Iniciando guardado de paciente...');
 
-      // Calcular edad
+      // Calcular edad (solo para validación/visualización)
       final age = calculateAge();
+      (age); // Evitar warning de unused variable
 
       // Obtener el nurseId del usuario logueado
       final authController = Get.find<AuthController>();
@@ -666,9 +663,13 @@ class PatientFormController extends GetxController {
         throw Exception('No hay enfermera logueada');
       }
 
+      // Generar consecutivo autoincremental
+      final nextConsecutivo = await _getNextConsecutivo();
+
       // Crear objeto Patient
       final patient = Patient(
         nurseId: nurseId,
+        consecutivo: nextConsecutivo,
         // Datos básicos (Paso 1)
         attentionDate: attentionDate.value,
         idType: selectedIdType.value,
@@ -681,11 +682,7 @@ class PatientFormController extends GetxController {
         secondLastName: secondLastNameController.text.trim().isEmpty
             ? null
             : secondLastNameController.text.trim(),
-        birthDate: birthDate.value!,
-        years: age['years'],
-        months: age['months'],
-        days: age['days'],
-        totalMonths: age['totalMonths'],
+        birthDate: birthDate.value!,  // Los años, meses, días se calculan dinámicamente desde esta fecha
         completeScheme: completeScheme.value,
         sex: selectedSex.value,
 
@@ -897,11 +894,7 @@ class PatientFormController extends GetxController {
           secondName: patient.secondName,
           lastName: patient.lastName,
           secondLastName: patient.secondLastName,
-          birthDate: patient.birthDate,
-          years: patient.years,
-          months: patient.months,
-          days: patient.days,
-          totalMonths: patient.totalMonths,
+          birthDate: patient.birthDate,  // Los años, meses, días se calculan dinámicamente
           completeScheme: patient.completeScheme,
           sex: patient.sex,
           gender: patient.gender,
@@ -997,18 +990,16 @@ class PatientFormController extends GetxController {
           );
         }
 
-        // Limpiar formulario después de un pequeño delay
-        Future.delayed(const Duration(milliseconds: 50), () {
-          clearForm();
-          resetForm();
-        });
+        // Limpiar formulario de inmediato (sin delay para evitar UI lag)
+        clearForm();
+        // NO llamar resetForm() porque resetForm() solo resetea navegación
 
         // Manejar navegación según el modo
         if (wasModal) {
           // Modal: el wrapper se encarga de cerrar y mostrar snackbar
           // No hacemos nada aquí
         } else if (wasEditMode) {
-          // Tab edición: ya se limpiará con el delay
+          // Tab edición: ya se limpió el formulario
         } else {
           // Tab creación: navegar al home
           Get.back();
