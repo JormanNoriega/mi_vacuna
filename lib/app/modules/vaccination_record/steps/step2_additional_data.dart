@@ -5,6 +5,7 @@ import '../../../controllers/patient_form_controller.dart';
 import '../../../models/patient_model.dart';
 import '../../../widgets/form_fields.dart';
 import '../../../widgets/colombia_location_selector.dart';
+import '../../../widgets/eps_selector.dart';
 import '../../../theme/colors.dart';
 
 class Step2AdditionalData extends StatefulWidget {
@@ -72,20 +73,25 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Sexo - Con botones
-                      const Text(
-                        'Sexo *',
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Obx(
-                        () => Row(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: _buildSexButton(
+                            const Text(
+                              'Sexo *',
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Obx(
+                              () => Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildSexButton(
                                 controller: controller,
                                 label: 'Mujer',
                                 icon: Icons.female,
@@ -111,8 +117,11 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                               ),
                             ),
                           ],
+                        ),
                       ),
-                    ),
+                    ],
+                        ),
+                      ),
                     const SizedBox(height: 16),
 
                     // Género - Dropdown
@@ -245,60 +254,68 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     const SizedBox(height: 16),
 
                     // Estatus Migratorio - Segmented Control
-                    const Text(
-                      'Estatus Migratorio *',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Obx(
-                      () => Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: backgroundMedium,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: borderColor),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _buildSegmentButton(
-                                controller: controller,
-                                label: 'Regular',
-                                value: 'regular',
-                                groupValue:
-                                    controller
-                                        .selectedMigratoryStatus
-                                        .value
-                                        ?.name ??
-                                    'N/A',
-                                onTap: () =>
-                                    controller.selectedMigratoryStatus.value =
-                                        EstatusMigratorio.regular,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Estatus Migratorio *',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Obx(
+                            () => Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: backgroundMedium,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildSegmentButton(
+                                      controller: controller,
+                                      label: 'Regular',
+                                      value: 'regular',
+                                      groupValue:
+                                          controller
+                                              .selectedMigratoryStatus
+                                              .value
+                                              ?.name ??
+                                          'N/A',
+                                      onTap: () =>
+                                          controller.selectedMigratoryStatus.value =
+                                              EstatusMigratorio.regular,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: _buildSegmentButton(
+                                      controller: controller,
+                                      label: 'Irregular',
+                                      value: 'irregular',
+                                      groupValue:
+                                          controller
+                                              .selectedMigratoryStatus
+                                              .value
+                                              ?.name ??
+                                          'N/A',
+                                      onTap: () =>
+                                          controller.selectedMigratoryStatus.value =
+                                              EstatusMigratorio.irregular,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: _buildSegmentButton(
-                                controller: controller,
-                                label: 'Irregular',
-                                value: 'irregular',
-                                groupValue:
-                                    controller
-                                        .selectedMigratoryStatus
-                                        .value
-                                        ?.name ??
-                                    'N/A',
-                                onTap: () =>
-                                    controller.selectedMigratoryStatus.value =
-                                        EstatusMigratorio.irregular,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -369,10 +386,10 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     const SizedBox(height: 16),
 
                     // Aseguradora
-                    FormFields.buildTextField(
-                      label: 'Aseguradora (EPS)',
+                    EPSSelector(
                       controller: controller.insurerController,
-                      placeholder: 'Ej: Sura EPS',
+                      label: 'Aseguradora (EPS)',
+                      placeholder: 'Seleccione una EPS',
                       required: true,
                     ),
                   ],
@@ -506,33 +523,41 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
               const SizedBox(height: 16),
 
               // Área
-              const Text(
-                'Área *',
-                style: TextStyle(
-                  color: textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Obx(
-                () => Row(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildAreaButton(
-                        controller: controller,
-                        label: 'Urbana',
-                        icon: Icons.location_city,
-                        value: Area.urbana,
+                    const Text(
+                      'Área *',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildAreaButton(
-                        controller: controller,
-                        label: 'Rural',
-                        icon: Icons.nature,
-                        value: Area.rural,
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => Row(
+                        children: [
+                          Expanded(
+                            child: _buildAreaButton(
+                              controller: controller,
+                              label: 'Urbana',
+                              icon: Icons.location_city,
+                              value: Area.urbana,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildAreaButton(
+                              controller: controller,
+                              label: 'Rural',
+                              icon: Icons.nature,
+                              value: Area.rural,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1479,6 +1504,15 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           ),
                           const SizedBox(height: 16),
 
+                          // Aseguradora (EPS) de la Madre
+                          EPSSelector(
+                            controller: controller.motherInsuranceController,
+                            label: 'Aseguradora (EPS)',
+                            placeholder: 'Seleccione una EPS',
+                            required: false,
+                          ),
+                          const SizedBox(height: 16),
+
                           // Pertenencia Étnica
                           FormFields.buildDropdownField(
                             label: 'Pertenencia Étnica',
@@ -1741,6 +1775,15 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Aseguradora (EPS) del Cuidador
+                          EPSSelector(
+                            controller: controller.caregiverInsuranceController,
+                            label: 'Aseguradora (EPS)',
+                            placeholder: 'Seleccione una EPS',
+                            required: false,
                           ),
                         ],
                       )

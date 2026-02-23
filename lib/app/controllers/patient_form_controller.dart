@@ -108,6 +108,7 @@ class PatientFormController extends GetxController {
   final motherEmailController = TextEditingController();
   final motherLandlineController = TextEditingController();
   final motherCellphoneController = TextEditingController();
+  final motherInsuranceController = TextEditingController();
   final selectedMotherAffiliationRegime = Rx<RegimenAfiliacion?>(null);
   final selectedMotherEthnicity = Rx<PertenenciaEtnica?>(null);
   final motherDisplaced = Rx<bool?>(null);
@@ -125,6 +126,7 @@ class PatientFormController extends GetxController {
   final caregiverEmailController = TextEditingController();
   final caregiverLandlineController = TextEditingController();
   final caregiverCellphoneController = TextEditingController();
+  final caregiverInsuranceController = TextEditingController();
 
   // ==================== ANTECEDENTES MÉDICOS ====================
   final hasContraindication = false.obs;
@@ -203,6 +205,7 @@ class PatientFormController extends GetxController {
     motherEmailController.dispose();
     motherLandlineController.dispose();
     motherCellphoneController.dispose();
+    motherInsuranceController.dispose();
 
     // Cuidador
     caregiverIdNumberController.dispose();
@@ -214,6 +217,7 @@ class PatientFormController extends GetxController {
     caregiverEmailController.dispose();
     caregiverLandlineController.dispose();
     caregiverCellphoneController.dispose();
+    caregiverInsuranceController.dispose();
 
     // Antecedentes
     contraindicationDetailsController.dispose();
