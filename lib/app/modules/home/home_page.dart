@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +67,7 @@ class HomePage extends StatelessWidget {
     final now = DateTime.now();
     final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'es_ES');
     final formattedDate = dateFormat.format(now);
+    
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 24 : 20),

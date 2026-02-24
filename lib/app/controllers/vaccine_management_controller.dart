@@ -91,6 +91,7 @@ class VaccineManagementController extends GetxController {
         code: vaccine.code,
         category: vaccine.category,
         maxDoses: vaccine.maxDoses,
+        vaccineSequence: vaccine.vaccineSequence,
         minMonths: vaccine.minMonths,
         maxMonths: vaccine.maxMonths,
         hasLaboratory: vaccine.hasLaboratory,

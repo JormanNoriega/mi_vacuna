@@ -33,6 +33,8 @@ class DatabaseHelper {
     );
   }
 
+  
+
   Future _createDB(Database db, int version) async {
     print('🔨 Creando base de datos versión $version...');
 
@@ -60,6 +62,7 @@ class DatabaseHelper {
         code TEXT NOT NULL UNIQUE,
         category TEXT NOT NULL,
         max_doses INTEGER NOT NULL,
+        vaccine_sequence INTEGER,
         min_months INTEGER,
         max_months INTEGER,
         has_laboratory INTEGER DEFAULT 0,

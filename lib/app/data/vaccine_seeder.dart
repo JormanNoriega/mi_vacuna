@@ -40,15 +40,25 @@ class VaccineSeeder {
     print('✅ Seeder completado: 27 vacunas cargadas');
   }
 
+  // Helper para obtener el siguiente vaccine_sequence
+  static Future<int> _nextSequence(Database db) async {
+    final res = await db.rawQuery('SELECT MAX(vaccine_sequence) as maxSeq FROM vaccines');
+    final maxSeq = res.first['maxSeq'];
+    final seq = (maxSeq is int ? maxSeq : (maxSeq == null ? 0 : int.tryParse(maxSeq.toString()) ?? 0));
+    return seq + 1;
+  }
+
   // ==================== COVID-19 ====================
   static Future<void> _seedCovid19(Database db) async {
     final vaccineId = _uuid.v4();
+    final sequence = await _nextSequence(db);
     await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'COVID-19',
       'code': 'covid19',
       'category': 'todas',
-      'max_doses': 5,
+      'max_doses': 6,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 1,
@@ -72,6 +82,7 @@ class VaccineSeeder {
       'Refuerzo',
       '2do refuerzo - Res419',
       '2do refuerzo',
+      'Dosis Adicional'
     ]);
 
     // Laboratorios
@@ -94,12 +105,14 @@ class VaccineSeeder {
   // ==================== BCG ====================
   static Future<void> _seedBCG(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'BCG',
       'code': 'bcg',
       'category': 'infantil',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 6,
       'has_laboratory': 0,
@@ -589,8 +602,8 @@ class VaccineSeeder {
       'code': 'sr_multidosis',
       'category': 'infantil',
       'max_doses': 2,
-      'min_months': 0,
-      'max_months': 60,
+      'min_months': null,
+      'max_months': null,
       'has_laboratory': 0,
       'has_lot': 1,
       'has_syringe': 1,
@@ -691,8 +704,8 @@ class VaccineSeeder {
       'code': 'varicela',
       'category': 'infantil',
       'max_doses': 2,
-      'min_months': 12,
-      'max_months': 60,
+      'min_months': 12, // 1 año
+      'max_months': 120, // 10 años
       'has_laboratory': 0,
       'has_lot': 1,
       'has_syringe': 1,
@@ -878,6 +891,7 @@ class VaccineSeeder {
       'Primera dosis',
       'Segunda dosis',
       'Tercera dosis',
+      'Dosis Unica',
     ]);
 
     // Jeringas

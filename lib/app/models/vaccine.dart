@@ -6,6 +6,7 @@ class Vaccine {
   String code; // "covid19", "bcg", "hepatitis_b"
   String category; // "infantil", "adulto", "especial", "todas"
   int maxDoses; // Número máximo de dosis
+  int? vaccineSequence; // Secuencia de orden en el Excel (auto-incremental)
 
   // Rango de edad (en meses)
   int? minMonths; // Edad mínima en meses (null = sin límite)
@@ -32,6 +33,7 @@ class Vaccine {
     required this.code,
     required this.category,
     required this.maxDoses,
+    this.vaccineSequence, // Auto-asignado por la BD
     this.minMonths,
     this.maxMonths,
     this.hasLaboratory = false,
@@ -56,6 +58,7 @@ class Vaccine {
       'code': code,
       'category': category,
       'max_doses': maxDoses,
+      'vaccine_sequence': vaccineSequence,
       'min_months': minMonths,
       'max_months': maxMonths,
       'has_laboratory': hasLaboratory ? 1 : 0,
@@ -81,6 +84,7 @@ class Vaccine {
       code: map['code'],
       category: map['category'],
       maxDoses: map['max_doses'],
+      vaccineSequence: map['vaccine_sequence'],
       minMonths: map['min_months'],
       maxMonths: map['max_months'],
       hasLaboratory: map['has_laboratory'] == 1,
