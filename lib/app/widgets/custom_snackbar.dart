@@ -26,6 +26,8 @@ class CustomSnackbar {
           Expanded(
             child: Text(
               message,
+              maxLines: null,
+              softWrap: true,
               style: const TextStyle(
                 color: Color(0xFF5F2120),
                 fontSize: 13,
@@ -39,7 +41,7 @@ class CustomSnackbar {
       backgroundColor: const Color(0xFFFCE4E4),
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 5),
       isDismissible: true,
       dismissDirection: DismissDirection.horizontal,
       forwardAnimationCurve: Curves.easeOutBack,
@@ -78,6 +80,8 @@ class CustomSnackbar {
           Expanded(
             child: Text(
               message,
+              maxLines: null,
+              softWrap: true,
               style: const TextStyle(
                 color: Color(0xFF1B5E20),
                 fontSize: 13,
@@ -91,7 +95,7 @@ class CustomSnackbar {
       backgroundColor: const Color(0xFFE7F4E8),
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 5),
       isDismissible: true,
       dismissDirection: DismissDirection.horizontal,
       forwardAnimationCurve: Curves.easeOutBack,
@@ -130,6 +134,8 @@ class CustomSnackbar {
           Expanded(
             child: Text(
               message,
+              maxLines: null,
+              softWrap: true,
               style: const TextStyle(
                 color: Color(0xFF0D47A1),
                 fontSize: 13,
@@ -143,7 +149,7 @@ class CustomSnackbar {
       backgroundColor: const Color(0xFFE1F5FE),
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 5),
       isDismissible: true,
       dismissDirection: DismissDirection.horizontal,
       forwardAnimationCurve: Curves.easeOutBack,
@@ -182,6 +188,8 @@ class CustomSnackbar {
           Expanded(
             child: Text(
               message,
+              maxLines: null,
+              softWrap: true,
               style: const TextStyle(
                 color: Color(0xFFE65100),
                 fontSize: 13,
@@ -195,7 +203,7 @@ class CustomSnackbar {
       backgroundColor: const Color(0xFFFFF3E0),
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 5),
       isDismissible: true,
       dismissDirection: DismissDirection.horizontal,
       forwardAnimationCurve: Curves.easeOutBack,

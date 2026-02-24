@@ -330,13 +330,14 @@ class VaccineSelectionController extends GetxController {
     // Fecha por defecto: hoy
     doseData.applicationDate ??= DateTime.now();
 
-    // Establecer opciones predeterminadas
+    // Establecer opciones predeterminadas para Laboratorio
     final labOptions = _laboratoryOptionsCache[vaccineId] ?? [];
     if (labOptions.isNotEmpty && doseData.selectedLaboratoryId == null) {
       final defaultLab = labOptions.firstWhereOrNull((opt) => opt.isDefault);
       doseData.selectedLaboratoryId = defaultLab?.id ?? labOptions.first.id;
     }
 
+    // Establecer opciones predeterminadas para Jeringa
     final syringeOptions = _syringeOptionsCache[vaccineId] ?? [];
     if (syringeOptions.isNotEmpty && doseData.selectedSyringeId == null) {
       final defaultSyringe = syringeOptions.firstWhereOrNull(
@@ -344,6 +345,36 @@ class VaccineSelectionController extends GetxController {
       );
       doseData.selectedSyringeId =
           defaultSyringe?.id ?? syringeOptions.first.id;
+    }
+
+    // Establecer opciones predeterminadas para Gotero
+    final dropperOptions = _dropperOptionsCache[vaccineId] ?? [];
+    if (dropperOptions.isNotEmpty && doseData.selectedDropperId == null) {
+      final defaultDropper = dropperOptions.firstWhereOrNull(
+        (opt) => opt.isDefault,
+      );
+      doseData.selectedDropperId =
+          defaultDropper?.id ?? dropperOptions.first.id;
+    }
+
+    // Establecer opciones predeterminadas para Neumococo
+    final pneumoOptions = _pneumococcalTypeOptionsCache[vaccineId] ?? [];
+    if (pneumoOptions.isNotEmpty && doseData.selectedPneumococcalTypeId == null) {
+      final defaultPneumo = pneumoOptions.firstWhereOrNull(
+        (opt) => opt.isDefault,
+      );
+      doseData.selectedPneumococcalTypeId =
+          defaultPneumo?.id ?? pneumoOptions.first.id;
+    }
+
+    // Establecer opciones predeterminadas para Observación
+    final obsOptions = _observationOptionsCache[vaccineId] ?? [];
+    if (obsOptions.isNotEmpty && doseData.selectedObservationId == null) {
+      final defaultObs = obsOptions.firstWhereOrNull(
+        (opt) => opt.isDefault,
+      );
+      doseData.selectedObservationId =
+          defaultObs?.id ?? obsOptions.first.id;
     }
   }
 
@@ -851,5 +882,21 @@ class VaccineSelectionController extends GetxController {
     if (doseData != null) {
       doseData.customObservationController.text = observation;
     }
+  }
+
+  /// Limpia todas las selecciones de vacunas (para reiniciar el formulario)
+  void clearAllSelections() {
+    // Disponer todos los datos de vacunas seleccionadas
+    for (var vaccineData in selectedVaccines.values) {
+      vaccineData.dispose();
+    }
+    selectedVaccines.clear();
+    availableVaccines.clear();
+    _doseOptionsCache.clear();
+    _laboratoryOptionsCache.clear();
+    _syringeOptionsCache.clear();
+    _dropperOptionsCache.clear();
+    _pneumococcalTypeOptionsCache.clear();
+    _observationOptionsCache.clear();
   }
 }

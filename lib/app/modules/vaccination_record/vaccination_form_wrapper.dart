@@ -18,23 +18,113 @@ class VaccinationFormWrapper extends StatefulWidget {
   State<VaccinationFormWrapper> createState() => _VaccinationFormWrapperState();
 }
 
-class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
+class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> 
+    with WidgetsBindingObserver {
   PageController? _localPageController;
+  bool _hasInitialized = false; // Flag para evitar múltiples inicializaciones
+  
+  // ✅ Key única para forzar reconstrucción completa del formulario
+  final RxString _formKey = DateTime.now().millisecondsSinceEpoch.toString().obs;
 
   @override
   void initState() {
     super.initState();
-    // Si es modal, crear PageController local
-    if (widget.showPopScope) {
-      _localPageController = PageController();
+    // SIEMPRE crear un PageController local para este wrapper
+    // Esto evita conflictos si el wrapper se abre/cierra múltiples veces
+    _localPageController = PageController();
+    
+    // Agregar observer para detectar cambios de visibilidad
+    WidgetsBinding.instance.addObserver(this);
+    
+    // ✅ Inicializar estado inmediatamente
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeFormState();
+      _hasInitialized = true;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Cuando la app vuelve a estar activa, verificar si necesitamos limpiar
+    if (state == AppLifecycleState.resumed && _hasInitialized) {
+      _checkAndCleanFormIfNeeded();
     }
+  }
+
+  /// Verifica si el formulario necesita ser limpiado
+  void _checkAndCleanFormIfNeeded() {
+    if (!mounted || widget.showPopScope) return;
+    
+    final controller = Get.isRegistered<PatientFormController>()
+        ? Get.find<PatientFormController>()
+        : null;
+    
+    if (controller == null) return;
+    
+    // Si estamos en tab mode y hay datos de edición, limpiar
+    if (controller.isEditMode.value || controller.isModalMode.value) {
+      print('🧹 Limpiando formulario - detectado estado modal/edición en tab');
+      controller.clearForm();
+      controller.isModalMode.value = false;
+      controller.isEditMode.value = false;
+      controller.editingPatientId = null;
+      _regenerateFormKey();
+    }
+  }
+
+  /// Inicializa el estado del formulario según el modo
+  void _initializeFormState() {
+    if (!mounted) return;
+    
+    final controller = Get.isRegistered<PatientFormController>()
+        ? Get.find<PatientFormController>()
+        : null;
+    
+    if (controller == null) return;
+
+    // Si está abierto como tab (no es modal), asegurar que el formulario esté limpio
+    if (!widget.showPopScope) {
+      print('🔄 Inicializando formulario en modo tab - limpiando datos');
+      controller.clearForm();
+      controller.isModalMode.value = false;
+      controller.isEditMode.value = false;
+      controller.editingPatientId = null;
+    }
+    
+    // Regenerar key para asegurar reconstrucción
+    _regenerateFormKey();
   }
 
   @override
   void dispose() {
-    // Liberar PageController local si existe
+    // Quitar observer y liberar PageController local si existe
+    WidgetsBinding.instance.removeObserver(this);
     _localPageController?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(VaccinationFormWrapper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // ✅ Detectar cambio de modo (modal ↔ tab)
+    if (oldWidget.showPopScope != widget.showPopScope) {
+      final controller = Get.isRegistered<PatientFormController>()
+          ? Get.find<PatientFormController>()
+          : null;
+      
+      // ✅ Si cambiamos de modal a tab, limpiar INSTANTÁNEAMENTE
+      if (oldWidget.showPopScope && !widget.showPopScope && controller != null) {
+        controller.clearForm(); // Limpiar datos inmediatamente
+      }
+      
+      // ✅ Recrear PageController para asegurar estado limpio
+      _localPageController?.dispose();
+      _localPageController = PageController();
+      
+      _initializeFormState();
+    }
   }
 
   @override
@@ -44,10 +134,16 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
         ? Get.find<PatientFormController>()
         : Get.put(PatientFormController());
 
-    // Determinar qué PageController usar
-    final pageController = widget.showPopScope
-        ? _localPageController! // Modal: usar local
-        : controller.pageController; // Tab: usar del controlador compartido
+    // ✅ VERIFICAR EN CADA BUILD: Si estamos en tab mode, asegurar que esté limpio
+    if (!widget.showPopScope && _hasInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkAndCleanFormIfNeeded();
+      });
+    }
+
+    // SIEMPRE usar el PageController local creado en initState
+    // Esto asegura que cada instancia del wrapper tenga su propio controller
+    final pageController = _localPageController!;
 
     final scaffold = Scaffold(
       backgroundColor: backgroundLight,
@@ -82,9 +178,10 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
           // Progress Indicator (optimizado para no reconstruir todo)
           _ProgressIndicator(controller: controller),
 
-          // PageView con los pasos
+          // PageView con los pasos (key reactiva para reconstrucción completa)
           Expanded(
-            child: PageView(
+            child: Obx(() => PageView(
+              key: ValueKey(_formKey.value), // ✅ Key cambia = reconstrucción TOTAL
               controller: pageController,
               physics: const NeverScrollableScrollPhysics(),
               children: const [
@@ -93,7 +190,7 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
                 Step3Vaccines(),
                 Step4Review(),
               ],
-            ),
+            )),
           ),
         ],
       ),
@@ -119,6 +216,11 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
     return scaffold;
   }
 
+  /// ✅ Método para forzar reconstrucción completa del formulario
+  void _regenerateFormKey() {
+    _formKey.value = DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
   void _handleNextButton(
     PatientFormController controller,
     PageController pageController,
@@ -126,9 +228,16 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
     final step = controller.currentStep.value;
     if (step == 0) {
       // ✅ Validar el FORM (para mostrar errores en rojo en los campos)
+      // Si el formKey está registrado, validar el Form
+      // Si no, confiar en la validación del controller
+      bool formIsValid = true;
       final step1FormKey = controller.step1FormKey.value;
       
-      if (step1FormKey != null && step1FormKey.currentState!.validate()) {
+      if (step1FormKey != null) {
+        formIsValid = step1FormKey.currentState?.validate() ?? true;
+      }
+      
+      if (formIsValid) {
         // El Form es válido, ahora validar lógica de negocio del controller
         if (controller.validateStep1()) {
           controller.nextStep(customPageController: pageController);
@@ -137,9 +246,16 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
       // Si hay errores en el Form, se muestran automáticamente en rojo
     } else if (step == 1) {
       // ✅ Validar el FORM (para mostrar errores en rojo en los campos)
+      // Si el formKey está registrado, validar el Form
+      // Si no, confiar en la validación del controller
+      bool formIsValid = true;
       final step2FormKey = controller.step2FormKey.value;
       
-      if (step2FormKey != null && step2FormKey.currentState!.validate()) {
+      if (step2FormKey != null) {
+        formIsValid = step2FormKey.currentState?.validate() ?? true;
+      }
+      
+      if (formIsValid) {
         // El Form es válido, ahora validar lógica de negocio del controller
         if (controller.validateStep2()) {
           controller.nextStep(customPageController: pageController);
@@ -147,22 +263,33 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
       }
       // Si hay errores en el Form, se muestran automáticamente en rojo
     } else if (step == 2) {
-      final vaccineController = Get.find<VaccineSelectionController>();
-      if (vaccineController.validate()) {
-        controller.nextStep(customPageController: pageController);
+      bool formIsValid = true;
+      final step3FormKey = controller.step3FormKey.value;
+      
+      if (step3FormKey != null) {
+        formIsValid = step3FormKey.currentState?.validate() ?? true;
+      }
+      
+      if (formIsValid) {
+        final vaccineController = Get.find<VaccineSelectionController>();
+        if (vaccineController.validate()) {
+          controller.nextStep(customPageController: pageController);
+        }
       }
     } else if (step == 3) {
       // Guardar el modo ANTES de ejecutar submitForm
-      final wasModal = controller.isModalMode.value;
       final wasEditMode = controller.isEditMode.value;
+      final isCurrentlyModal = widget.showPopScope; // Flag actual del widget
 
-      // Ejecutar guardado (sin mostrar snackbar en el controller si es modal)
+      // ✅ Ejecutar guardado (sin lógica de navegación desde el controller)
       await controller.submitForm();
 
-      // Si era modal, cerrar PRIMERO y luego mostrar snackbar
-      if (wasModal && widget.showPopScope) {
-        Get.back();
-        // Mostrar snackbar después de cerrar usando CustomSnackbar
+      // ✅ Manejar UI y navegación SOLO desde el wrapper
+      if (isCurrentlyModal) {
+        // Modal: cerrar PRIMERO y luego mostrar snackbar
+        Navigator.of(context).pop(); // Usar Navigator en lugar de Get.back()
+        
+        // Mostrar snackbar después de cerrar
         Future.delayed(const Duration(milliseconds: 300), () {
           CustomSnackbar.showSuccess(
             wasEditMode
@@ -171,12 +298,35 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
           );
         });
       } else {
-        // Modo tab: mostrar snackbar directamente
+        // Tab: mostrar snackbar, limpiar y navegar al inicio
         CustomSnackbar.showSuccess(
           wasEditMode
               ? 'Paciente actualizado correctamente'
               : 'Paciente y vacunas registrados correctamente',
         );
+        
+        // Breve delay para permitir que se complete el snackbar
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        // ✅ PRIMERO: Limpiar formulario completamente
+        controller.clearForm();
+        
+        // ✅ SEGUNDO: Regenerar key para FORZAR reconstrucción total de widgets
+        _regenerateFormKey();
+        
+        // ✅ TERCERO: Resetear flag para forzar siguiente inicialización
+        _hasInitialized = false;
+        
+        // ✅ CUARTO: Breve delay para que los widgets se reconstruyan
+        await Future.delayed(const Duration(milliseconds: 150));
+        
+        // ✅ QUINTO: Navegar al primer paso
+        if (pageController.hasClients) {
+          pageController.jumpToPage(0);
+        }
+        
+        // ✅ SEXTO: Marcar como inicializado nuevamente
+        _hasInitialized = true;
       }
     }
   }
@@ -228,11 +378,17 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper> {
                 // Cerrar diálogo
                 Navigator.of(context).pop();
 
-                // Limpiar formulario antes de cerrar
+                // ✅ PRIMERO: Limpiar formulario antes de cerrar
                 controller.clearForm();
-                controller.resetForm();
+                
+                // ✅ SEGUNDO: Regenerar key para FORZAR reconstrucción total
+                _regenerateFormKey();
+                
+                // ✅ TERCERO: Limpiar flags de modo
+                controller.isModalMode.value = false;
+                controller.isEditMode.value = false;
 
-                // Cerrar el modal
+                // ✅ CUARTO: Cerrar el modal
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(

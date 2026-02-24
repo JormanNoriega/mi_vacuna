@@ -45,6 +45,20 @@ class PatientFormController extends GetxController {
     step2FormKey.value = key;
   }
 
+  // formKey de Step 3 para validar desde el wrapper
+  Rx<GlobalKey<FormState>?> step3FormKey = Rx<GlobalKey<FormState>?>(null);
+
+  void registerStep3FormKey(GlobalKey<FormState> key) {
+    step3FormKey.value = key;
+  }
+
+  // ScrollController para Step2 (para scroll automático a errores)
+  ScrollController? _step2ScrollController;
+
+  void registerStep2ScrollController(ScrollController controller) {
+    _step2ScrollController = controller;
+  }
+
   // ==================== PASO 1: DATOS BÁSICOS ====================
   // Controllers de texto
   final idNumberController = TextEditingController();
@@ -85,6 +99,17 @@ class PatientFormController extends GetxController {
   final emailController = TextEditingController();
   final authorizeCalls = false.obs;
   final authorizeEmail = false.obs;
+
+  // ==================== VALIDACIÓN REACTIVA ====================
+  // Errores en tiempo real para validación mientras se escribe
+  final landlineError = Rx<String?>(null);
+  final cellphoneError = Rx<String?>(null);
+  final addressError = Rx<String?>(null);
+  
+  // Errores de la madre (para menores de edad)
+  final motherIdError = Rx<String?>(null);
+  final motherFirstNameError = Rx<String?>(null);
+  final motherLastNameError = Rx<String?>(null);
 
   // Controllers de texto - Salud
   final insurerController = TextEditingController();
@@ -155,15 +180,139 @@ class PatientFormController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Resetear el estado al inicializar
-    resetForm();
-    _setupOptimizations();
+    // Limpiar e inicializar valores por defecto
+    clearForm();
+    // _setupOptimizations(); // Método no implementado, commented out
+    _setupReactiveValidation();
   }
 
-  /// Configurar optimizaciones para mejorar rendimiento
-  void _setupOptimizations() {
-    // Deshabilitar logs innecesarios en producción
-    // GetX puede causar overhead con logs excesivos
+  /// Configurar validación reactiva que se ejecuta mientras el usuario escribe
+  void _setupReactiveValidation() {
+    // Mostrar datos de madre automáticamente si el paciente es menor de edad
+    ever(birthDate, (_) {
+      final age = calculateAge();
+      if (age['years']! < 18) {
+        showMotherData.value = true;
+      } else {
+        // Si es mayor, ocultar la sección de madre
+        showMotherData.value = false;
+      }
+    });
+
+    // Validar dirección en tiempo real
+    addressController.addListener(() {
+      _validateAddress();
+    });
+
+    // Validar teléfono fijo en tiempo real
+    landlineController.addListener(() {
+      _validateLandline();
+    });
+
+    // Validar celular en tiempo real (opcional)
+    cellphoneController.addListener(() {
+      _validateCellphone();
+    });
+
+    // Validar datos de madre en tiempo real (solo cuando showMotherData es true)
+    motherIdNumberController.addListener(() {
+      _validateMotherIdNumber();
+    });
+
+    motherFirstNameController.addListener(() {
+      _validateMotherFirstName();
+    });
+
+    motherLastNameController.addListener(() {
+      _validateMotherLastName();
+    });
+  }
+
+  /// Validar dirección reactivamente
+  void _validateAddress() {
+    final value = addressController.text.trim();
+    if (value.isEmpty) {
+      addressError.value = 'La dirección es requerida';
+    } else if (value.length < 5) {
+      addressError.value = 'La dirección debe tener al menos 5 caracteres';
+    } else {
+      addressError.value = null;
+    }
+  }
+
+  /// Validar teléfono fijo reactivamente
+  void _validateLandline() {
+    final value = landlineController.text.trim();
+    if (value.isEmpty) {
+      landlineError.value = null; // Teléfono fijo es opcional
+    } else if (!RegExp(r'^\d{7,}$').hasMatch(value)) {
+      landlineError.value = 'El teléfono debe tener al menos 7 dígitos';
+    } else {
+      landlineError.value = null;
+    }
+  }
+
+  /// Validar celular reactivamente (obligatorio)
+  void _validateCellphone() {
+    final value = cellphoneController.text.trim();
+    if (value.isEmpty) {
+      cellphoneError.value = 'El celular es requerido';
+    } else if (!RegExp(r'^\d{7,}$').hasMatch(value)) {
+      cellphoneError.value = 'El celular debe tener al menos 7 dígitos';
+    } else {
+      cellphoneError.value = null;
+    }
+  }
+
+  /// Validar número de ID de la madre
+  void _validateMotherIdNumber() {
+    final value = motherIdNumberController.text.trim();
+    final age = calculateAge();
+    
+    // Solo validar si el paciente es menor
+    if (age['years']! < 18) {
+      if (value.isEmpty) {
+        motherIdError.value = 'Número de ID requerido';
+      } else {
+        motherIdError.value = null;
+      }
+    } else {
+      motherIdError.value = null;
+    }
+  }
+
+  /// Validar nombre de la madre
+  void _validateMotherFirstName() {
+    final value = motherFirstNameController.text.trim();
+    final age = calculateAge();
+    
+    // Solo validar si el paciente es menor
+    if (age['years']! < 18) {
+      if (value.isEmpty) {
+        motherFirstNameError.value = 'Nombre requerido';
+      } else {
+        motherFirstNameError.value = null;
+      }
+    } else {
+      motherFirstNameError.value = null;
+    }
+  }
+
+  /// Validar apellido de la madre
+  void _validateMotherLastName() {
+    final value = motherLastNameController.text.trim();
+    final age = calculateAge();
+    
+    // Solo validar si el paciente es menor
+    if (age['years']! < 18) {
+      if (value.isEmpty) {
+        motherLastNameError.value = 'Apellido requerido';
+      } else {
+        motherLastNameError.value = null;
+      }
+    } else {
+      motherLastNameError.value = null;
+    }
   }
 
   @override
@@ -301,26 +450,6 @@ class PatientFormController extends GetxController {
         }
       });
     }
-  }
-
-  /// Resetea el formulario al estado inicial
-  void resetForm() {
-    // Actualizar todos los valores en batch
-    currentStep.value = 0;
-    isEditMode.value = false;
-    isModalMode.value = false;
-    editingPatientId = null;
-
-    // Resetear FormKey para evitar conflictos
-    step1FormKey.value = null;
-    step2FormKey.value = null;
-
-    // Resetear el PageController después del frame actual
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (pageController.hasClients) {
-        pageController.jumpToPage(0);
-      }
-    });
   }
 
   /// Verifica si hay datos sin guardar en el formulario
@@ -572,67 +701,163 @@ class PatientFormController extends GetxController {
     return true;
   }
 
-  bool validateStep2() {
+  /// Recopila todos los errores de validación del Paso 2 sin mostrar snackbars individuales
+  List<String> _collectStep2Errors() {
+    final List<String> errors = [];
+
     // País de Nacimiento (requerido)
     if (birthCountryController.text.trim().isEmpty) {
-      CustomSnackbar.showError('El país de nacimiento es requerido');
-      return false;
+      errors.add('El país de nacimiento es requerido');
     }
 
     // Estatus Migratorio (requerido)
     if (selectedMigratoryStatus.value == null) {
-      CustomSnackbar.showError('El estatus migratorio es requerido');
-      return false;
+      errors.add('El estatus migratorio es requerido');
     }
 
     // Lugar de Atención del Parto (solo requerido si ha dado a luz)
     if (hasGivenBirth.value && birthPlaceController.text.trim().isEmpty) {
-      CustomSnackbar.showError('El lugar de atención del parto es requerido');
-      return false;
+      errors.add('El lugar de atención del parto es requerido');
     }
 
     // Régimen de Afiliación (requerido)
     if (selectedHealthRegime.value == null) {
-      CustomSnackbar.showError('El régimen de afiliación es requerido');
-      return false;
+      errors.add('El régimen de afiliación es requerido');
     }
 
     // Aseguradora (requerido)
     if (insurerController.text.trim().isEmpty) {
-      CustomSnackbar.showError('La aseguradora (EPS) es requerida');
-      return false;
-    }
-
-    // Pertenencia Étnica (requerido)
-    if (selectedEthnicity.value == PertenenciaEtnica.ninguno) {
-      // Esto es válido, ninguno es una opción
+      errors.add('La aseguradora (EPS) es requerida');
     }
 
     // Departamento y Municipio (requeridos)
     if (residenceDepartmentController.text.trim().isEmpty) {
-      CustomSnackbar.showError('El departamento de residencia es requerido');
-      return false;
+      errors.add('El departamento de residencia es requerido');
     }
 
     if (residenceMunicipalityController.text.trim().isEmpty) {
-      CustomSnackbar.showError('El municipio de residencia es requerido');
-      return false;
+      errors.add('El municipio de residencia es requerido');
     }
 
     // Área (requerida)
     if (selectedArea.value == null) {
-      CustomSnackbar.showError('El área de residencia es requerida');
-      return false;
+      errors.add('El área de residencia es requerida');
+    }
+
+    // Dirección (requerido)
+    if (addressController.text.trim().isEmpty) {
+      errors.add('La dirección es requerida');
+    } else if (addressError.value != null) {
+      errors.add('Dirección: ${addressError.value}');
+    }
+
+    // Celular (requerido)
+    if (cellphoneController.text.trim().isEmpty) {
+      errors.add('El celular es requerido');
+    } else if (cellphoneError.value != null) {
+      errors.add('Celular: ${cellphoneError.value}');
+    }
+
+    // Teléfono Fijo (opcional)
+    if (landlineError.value != null) {
+      errors.add('Teléfono fijo: ${landlineError.value}');
+    }
+
+    // ========== VALIDACIONES CONDICIONALES ==========
+    
+    // Si el paciente es menor de edad, debe haber DATOS DE MADRE O DATOS DE CUIDADOR (o ambos)
+    final age = calculateAge();
+    if (age['years']! < 18) {
+      final hasMotherData = _isMotherDataComplete();
+      final hasCaregiverData = _isCaregiverDataComplete();
+      
+      // Si ninguno está completo, mostrar error
+      if (!hasMotherData && !hasCaregiverData) {
+        errors.add('Para menores de edad, debe proporcionar datos de la madre O del cuidador (o ambos)');
+      }
     }
 
     // Validaciones condicionales para gestantes
     if (selectedUserCondition.value == CondicionUsuaria.gestante) {
       if (lastMenstrualDate.value == null) {
-        CustomSnackbar.showError(
-          'La fecha de última menstruación es requerida para gestantes',
-        );
-        return false;
+        errors.add('La fecha de última menstruación es requerida para gestantes');
       }
+    }
+
+    return errors;
+  }
+
+  /// Verifica si los datos de la madre están completos
+  bool _isMotherDataComplete() {
+    if (!showMotherData.value) return false;
+    
+    // Chequear campos mínimos requeridos de madre
+    final hasRequiredFields = 
+        motherIdNumberController.text.trim().isNotEmpty &&
+        motherFirstNameController.text.trim().isNotEmpty &&
+        motherLastNameController.text.trim().isNotEmpty;
+    
+    return hasRequiredFields;
+  }
+
+  /// Verifica si los datos del cuidador están completos
+  bool _isCaregiverDataComplete() {
+    if (!showCaregiverData.value) return false;
+    
+    // Chequear campos mínimos requeridos de cuidador
+    final hasRequiredFields = 
+        caregiverIdNumberController.text.trim().isNotEmpty &&
+        caregiverFirstNameController.text.trim().isNotEmpty &&
+        caregiverLastNameController.text.trim().isNotEmpty;
+    
+    return hasRequiredFields;
+  }
+
+  /// Hace scroll al inicio de Step 2 cuando hay errores de validación
+  /// Calcula la posición de scroll basado dónde están los errores
+  double _calculateScrollPosition(List<String> errors) {
+    // Si hay errores de madre, scroll a esa sección
+    if (errors.any((e) => e.toLowerCase().contains('madre'))) {
+      return 3500.0; // Posición aproximada de la sección de madre
+    }
+    
+    // Si hay errores de otros campos, scroll al top
+    return 0.0;
+  }
+
+  void _scrollToStep2Errors(List<String> errors) {
+    if (_step2ScrollController != null && _step2ScrollController!.hasClients) {
+      // Calcular la posición de scroll basado dónde están los errores
+      final scrollPosition = _calculateScrollPosition(errors);
+      
+      // Hacer scroll con una pequeña pausa para asegurar que funcione
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_step2ScrollController!.hasClients) {
+          _step2ScrollController!.animateTo(
+            scrollPosition,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+      });
+    }
+  }
+
+  bool validateStep2() {
+    final errors = _collectStep2Errors();
+
+    if (errors.isNotEmpty) {
+      // Cerrar cualquier snackbar anterior para asegurar que se muestre el nuevo
+      Get.closeCurrentSnackbar();
+      
+      // Construir mensaje consolidado con punto antes de cada error
+      final errorMessage = errors.join('\n• ');
+      CustomSnackbar.showError('Por favor verifica:\n• $errorMessage');
+      
+      // Hacer scroll al campo con error más alto
+      _scrollToStep2Errors(errors);
+      
+      return false;
     }
 
     return true;
@@ -981,33 +1206,8 @@ class PatientFormController extends GetxController {
         await _saveAppliedDoses(patientId, nurseId);
         print('✅ Vacunas guardadas exitosamente');
 
-        // Guardar el modo antes de proceder
-        final wasEditMode = isEditMode.value;
-        final wasModal = isModalMode.value;
-
-        // Mostrar mensaje de éxito SOLO si NO es modal
-        if (!wasModal) {
-          CustomSnackbar.showSuccess(
-            wasEditMode
-                ? 'Paciente actualizado correctamente'
-                : 'Paciente y vacunas registrados correctamente',
-          );
-        }
-
-        // Limpiar formulario de inmediato (sin delay para evitar UI lag)
-        clearForm();
-        // NO llamar resetForm() porque resetForm() solo resetea navegación
-
-        // Manejar navegación según el modo
-        if (wasModal) {
-          // Modal: el wrapper se encarga de cerrar y mostrar snackbar
-          // No hacemos nada aquí
-        } else if (wasEditMode) {
-          // Tab edición: ya se limpió el formulario
-        } else {
-          // Tab creación: navegar al home
-          Get.back();
-        }
+        // ✅ SOLO guardar. NO limpiar ni navegar desde aquí
+        // El wrapper se encarga de la navegación y limpieza según el contexto
       } else {
         throw Exception('No se pudo crear el paciente');
       }
@@ -1144,6 +1344,11 @@ class PatientFormController extends GetxController {
     emailController.clear();
     authorizeCalls.value = false;
     authorizeEmail.value = false;
+    
+    // Resetear errores
+    addressError.value = null;
+    landlineError.value = null;
+    cellphoneError.value = null;
 
     // Demográficos - Resetear a valores por defecto
     selectedGender.value = null;
@@ -1177,6 +1382,12 @@ class PatientFormController extends GetxController {
     motherCellphoneController.clear();
     selectedMotherAffiliationRegime.value = null;
     selectedMotherEthnicity.value = null;
+    motherDisplaced.value = null;
+    
+    // Resetear errores de madre
+    motherIdError.value = null;
+    motherFirstNameError.value = null;
+    motherLastNameError.value = null;
     motherDisplaced.value = null;
 
     // Cuidador - Resetear completamente
@@ -1212,7 +1423,24 @@ class PatientFormController extends GetxController {
     previousPregnanciesController.clear();
     hasGivenBirth.value = false;
 
-    // Resetear navegación
+    // ✅ Limpiar controlador de vacunas
+    if (Get.isRegistered<VaccineSelectionController>()) {
+      Get.find<VaccineSelectionController>().clearAllSelections();
+    }
+
+    // ✅ Resetear estado de navegación y edición
     currentStep.value = 0;
+    isEditMode.value = false;
+    isModalMode.value = false;
+    editingPatientId = null;
+
+    // ✅ Resetear FormKeys
+    step1FormKey.value = null;
+    step2FormKey.value = null;
+
+    // ✅ Resetear scroll controller de Step2
+    if (_step2ScrollController != null && _step2ScrollController!.hasClients) {
+      _step2ScrollController!.jumpTo(0);
+    }
   }
 }

@@ -6,6 +6,7 @@ import '../../../models/patient_model.dart';
 import '../../../widgets/form_fields.dart';
 import '../../../widgets/colombia_location_selector.dart';
 import '../../../widgets/eps_selector.dart';
+import '../../../widgets/country_selector.dart';
 import '../../../theme/colors.dart';
 
 class Step2AdditionalData extends StatefulWidget {
@@ -18,6 +19,10 @@ class Step2AdditionalData extends StatefulWidget {
 class _Step2AdditionalDataState extends State<Step2AdditionalData>
     with AutomaticKeepAliveClientMixin {
   late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final ScrollController _scrollController = ScrollController();
+  
+  // Referencia al estado del FormField de historyRecordDate
+  FormFieldState<DateTime?>? _historyRecordDateFieldState;
   
   @override
   bool get wantKeepAlive => true;
@@ -25,15 +30,21 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
   // Getter para exponer el formKey desde Step2
   GlobalKey<FormState> get formKey => _formKey;
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final controller = Get.find<PatientFormController>();
 
-    // ✅ Registrar formKey en el siguiente frame para que el wrapper pueda acceder
+    // ✅ Registrar formKey y ScrollController en el siguiente frame para que el wrapper pueda acceder
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.registerStep2FormKey(_formKey);
+      controller.registerStep2ScrollController(_scrollController);
     });
 
     return Form(
@@ -41,6 +52,7 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
       child: Container(
         color: backgroundMedium,
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 80),
             child: Column(
@@ -245,10 +257,10 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // País de Nacimiento
-                    FormFields.buildTextField(
-                      label: 'País de Nacimiento',
+                    CountrySelector(
                       controller: controller.birthCountryController,
-                      placeholder: 'Ej: Colombia',
+                      label: 'País de Nacimiento',
+                      placeholder: 'Seleccione un país',
                       required: true,
                     ),
                     const SizedBox(height: 16),
@@ -353,23 +365,17 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                       label: 'Régimen de Afiliación',
                       value: _getDisplayValue(controller.selectedHealthRegime.value?.name),
                       items: const [
-                        'No Aplica',
-                        'Contributivo',
                         'Subsidiado',
+                        'Contributivo',
                         'Población Pobre No Asegurada',
-                        'Especial',
-                        'Excepción',
-                        'No Asegurado',
+                        'Excepción Y Especial E Inpec',
                       ],
                       onChanged: (value) {
                         final enumMap = {
-                          'No Aplica': null,
-                          'Contributivo': 'contributivo',
                           'Subsidiado': 'subsidiado',
+                          'Contributivo': 'contributivo',
                           'Población Pobre No Asegurada': 'poblacionPobreNoAsegurada',
-                          'Especial': 'especial',
-                          'Excepción': 'excepcion',
-                          'No Asegurado': 'noAsegurado',
+                          'Excepción Y Especial E Inpec': 'excepcion',
                         };
                         final enumValue = enumMap[value];
                         if (enumValue == null) {
@@ -566,31 +572,91 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
               const SizedBox(height: 16),
 
               // Dirección
-              FormFields.buildTextField(
-                label: 'Dirección con Nomenclatura',
-                controller: controller.addressController,
-                placeholder: 'Ej: Calle 50 # 45-32',
-                required: false,
+              Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FormFields.buildTextField(
+                      label: 'Dirección con Nomenclatura',
+                      controller: controller.addressController,
+                      placeholder: 'Ej: Calle 50 # 45-32',
+                      required: true,
+                    ),
+                    // Error reactivo
+                    if (controller.addressError.value != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Text(
+                          controller.addressError.value!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
               // Teléfono fijo
-              FormFields.buildTextField(
-                label: 'Teléfono Fijo (Indicativo + Número)',
-                controller: controller.landlineController,
-                placeholder: 'Ej: 6012345678',
-                keyboardType: TextInputType.phone,
-                required: false,
+              Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FormFields.buildTextField(
+                      label: 'Teléfono Fijo (Indicativo + Número)',
+                      controller: controller.landlineController,
+                      placeholder: 'Ej: 6012345678',
+                      keyboardType: TextInputType.phone,
+                      required: false,
+                    ),
+                    // Error reactivo
+                    if (controller.landlineError.value != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Text(
+                          controller.landlineError.value!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
               // Celular
-              FormFields.buildTextField(
-                label: 'Celular',
-                controller: controller.cellphoneController,
-                placeholder: 'Ej: 3001234567',
-                keyboardType: TextInputType.phone,
-                required: false,
+              Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FormFields.buildTextField(
+                      label: 'Celular',
+                      controller: controller.cellphoneController,
+                      placeholder: 'Ej: 3001234567',
+                      keyboardType: TextInputType.phone,
+                      required: true,
+                    ),
+                    // Error reactivo
+                    if (controller.cellphoneError.value != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Text(
+                          controller.cellphoneError.value!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -942,10 +1008,13 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                   label: 'Fecha de Registro del Antecedente',
                   value: controller.historyRecordDate.value,
                   icon: Icons.calendar_today,
+                  onFieldStateReady: (fieldState) {
+                    _historyRecordDateFieldState = fieldState;
+                  },
                   onTap: () async {
                     final date = await showDatePicker(
                       context: Get.context!,
-                      initialDate: DateTime.now(),
+                      initialDate: controller.historyRecordDate.value ?? DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                       locale: const Locale('es'),
@@ -963,6 +1032,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     );
                     if (date != null) {
                       controller.historyRecordDate.value = date;
+                      // Actualizar el estado del FormField
+                      _historyRecordDateFieldState?.didChange(date);
                     }
                   },
                 ),
@@ -1301,26 +1372,80 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ✅ ADVERTENCIA PARA MENORES
+              Obx(() {
+                final age = controller.calculateAge();
+                final isMinor = age['years']! < 18;
+                
+                if (isMinor) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3CD), // Amarillo suave
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFD700), width: 1),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Color(0xFFFF8C00),
+                          size: 20,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Para menores: requiere datos de madre O cuidador (o ambos)',
+                            style: TextStyle(
+                              color: Color(0xFF8B6914),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+
               // Pregunta: ¿Desea agregar datos de la madre?
               Obx(
-                () => SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    '¿Desea agregar datos de la madre?',
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                () {
+                  // Calcular edad en tiempo real para determinar si el toggle está deshabilitado
+                  final age = controller.calculateAge();
+                  final isMinor = age['years']! < 18;
+                  
+                  return SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      '¿Desea agregar datos de la madre?',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  subtitle: const Text(
-                    'Para pacientes menores de edad',
-                    style: TextStyle(color: textSecondary, fontSize: 12),
-                  ),
-                  value: controller.showMotherData.value,
-                  onChanged: (value) => controller.showMotherData.value = value,
-                  activeThumbColor: primaryColor,
-                ),
+                    subtitle: isMinor
+                        ? const Text(
+                            '(Obligatorio para menores O proporcionar datos del cuidador)',
+                            style: TextStyle(
+                              color: Color(0xFFFF8C00),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : const Text(
+                            'Para pacientes menores de edad',
+                            style: TextStyle(color: textSecondary, fontSize: 12),
+                          ),
+                    value: controller.showMotherData.value,
+                    onChanged: (value) => controller.showMotherData.value = value,
+                    activeThumbColor: primaryColor,
+                  );
+                },
               ),
 
               // Campos de la madre (se muestran solo si showMotherData es true)
@@ -1332,241 +1457,247 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           const Divider(),
                           const SizedBox(height: 16),
 
-                          // Tipo y número de documento
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: FormFields.buildDropdownField(
-                                  label: 'Tipo de Documento',
-                                  value:
-                                      controller.selectedMotherIdType.value ??
-                                      'CC - Cédula de Ciudadanía',
-                                  items: const [
-                                    'CC - Cédula de Ciudadanía',
-                                    'CE - Cédula de Extranjería',
-                                    'PA - Pasaporte',
-                                    'RC - Registro Civil',
-                                    'TI - Tarjeta de Identidad',
-                                  ],
-                                  onChanged: (value) =>
-                                      controller.selectedMotherIdType.value =
-                                          value,
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 3,
-                                child: FormFields.buildTextField(
-                                  label: 'Número de Documento',
-                                  controller:
-                                      controller.motherIdNumberController,
-                                  placeholder: 'Ej: 1234567890',
-                                  keyboardType: TextInputType.number,
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                          // Calcular si es menor para validación de campos
+                          Builder(
+                            builder: (context) {
+                              final age = controller.calculateAge();
+                              final isMinor = age['years']! < 18;
 
-                          // Nombres
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Primer Nombre',
-                                  controller:
-                                      controller.motherFirstNameController,
-                                  placeholder: 'Ej: María',
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Segundo Nombre',
-                                  controller:
-                                      controller.motherSecondNameController,
-                                  placeholder: 'Ej: Elena',
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                              return Column(
+                                children: [
+                                  // Tipo y número de documento
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 1,
+                                        child: FormFields.buildDropdownField(
+                                          label: 'Tipo de Documento',
+                                          value:
+                                              controller.selectedMotherIdType.value ??
+                                              'CC - Cédula de Ciudadanía',
+                                          items: const [
+                                            'CC - Cédula de Ciudadanía',
+                                            'CE - Cédula de Extranjería',
+                                            'PA - Pasaporte',
+                                            'RC - Registro Civil',
+                                            'TI - Tarjeta de Identidad',
+                                          ],
+                                          onChanged: (value) =>
+                                              controller.selectedMotherIdType.value =
+                                                  value,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        flex: 1,
+                                        child: FormFields.buildTextField(
+                                          label: 'Número de Documento',
+                                          controller:
+                                              controller.motherIdNumberController,
+                                          placeholder: 'Ej: 1234567890',
+                                          keyboardType: TextInputType.number,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Apellidos
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Primer Apellido',
-                                  controller:
-                                      controller.motherLastNameController,
-                                  placeholder: 'Ej: García',
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Segundo Apellido',
-                                  controller:
-                                      controller.motherSecondLastNameController,
-                                  placeholder: 'Ej: López',
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                                  // Nombres
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Primer Nombre',
+                                          controller:
+                                              controller.motherFirstNameController,
+                                          placeholder: 'Ej: María',
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Segundo Nombre',
+                                          controller:
+                                              controller.motherSecondNameController,
+                                          placeholder: 'Ej: Elena',
+                                          required: false,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Contacto
-                          FormFields.buildTextField(
-                            label: 'Email',
-                            controller: controller.motherEmailController,
-                            placeholder: 'Ej: maria@example.com',
-                            keyboardType: TextInputType.emailAddress,
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
+                                  // Apellidos
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Primer Apellido',
+                                          controller:
+                                              controller.motherLastNameController,
+                                          placeholder: 'Ej: García',
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Segundo Apellido',
+                                          controller:
+                                              controller.motherSecondLastNameController,
+                                          placeholder: 'Ej: López',
+                                          required: false,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Teléfono Fijo',
-                                  controller:
-                                      controller.motherLandlineController,
-                                  placeholder: 'Ej: 6012345678',
-                                  keyboardType: TextInputType.phone,
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Celular',
-                                  controller:
-                                      controller.motherCellphoneController,
-                                  placeholder: 'Ej: 3001234567',
-                                  keyboardType: TextInputType.phone,
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                                  // Contacto
+                                  FormFields.buildTextField(
+                                    label: 'Email',
+                                    controller: controller.motherEmailController,
+                                    placeholder: 'Ej: maria@example.com',
+                                    keyboardType: TextInputType.emailAddress,
+                                    required: false,
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Régimen de Afiliación
-                          FormFields.buildDropdownField(
-                            label: 'Régimen de Afiliación',
-                            value:
-                                _getDisplayValue(
-                                    controller
-                                        .selectedMotherAffiliationRegime
-                                        .value
-                                        ?.name),
-                            items: const [
-                              'No Aplica',
-                              'Contributivo',
-                              'Subsidiado',
-                              'Población Pobre No Asegurada',
-                              'Especial',
-                              'Excepción',
-                              'No Asegurado',
-                            ],
-                            onChanged: (value) {
-                              final enumMap = {
-                                'No Aplica': null,
-                                'Contributivo': 'contributivo',
-                                'Subsidiado': 'subsidiado',
-                                'Población Pobre No Asegurada': 'poblacionPobreNoAsegurada',
-                                'Especial': 'especial',
-                                'Excepción': 'excepcion',
-                                'No Asegurado': 'noAsegurado',
-                              };
-                              final enumValue = enumMap[value];
-                              if (enumValue == null) {
-                                controller
-                                    .selectedMotherAffiliationRegime
-                                    .value = null;
-                              } else {
-                                controller
-                                    .selectedMotherAffiliationRegime
-                                    .value = RegimenAfiliacion.values
-                                    .firstWhere((e) => e.name == enumValue);
-                              }
+                                          Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Teléfono Fijo',
+                                          controller:
+                                              controller.motherLandlineController,
+                                          placeholder: 'Ej: 6012345678',
+                                          keyboardType: TextInputType.phone,
+                                          required: false,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Celular',
+                                          controller:
+                                              controller.motherCellphoneController,
+                                          placeholder: 'Ej: 3001234567',
+                                          keyboardType: TextInputType.phone,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Régimen de Afiliación
+                                  FormFields.buildDropdownField(
+                                    label: 'Régimen de Afiliación',
+                                    value:
+                                        _getDisplayValue(
+                                            controller
+                                                .selectedMotherAffiliationRegime
+                                                .value
+                                                ?.name),
+                                    items: const [
+                                      'Subsidiado',
+                                      'Contributivo',
+                                      'Población Pobre No Asegurada',
+                                      'Excepción Y Especial E Inpec',
+                                    ],
+                                    onChanged: (value) {
+                                      final enumMap = {
+                                        'Subsidiado': 'subsidiado',
+                                        'Contributivo': 'contributivo',
+                                        'Población Pobre No Asegurada': 'poblacionPobreNoAsegurada',
+                                        'Excepción Y Especial E Inpec': 'excepcion',
+                                      };
+                                      final enumValue = enumMap[value];
+                                      if (enumValue == null) {
+                                        controller
+                                            .selectedMotherAffiliationRegime
+                                            .value = null;
+                                      } else {
+                                        controller
+                                            .selectedMotherAffiliationRegime
+                                            .value = RegimenAfiliacion.values
+                                            .firstWhere((e) => e.name == enumValue);
+                                      }
+                                    },
+                                    required: false,
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Aseguradora (EPS) de la Madre
+                                  EPSSelector(
+                                    controller: controller.motherInsuranceController,
+                                    label: 'Aseguradora (EPS)',
+                                    placeholder: 'Seleccione una EPS',
+                                    required: isMinor,
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Pertenencia Étnica
+                                  FormFields.buildDropdownField(
+                                    label: 'Pertenencia Étnica',
+                                    value:
+                                        _getEthnicityDisplay(
+                                            controller
+                                                .selectedMotherEthnicity
+                                                .value
+                                                ?.name ??
+                                            'ninguno'),
+                                    items: const [
+                                      'Ninguno',
+                                      'Indígena',
+                                      'Rom',
+                                      'Raizal',
+                                      'Palenquero',
+                                      'Negro Afrocolombiano',
+                                    ],
+                                    onChanged: (value) {
+                                      final enumMap = {
+                                        'Ninguno': 'ninguno',
+                                        'Indígena': 'indigena',
+                                        'Rom': 'rom',
+                                        'Raizal': 'raizal',
+                                        'Palenquero': 'palenquero',
+                                        'Negro Afrocolombiano': 'negroAfrocolombiano',
+                                      };
+                                      final enumValue = enumMap[value]!;
+                                      controller.selectedMotherEthnicity.value =
+                                          PertenenciaEtnica.values.firstWhere(
+                                            (e) => e.name == enumValue,
+                                          );
+                                    },
+                                    required: false,
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Desplazada
+                                  Obx(
+                                    () => CheckboxListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: const Text(
+                                        '¿Es persona desplazada?',
+                                        style: TextStyle(
+                                          color: textPrimary,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      value: controller.motherDisplaced.value ?? false,
+                                      onChanged: (value) =>
+                                          controller.motherDisplaced.value = value,
+                                      activeColor: primaryColor,
+                                      controlAffinity: ListTileControlAffinity.leading,
+                                    ),
+                                  ),
+                                ],
+                              );
                             },
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Aseguradora (EPS) de la Madre
-                          EPSSelector(
-                            controller: controller.motherInsuranceController,
-                            label: 'Aseguradora (EPS)',
-                            placeholder: 'Seleccione una EPS',
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Pertenencia Étnica
-                          FormFields.buildDropdownField(
-                            label: 'Pertenencia Étnica',
-                            value:
-                                _getEthnicityDisplay(
-                                    controller
-                                        .selectedMotherEthnicity
-                                        .value
-                                        ?.name ??
-                                    'ninguno'),
-                            items: const [
-                              'Ninguno',
-                              'Indígena',
-                              'Rom',
-                              'Raizal',
-                              'Palenquero',
-                              'Negro Afrocolombiano',
-                            ],
-                            onChanged: (value) {
-                              final enumMap = {
-                                'Ninguno': 'ninguno',
-                                'Indígena': 'indigena',
-                                'Rom': 'rom',
-                                'Raizal': 'raizal',
-                                'Palenquero': 'palenquero',
-                                'Negro Afrocolombiano': 'negroAfrocolombiano',
-                              };
-                              final enumValue = enumMap[value]!;
-                              controller.selectedMotherEthnicity.value =
-                                  PertenenciaEtnica.values.firstWhere(
-                                    (e) => e.name == enumValue,
-                                  );
-                            },
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Desplazada
-                          Obx(
-                            () => CheckboxListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text(
-                                '¿Es persona desplazada?',
-                                style: TextStyle(
-                                  color: textPrimary,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              value: controller.motherDisplaced.value ?? false,
-                              onChanged: (value) =>
-                                  controller.motherDisplaced.value = value,
-                              activeColor: primaryColor,
-                              controlAffinity: ListTileControlAffinity.leading,
-                            ),
                           ),
                         ],
                       )
@@ -1606,27 +1737,80 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ✅ ADVERTENCIA PARA MENORES
+              Obx(() {
+                final age = controller.calculateAge();
+                final isMinor = age['years']! < 18;
+                
+                if (isMinor) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9), // Verde suave
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF4CAF50), width: 1),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          color: Color(0xFF4CAF50),
+                          size: 20,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Para menores: puede usar esto como alternativa a datos de madre',
+                            style: TextStyle(
+                              color: Color(0xFF2E7D32),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+
               // Pregunta: ¿Desea agregar datos del cuidador?
               Obx(
-                () => SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    '¿Desea agregar datos del cuidador?',
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                () {
+                  final age = controller.calculateAge();
+                  final isMinor = age['years']! < 18;
+
+                  return SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      '¿Desea agregar datos del cuidador?',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  subtitle: const Text(
-                    'Tutor o responsable del paciente',
-                    style: TextStyle(color: textSecondary, fontSize: 12),
-                  ),
-                  value: controller.showCaregiverData.value,
-                  onChanged: (value) =>
-                      controller.showCaregiverData.value = value,
-                  activeThumbColor: primaryColor,
-                ),
+                    subtitle: isMinor
+                        ? const Text(
+                            'Tutor o responsable (Alternativa a datos de madre para menores)',
+                            style: TextStyle(
+                              color: Color(0xFF4CAF50),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : const Text(
+                            'Tutor o responsable del paciente',
+                            style: TextStyle(color: textSecondary, fontSize: 12),
+                          ),
+                    value: controller.showCaregiverData.value,
+                    onChanged: (value) =>
+                        controller.showCaregiverData.value = value,
+                    activeThumbColor: primaryColor,
+                  );
+                },
               ),
 
               // Campos del cuidador (se muestran solo si showCaregiverData es true)
@@ -1638,152 +1822,164 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                           const Divider(),
                           const SizedBox(height: 16),
 
-                          // Tipo y número de documento
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: FormFields.buildDropdownField(
-                                  label: 'Tipo de Documento',
-                                  value:
-                                      controller
-                                          .selectedCaregiverIdType
-                                          .value ??
-                                      'CC - Cédula de Ciudadanía',
-                                  items: const [
-                                    'CC - Cédula de Ciudadanía',
-                                    'CE - Cédula de Extranjería',
-                                    'PA - Pasaporte',
-                                    'RC - Registro Civil',
-                                    'TI - Tarjeta de Identidad',
-                                  ],
-                                  onChanged: (value) =>
-                                      controller.selectedCaregiverIdType.value =
-                                          value,
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 3,
-                                child: FormFields.buildTextField(
-                                  label: 'Número de Documento',
-                                  controller:
-                                      controller.caregiverIdNumberController,
-                                  placeholder: 'Ej: 1234567890',
-                                  keyboardType: TextInputType.number,
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                          // Calcular si es menor para validación de campos
+                          Builder(
+                            builder: (context) {
+                              final age = controller.calculateAge();
+                              final isMinor = age['years']! < 18;
 
-                          // Nombres
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Primer Nombre',
-                                  controller:
-                                      controller.caregiverFirstNameController,
-                                  placeholder: 'Ej: Juan',
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Segundo Nombre',
-                                  controller:
-                                      controller.caregiverSecondNameController,
-                                  placeholder: 'Ej: Carlos',
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                              return Column(
+                                children: [
+                                  // Tipo y número de documento
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 1,
+                                        child: FormFields.buildDropdownField(
+                                          label: 'Tipo de Documento',
+                                          value:
+                                              controller
+                                                  .selectedCaregiverIdType
+                                                  .value ??
+                                              'CC - Cédula de Ciudadanía',
+                                          items: const [
+                                            'CC - Cédula de Ciudadanía',
+                                            'CE - Cédula de Extranjería',
+                                            'PA - Pasaporte',
+                                            'RC - Registro Civil',
+                                            'TI - Tarjeta de Identidad',
+                                          ],
+                                          onChanged: (value) =>
+                                              controller.selectedCaregiverIdType.value =
+                                                  value,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        flex: 1,
+                                        child: FormFields.buildTextField(
+                                          label: 'Número de Documento',
+                                          controller:
+                                              controller.caregiverIdNumberController,
+                                          placeholder: 'Ej: 1234567890',
+                                          keyboardType: TextInputType.number,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Apellidos
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Primer Apellido',
-                                  controller:
-                                      controller.caregiverLastNameController,
-                                  placeholder: 'Ej: Pérez',
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Segundo Apellido',
-                                  controller: controller
-                                      .caregiverSecondLastNameController,
-                                  placeholder: 'Ej: Ramírez',
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                                  // Nombres
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Primer Nombre',
+                                          controller:
+                                              controller.caregiverFirstNameController,
+                                          placeholder: 'Ej: Juan',
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Segundo Nombre',
+                                          controller:
+                                              controller.caregiverSecondNameController,
+                                          placeholder: 'Ej: Carlos',
+                                          required: false,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Parentesco
-                          FormFields.buildTextField(
-                            label: 'Parentesco',
-                            controller:
-                                controller.caregiverRelationshipController,
-                            placeholder: 'Ej: Padre, Tío, Abuelo',
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
+                                  // Apellidos
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Primer Apellido',
+                                          controller:
+                                              controller.caregiverLastNameController,
+                                          placeholder: 'Ej: Pérez',
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Segundo Apellido',
+                                          controller: controller
+                                              .caregiverSecondLastNameController,
+                                          placeholder: 'Ej: Ramírez',
+                                          required: false,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Contacto
-                          FormFields.buildTextField(
-                            label: 'Email',
-                            controller: controller.caregiverEmailController,
-                            placeholder: 'Ej: juan@example.com',
-                            keyboardType: TextInputType.emailAddress,
-                            required: false,
-                          ),
-                          const SizedBox(height: 16),
+                                  // Parentesco
+                                  FormFields.buildTextField(
+                                    label: 'Parentesco',
+                                    controller:
+                                        controller.caregiverRelationshipController,
+                                    placeholder: 'Ej: Padre, Tío, Abuelo',
+                                    required: false,
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Teléfono Fijo',
-                                  controller:
-                                      controller.caregiverLandlineController,
-                                  placeholder: 'Ej: 6012345678',
-                                  keyboardType: TextInputType.phone,
-                                  required: false,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FormFields.buildTextField(
-                                  label: 'Celular',
-                                  controller:
-                                      controller.caregiverCellphoneController,
-                                  placeholder: 'Ej: 3001234567',
-                                  keyboardType: TextInputType.phone,
-                                  required: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                                  // Contacto
+                                  FormFields.buildTextField(
+                                    label: 'Email',
+                                    controller: controller.caregiverEmailController,
+                                    placeholder: 'Ej: juan@example.com',
+                                    keyboardType: TextInputType.emailAddress,
+                                    required: false,
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Aseguradora (EPS) del Cuidador
-                          EPSSelector(
-                            controller: controller.caregiverInsuranceController,
-                            label: 'Aseguradora (EPS)',
-                            placeholder: 'Seleccione una EPS',
-                            required: false,
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Teléfono Fijo',
+                                          controller:
+                                              controller.caregiverLandlineController,
+                                          placeholder: 'Ej: 6012345678',
+                                          keyboardType: TextInputType.phone,
+                                          required: false,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: FormFields.buildTextField(
+                                          label: 'Celular',
+                                          controller:
+                                              controller.caregiverCellphoneController,
+                                          placeholder: 'Ej: 3001234567',
+                                          keyboardType: TextInputType.phone,
+                                          required: isMinor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Aseguradora (EPS) del Cuidador
+                                  EPSSelector(
+                                    controller: controller.caregiverInsuranceController,
+                                    label: 'Aseguradora (EPS)',
+                                    placeholder: 'Seleccione una EPS',
+                                    required: isMinor,
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       )
@@ -1910,14 +2106,14 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
 
   // Helper para convertir nombre de enum a display value con mayúscula
   String _getDisplayValue(String? enumName) {
-    if (enumName == null) return 'No Aplica';
+    if (enumName == null) return 'Seleccione una opción';
     
     final displayMap = {
       'contributivo': 'Contributivo',
       'subsidiado': 'Subsidiado',
       'poblacionPobreNoAsegurada': 'Población Pobre No Asegurada',
       'especial': 'Especial',
-      'excepcion': 'Excepción',
+      'excepcion': 'Excepción Y Especial E Inpec',
       'noAsegurado': 'No Asegurado',
       'masculino': 'Masculino',
       'femenino': 'Femenino',

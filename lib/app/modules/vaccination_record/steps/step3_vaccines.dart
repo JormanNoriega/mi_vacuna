@@ -16,6 +16,7 @@ class Step3Vaccines extends StatefulWidget {
 class _Step3VaccinesState extends State<Step3Vaccines>
     with AutomaticKeepAliveClientMixin {
   bool _hasLoadedEditData = false;
+  late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   bool get wantKeepAlive => true;
@@ -32,6 +33,11 @@ class _Step3VaccinesState extends State<Step3Vaccines>
 
   Future<void> _initializeData() async {
     final patientController = Get.find<PatientFormController>();
+
+    // Registrar el formKey para que el wrapper pueda validar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      patientController.registerStep3FormKey(_formKey);
+    });
 
     // Usar find si ya existe, put si no
     final vaccineController = Get.isRegistered<VaccineSelectionController>()
@@ -63,10 +69,12 @@ class _Step3VaccinesState extends State<Step3Vaccines>
         ? Get.find<VaccineSelectionController>()
         : Get.put(VaccineSelectionController());
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
@@ -180,6 +188,7 @@ class _Step3VaccinesState extends State<Step3Vaccines>
               );
             }),
           ],
+          ),
         ),
       ),
     );
@@ -741,16 +750,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             ? null
             : (value) {
                 if (value != null) {
-                  final option = options.firstWhere(
+                  final option = options.firstWhereOrNull(
                     (opt) => opt.displayName == value,
                   );
-                  controller.setSelectedLaboratory(
-                    vaccine.id!,
-                    doseOptionId,
-                    option.id!,
-                  );
+                  if (option != null) {
+                    controller.setSelectedLaboratory(
+                      vaccine.id!,
+                      doseOptionId,
+                      option.id!,
+                    );
+                  }
                 }
               },
+        required: vaccine.hasLaboratory,
+        customValidator: vaccine.hasLaboratory
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Laboratorio es requerido';
+                }
+                return null;
+              }
+            : null,
       );
     });
   }
@@ -777,16 +797,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             ? null
             : (value) {
                 if (value != null) {
-                  final option = options.firstWhere(
+                  final option = options.firstWhereOrNull(
                     (opt) => opt.displayName == value,
                   );
-                  controller.setSelectedSyringe(
-                    vaccine.id!,
-                    doseOptionId,
-                    option.id!,
-                  );
+                  if (option != null) {
+                    controller.setSelectedSyringe(
+                      vaccine.id!,
+                      doseOptionId,
+                      option.id!,
+                    );
+                  }
                 }
               },
+        required: vaccine.hasSyringe,
+        customValidator: vaccine.hasSyringe
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Jeringa es requerida';
+                }
+                return null;
+              }
+            : null,
       );
     });
   }
@@ -813,16 +844,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             ? null
             : (value) {
                 if (value != null) {
-                  final option = options.firstWhere(
+                  final option = options.firstWhereOrNull(
                     (opt) => opt.displayName == value,
                   );
-                  controller.setSelectedDropper(
-                    vaccine.id!,
-                    doseOptionId,
-                    option.id!,
-                  );
+                  if (option != null) {
+                    controller.setSelectedDropper(
+                      vaccine.id!,
+                      doseOptionId,
+                      option.id!,
+                    );
+                  }
                 }
               },
+        required: vaccine.hasDropper,
+        customValidator: vaccine.hasDropper
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Gotero es requerido';
+                }
+                return null;
+              }
+            : null,
       );
     });
   }
@@ -849,16 +891,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             ? null
             : (value) {
                 if (value != null) {
-                  final option = options.firstWhere(
+                  final option = options.firstWhereOrNull(
                     (opt) => opt.displayName == value,
                   );
-                  controller.setSelectedPneumococcalType(
-                    vaccine.id!,
-                    doseOptionId,
-                    option.id!,
-                  );
+                  if (option != null) {
+                    controller.setSelectedPneumococcalType(
+                      vaccine.id!,
+                      doseOptionId,
+                      option.id!,
+                    );
+                  }
                 }
               },
+        required: vaccine.hasPneumococcalType,
+        customValidator: vaccine.hasPneumococcalType
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Tipo de neumococo es requerido';
+                }
+                return null;
+              }
+            : null,
       );
     });
   }
@@ -885,16 +938,27 @@ class _Step3VaccinesState extends State<Step3Vaccines>
             ? null
             : (value) {
                 if (value != null) {
-                  final option = options.firstWhere(
+                  final option = options.firstWhereOrNull(
                     (opt) => opt.displayName == value,
                   );
-                  controller.setSelectedObservation(
-                    vaccine.id!,
-                    doseOptionId,
-                    option.id!,
-                  );
+                  if (option != null) {
+                    controller.setSelectedObservation(
+                      vaccine.id!,
+                      doseOptionId,
+                      option.id!,
+                    );
+                  }
                 }
               },
+        required: vaccine.hasObservation,
+        customValidator: vaccine.hasObservation
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Observación es requerida';
+                }
+                return null;
+              }
+            : null,
       );
     });
   }
@@ -916,6 +980,13 @@ class _Step3VaccinesState extends State<Step3Vaccines>
       controller: textController,
       placeholder: 'Ej: LOT123456',
       enabled: !isLocked,
+      required: true,
+      customValidator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Lote es obligatorio';
+        }
+        return null;
+      },
     );
   }
 
@@ -936,6 +1007,15 @@ class _Step3VaccinesState extends State<Step3Vaccines>
       controller: textController,
       placeholder: 'Ej: SYR789',
       enabled: !isLocked,
+      required: vaccine.hasSyringeLot,
+      customValidator: vaccine.hasSyringeLot
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Lote de jeringa es requerido';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -956,6 +1036,15 @@ class _Step3VaccinesState extends State<Step3Vaccines>
       controller: textController,
       placeholder: 'Ej: DIL456',
       enabled: !isLocked,
+      required: vaccine.hasDiluent,
+      customValidator: vaccine.hasDiluent
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Diluyente es requerido';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -977,6 +1066,15 @@ class _Step3VaccinesState extends State<Step3Vaccines>
       placeholder: 'Ej: 2',
       keyboardType: TextInputType.number,
       enabled: !isLocked,
+      required: vaccine.hasVialCount,
+      customValidator: vaccine.hasVialCount
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Cantidad de frascos es requerida';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -993,12 +1091,12 @@ class _Step3VaccinesState extends State<Step3Vaccines>
       );
 
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.only(left: 4, bottom: 6),
+              padding: EdgeInsets.only(left: 0, bottom: 8),
               child: Text(
                 'Fecha de Aplicación *',
                 style: TextStyle(
