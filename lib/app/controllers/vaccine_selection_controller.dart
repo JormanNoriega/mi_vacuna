@@ -232,10 +232,28 @@ class VaccineSelectionController extends GetxController {
 
   /// Carga todas las opciones de configuración de una vacuna
   Future<void> _loadVaccineOptions(String vaccineId) async {
-    final vaccine = availableVaccines.firstWhereOrNull(
+    var vaccine = availableVaccines.firstWhereOrNull(
       (v) => v.id == vaccineId,
     );
-    if (vaccine == null) return;
+    
+    // Si no está en la lista de disponibles, intentar recargarlo
+    if (vaccine == null) {
+      print('⚠️ Vacuna $vaccineId no encontrada en availableVaccines, recargando...');
+      // Recargar todas las vacunas disponibles
+      try {
+        availableVaccines.value = await _vaccineService.getAllActiveVaccines();
+        vaccine = availableVaccines.firstWhereOrNull(
+          (v) => v.id == vaccineId,
+        );
+      } catch (e) {
+        print('❌ Error recargando vacunas: $e');
+      }
+    }
+    
+    if (vaccine == null) {
+      print('❌ No se pudo encontrar la vacuna $vaccineId después de recargar');
+      return;
+    }
 
     try {
       _doseOptionsCache[vaccineId] = await _vaccineService.getDoses(vaccineId);
@@ -264,8 +282,9 @@ class VaccineSelectionController extends GetxController {
       }
 
       selectedVaccines.refresh();
+      print('✅ Opciones cargadas para vacuna: $vaccineId');
     } catch (e) {
-      print('Error cargando opciones para vacuna $vaccineId: $e');
+      print('❌ Error cargando opciones para vacuna $vaccineId: $e');
     }
   }
 
@@ -384,20 +403,38 @@ class VaccineSelectionController extends GetxController {
       final List<AppliedDose> doses = await _appliedDoseService
           .getDosesByPatient(patientId);
 
+      print('📋 Cargando ${doses.length} dosis registradas para el paciente');
+
       for (final AppliedDose appliedDose in doses) {
         final vaccineId = appliedDose.vaccineId;
 
+        print('🔄 Procesando dosis de vacuna: $vaccineId');
+
+        // Asegurar que la vacuna está seleccionada Y que sus opciones están cargadas
         if (!isVaccineSelected(vaccineId)) {
           await toggleVaccineSelection(vaccineId);
+          // Esperar adicional para asegurar carga completa
+          await Future.delayed(const Duration(milliseconds: 100));
         }
 
         final vaccineData = selectedVaccines[vaccineId];
         if (vaccineData == null) {
+          print('   ❌ VaccineData no encontrado para $vaccineId');
           continue;
         }
 
-        final doseOptions = getDoseOptions(vaccineId);
+        // Intentar obtener opciones de dosis
+        var doseOptions = getDoseOptions(vaccineId);
+        
+        // Si las opciones están vacías, intentar cargarlas nuevamente
         if (doseOptions.isEmpty) {
+          print('   ⚠️ DoseOptions vacías, intentando recargar...');
+          await _loadVaccineOptions(vaccineId);
+          doseOptions = getDoseOptions(vaccineId);
+        }
+
+        if (doseOptions.isEmpty) {
+          print('   ❌ No se pudieron obtener opciones de dosis para $vaccineId');
           continue;
         }
 
@@ -509,8 +546,14 @@ class VaccineSelectionController extends GetxController {
           if (appliedDose.customObservation != null && appliedDose.customObservation!.isNotEmpty) {
             doseData.customObservationController.text = appliedDose.customObservation!;
           }
+          
+          print('   ✅ Dosis cargada: ${doseOption.displayName}');
+        } else {
+          print('   ❌ No se encontró opción de dosis para: ${appliedDose.selectedDose}');
         }
       }
+      
+      print('✅ Todas las dosis han sido cargadas');
       selectedVaccines.refresh();
     } catch (e) {
       print('❌ Error al cargar dosis registradas: $e');

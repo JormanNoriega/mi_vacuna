@@ -5,6 +5,7 @@ import '../../../controllers/vaccine_selection_controller.dart';
 import '../../../models/vaccine.dart';
 import '../../../theme/colors.dart';
 import '../../../widgets/form_fields.dart';
+import '../../../widgets/custom_snackbar.dart';
 
 class Step3Vaccines extends StatefulWidget {
   const Step3Vaccines({super.key});
@@ -14,9 +15,16 @@ class Step3Vaccines extends StatefulWidget {
 }
 
 class _Step3VaccinesState extends State<Step3Vaccines>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   bool _hasLoadedEditData = false;
-  late final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final VaccineSelectionController vaccineController;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -24,6 +32,12 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Usar find si ya existe, put si no (solo una vez)
+    vaccineController = Get.isRegistered<VaccineSelectionController>()
+      ? Get.find<VaccineSelectionController>()
+      : Get.put(VaccineSelectionController(), permanent: true);
 
     // Cargar datos después de que el widget se construya
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -31,32 +45,76 @@ class _Step3VaccinesState extends State<Step3Vaccines>
     });
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Si la app regresa del background, revalidar datos
+    if (state == AppLifecycleState.resumed) {
+      final patientController = Get.find<PatientFormController>();
+      if (patientController.isEditMode.value) {
+        // Resetear para recargar datos si es necesario
+        _hasLoadedEditData = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _initializeData();
+        });
+      }
+    }
+  }
+
   Future<void> _initializeData() async {
+    if (_hasLoadedEditData) {
+      return; // Ya fue inicializado, evitar duplicados
+    }
+
     final patientController = Get.find<PatientFormController>();
 
-    // Registrar el formKey para que el wrapper pueda validar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      patientController.registerStep3FormKey(_formKey);
-    });
+    // Registrar el formKey para validación
+    patientController.registerStep3FormKey(_formKey);
 
-    // Usar find si ya existe, put si no
-    final vaccineController = Get.isRegistered<VaccineSelectionController>()
-        ? Get.find<VaccineSelectionController>()
-        : Get.put(VaccineSelectionController());
+    try {
+      // En modo edición, limpiar y recargar todo
+      if (patientController.isEditMode.value &&
+          patientController.editingPatientId != null) {
+        _hasLoadedEditData = true;
+        
+        // Mostrar loading
+        vaccineController.isLoading.value = true;
+        
+        try {
+          // Limpiar estado anterior
+          vaccineController.selectedVaccines.clear();
+          
+          // Cargar nuevas vacunas disponibles
+          await vaccineController.loadAvailableVaccines(
+            patientController.birthDate.value,
+          );
 
-    // Cargar vacunas disponibles según la edad del paciente
-    await vaccineController.loadAvailableVaccines(
-      patientController.birthDate.value,
-    );
+          // Asegurar que las vacunas cargaron antes de cargar datos de edición
+          if (vaccineController.availableVaccines.isEmpty) {
+            print('⚠️ Sin vacunas disponibles después de cargar');
+          }
 
-    // Si está en modo edición y aún no se han cargado las vacunas
-    if (patientController.isEditMode.value &&
-        patientController.editingPatientId != null &&
-        !_hasLoadedEditData) {
-      _hasLoadedEditData = true;
-      await patientController.loadPatientVaccinesForEdit(
-        patientController.editingPatientId!,
-      );
+          // Cargar datos del paciente en edición
+          await patientController.loadPatientVaccinesForEdit(
+            patientController.editingPatientId!,
+          );
+          
+          print('✅ Datos de edición cargados correctamente');
+        } finally {
+          vaccineController.isLoading.value = false;
+        }
+      } else {
+        // Modo creación: solo cargar disponibles si necesario
+        _hasLoadedEditData = true;
+        if (vaccineController.availableVaccines.isEmpty) {
+          await vaccineController.loadAvailableVaccines(
+            patientController.birthDate.value,
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error en _initializeData: $e');
+      _hasLoadedEditData = false; // Permitir reintento
+      CustomSnackbar.showError('Error al cargar datos del formulario');
     }
   }
 
@@ -64,130 +122,67 @@ class _Step3VaccinesState extends State<Step3Vaccines>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // Usar find si ya existe, put si no
-    final vaccineController = Get.isRegistered<VaccineSelectionController>()
-        ? Get.find<VaccineSelectionController>()
-        : Get.put(VaccineSelectionController());
-
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 100),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Selecciona las Vacunas',
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ...existing code...
+              // Lista de vacunas disponibles
+              Obx(() {
+                if (vaccineController.isLoading.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Marca las vacunas que deseas aplicar y completa su información',
-                    style: TextStyle(color: textSecondary, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
+                  );
+                }
 
-            // Info Card
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: primaryColor.withOpacity(0.1)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.info_outline,
-                      color: primaryColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Solo marca las vacunas que aplicarás hoy. Al seleccionar una vacuna, se mostrarán los campos necesarios.',
-                      style: TextStyle(color: textSecondary, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Lista de vacunas disponibles
-            Obx(() {
-              if (vaccineController.isLoading.value) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-
-              if (vaccineController.availableVaccines.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.vaccines_outlined,
-                          size: 64,
-                          color: textSecondary.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No hay vacunas disponibles',
-                          style: TextStyle(
-                            color: textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                if (vaccineController.availableVaccines.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.vaccines_outlined,
+                            size: 64,
+                            color: textSecondary.withOpacity(0.5),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Configura vacunas en el catálogo',
-                          style: TextStyle(color: textSecondary, fontSize: 14),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No hay vacunas disponibles',
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Configura vacunas en el catálogo',
+                            style: TextStyle(color: textSecondary, fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              return Column(
-                children: vaccineController.availableVaccines
-                    .map(
-                      (vaccine) =>
-                          _buildVaccineCard(vaccine, vaccineController),
-                    )
-                    .toList(),
-              );
-            }),
-          ],
+                return Column(
+                  children: vaccineController.availableVaccines
+                      .map(
+                        (vaccine) =>
+                            _buildVaccineCard(vaccine, vaccineController),
+                      )
+                      .toList(),
+                );
+              }),
+            ],
           ),
         ),
       ),

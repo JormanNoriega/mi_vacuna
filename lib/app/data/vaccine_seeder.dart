@@ -148,12 +148,14 @@ class VaccineSeeder {
   // ==================== HEPATITIS B ====================
   static Future<void> _seedHepatitisB(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Hepatitis B',
       'code': 'hepatitis_b',
       'category': 'infantil',
       'max_doses': 4,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 216, // 18 años
       'has_laboratory': 0,
@@ -204,12 +206,14 @@ class VaccineSeeder {
   // ==================== POLIO INACTIVADO ====================
   static Future<void> _seedPolioInactivado(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Polio Inactivado (IPV)',
       'code': 'polio_ipv',
       'category': 'infantil',
       'max_doses': 5,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 60, // 5 años
       'has_laboratory': 0,
@@ -249,12 +253,14 @@ class VaccineSeeder {
   // ==================== POLIO ORAL ====================
   static Future<void> _seedPolioOral(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Polio Oral (OPV)',
       'code': 'polio_oral',
       'category': 'infantil',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 60, // 5 años
       'has_laboratory': 0,
@@ -280,12 +286,14 @@ class VaccineSeeder {
   // ==================== PENTAVALENTE ====================
   static Future<void> _seedPentavalente(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Pentavalente (DPT+HB+Hib)',
       'code': 'pentavalente',
       'category': 'infantil',
       'max_doses': 5,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 24, // 2 años
       'has_laboratory': 0,
@@ -325,12 +333,14 @@ class VaccineSeeder {
   // ==================== HEXAVALENTE ====================
   static Future<void> _seedHexavalente(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Hexavalente',
       'code': 'hexavalente',
       'category': 'infantil',
       'max_doses': 3,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 24,
       'has_laboratory': 0,
@@ -363,12 +373,14 @@ class VaccineSeeder {
   // ==================== DPT ====================
   static Future<void> _seedDPT(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'DPT (Difteria, Tos ferina, Tétanos)',
       'code': 'dpt',
       'category': 'infantil',
       'max_doses': 5,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 84, // 7 años
       'has_laboratory': 0,
@@ -403,12 +415,14 @@ class VaccineSeeder {
   // ==================== DTPa PEDIÁTRICO ====================
   static Future<void> _seedDTPaPediatrico(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'DTPa Pediátrico',
       'code': 'dtpa_pediatrico',
       'category': 'infantil',
       'max_doses': 5,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 84,
       'has_laboratory': 0,
@@ -443,12 +457,14 @@ class VaccineSeeder {
   // ==================== TD PEDIÁTRICO ====================
   static Future<void> _seedTDPediatrico(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'TD Pediátrico',
       'code': 'td_pediatrico',
       'category': 'infantil',
       'max_doses': 5,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 84,
       'has_laboratory': 0,
@@ -483,12 +499,14 @@ class VaccineSeeder {
   // ==================== ROTAVIRUS ====================
   static Future<void> _seedRotavirus(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Rotavirus',
       'code': 'rotavirus',
       'category': 'infantil',
       'max_doses': 2,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 6,
       'has_laboratory': 0,
@@ -517,12 +535,14 @@ class VaccineSeeder {
   // ==================== NEUMOCOCO ====================
   static Future<void> _seedNeumococo(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Neumococo Conjugada',
       'code': 'neumococo',
       'category': 'infantil',
       'max_doses': 4,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 60,
       'has_laboratory': 0,
@@ -562,12 +582,14 @@ class VaccineSeeder {
   // ==================== TRIPLE VIRAL ====================
   static Future<void> _seedTripleViral(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Triple Viral (SRP)',
       'code': 'srp',
       'category': 'infantil',
       'max_doses': 2,
+      'vaccine_sequence': sequence,
       'min_months': 12,
       'max_months': 60,
       'has_laboratory': 0,
@@ -596,12 +618,14 @@ class VaccineSeeder {
   // ==================== SARAMPIÓN RUBEOLA ====================
   static Future<void> _seedSarampionRubeola(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Sarampión Rubeola (SR) Multidosis',
       'code': 'sr_multidosis',
       'category': 'infantil',
       'max_doses': 2,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -630,12 +654,14 @@ class VaccineSeeder {
   // ==================== FIEBRE AMARILLA ====================
   static Future<void> _seedFiebreAmarilla(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Fiebre Amarilla',
       'code': 'fiebre_amarilla',
       'category': 'todas',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': 12,
       'max_months': null,
       'has_laboratory': 0,
@@ -664,12 +690,14 @@ class VaccineSeeder {
   // ==================== HEPATITIS A PEDIÁTRICA ====================
   static Future<void> _seedHepatitisAPediatrica(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Hepatitis A Pediátrica',
       'code': 'hepatitis_a_pediatrica',
       'category': 'infantil',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': 0,
       'max_months': 144, // 12 años
       'has_laboratory': 0,
@@ -698,12 +726,14 @@ class VaccineSeeder {
   // ==================== VARICELA ====================
   static Future<void> _seedVaricela(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Varicela',
       'code': 'varicela',
       'category': 'infantil',
       'max_doses': 2,
+      'vaccine_sequence': sequence,
       'min_months': 12, // 1 año
       'max_months': 120, // 10 años
       'has_laboratory': 0,
@@ -732,12 +762,14 @@ class VaccineSeeder {
   // ==================== TOXOIDE TETÁNICO DIFTÉRICO ADULTO ====================
   static Future<void> _seedToxoideTetanicoDiftericoAdulto(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Toxoide Tetánico Diftérico (TD) Adulto',
       'code': 'td_adulto',
       'category': 'adulto',
       'max_doses': 9,
+      'vaccine_sequence': sequence,
       'min_months': 84, // 7 años en adelante
       'max_months': null,
       'has_laboratory': 0,
@@ -776,12 +808,14 @@ class VaccineSeeder {
   // ==================== DTPa ADULTO ====================
   static Future<void> _seedDTPaAdulto(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'dTpa Adulto',
       'code': 'dtpa_adulto',
       'category': 'adulto',
       'max_doses': 6,
+      'vaccine_sequence': sequence,
       'min_months': 84,
       'max_months': null,
       'has_laboratory': 0,
@@ -817,12 +851,14 @@ class VaccineSeeder {
   // ==================== INFLUENZA ====================
   static Future<void> _seedInfluenza(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Influenza',
       'code': 'influenza',
       'category': 'todas',
       'max_doses': 99, // Anual
+      'vaccine_sequence': sequence,
       'min_months': 6,
       'max_months': null,
       'has_laboratory': 0,
@@ -865,12 +901,14 @@ class VaccineSeeder {
   // ==================== VPH ====================
   static Future<void> _seedVPH(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'VPH (Virus del Papiloma Humano)',
       'code': 'vph',
       'category': 'adolescente',
       'max_doses': 3,
+      'vaccine_sequence': sequence,
       'min_months': 108, // 9 años
       'max_months': 204, // 17 años
       'has_laboratory': 0,
@@ -906,12 +944,14 @@ class VaccineSeeder {
   // ==================== ANTIRRÁBICA VACUNA ====================
   static Future<void> _seedAntirrabicaVacuna(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Antirrábica Humana (Vacuna)',
       'code': 'antirrabica_vacuna',
       'category': 'especial',
       'max_doses': 6,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -952,12 +992,14 @@ class VaccineSeeder {
   // ==================== ANTIRRÁBICO SUERO ====================
   static Future<void> _seedAntirrabicoSuero(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Antirrábico Humano (Suero)',
       'code': 'antirrabico_suero',
       'category': 'especial',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -979,12 +1021,14 @@ class VaccineSeeder {
   // ==================== HEPATITIS B INMUNOGLOBULINA ====================
   static Future<void> _seedHepatitisBInmunoglobulina(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Hepatitis B (Inmunoglobulina)',
       'code': 'hepatitis_b_inmunoglobulina',
       'category': 'especial',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -1019,12 +1063,14 @@ class VaccineSeeder {
   // ==================== INMUNOGLOBULINA ANTITETÁNICA ====================
   static Future<void> _seedInmunoglobulinaAntitetanica(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Inmunoglobulina Antitetánica (Suero Homólogo)',
       'code': 'inmunoglobulina_antitetanica',
       'category': 'especial',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -1057,12 +1103,14 @@ class VaccineSeeder {
   // ==================== ANTITOXINA TETÁNICA ====================
   static Future<void> _seedAntitoxinaTetanica(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Antitoxina Tetánica (Suero Heterólogo)',
       'code': 'antitoxina_tetanica',
       'category': 'especial',
       'max_doses': 1,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,
@@ -1095,12 +1143,14 @@ class VaccineSeeder {
   // ==================== MENINGOCOCO ====================
   static Future<void> _seedMeningococo(Database db) async {
     final vaccineId = _uuid.v4();
-    db.insert('vaccines', {
+    final sequence = await _nextSequence(db);
+    await db.insert('vaccines', {
       'id': vaccineId,
       'name': 'Meningococo (Serogrupos A, C, W-135, Y)',
       'code': 'meningococo',
       'category': 'todas',
       'max_doses': 4,
+      'vaccine_sequence': sequence,
       'min_months': null,
       'max_months': null,
       'has_laboratory': 0,

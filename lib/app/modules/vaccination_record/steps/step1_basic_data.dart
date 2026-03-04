@@ -6,6 +6,7 @@ import '../../../controllers/patient_form_controller.dart';
 import '../../../widgets/form_fields.dart';
 import '../../../widgets/custom_snackbar.dart';
 import '../../../theme/colors.dart';
+import '../vaccination_form_wrapper.dart';
 
 class Step1BasicData extends StatefulWidget {
   const Step1BasicData({super.key});
@@ -479,12 +480,25 @@ class _Step1BasicDataState extends State<Step1BasicData>
           ),
           ElevatedButton(
             onPressed: () {
-              Get.back();
-              // Cargar en modo edición pero NO modal (isModal: false)
-              controller.loadPatientData(patient, isModal: false);
+              Get.back(); // Cerrar alert
+              
+              // ✅ Mostrar snackbar de confirmación
               CustomSnackbar.showSuccess(
-                'Paciente encontrado. Modo edición activado.',
+                'Paciente encontrado. Abriendo modo edición...',
               );
+              
+              // ✅ Cargar paciente en modo MODAL
+              controller.loadPatientData(patient, isModal: true);
+              
+              // ✅ Breve delay para que se vea el snackbar
+              Future.delayed(const Duration(milliseconds: 500), () {
+                // ✅ Abrir como MODAL con PopScope
+                Get.to(
+                  () => const VaccinationFormWrapper(showPopScope: true),
+                  opaque: false,
+                  transition: Transition.fadeIn,
+                );
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
@@ -493,7 +507,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
               ),
             ),
             child: const Text(
-              'Sí, cargar datos',
+              'Sí, editar paciente',
               style: TextStyle(color: Colors.white),
             ),
           ),

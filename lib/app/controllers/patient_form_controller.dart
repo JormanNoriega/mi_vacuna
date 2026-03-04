@@ -23,6 +23,7 @@ class PatientFormController extends GetxController {
   final isModalMode =
       false.obs; // Indica si se abrió como modal desde patient_history
   String? editingPatientId; // Cambiado de int? a String? para UUID
+  int? editingPatientConsecutivo; // ✅ Guardar consecutivo al editar
 
   // ==================== CONTROL DE NAVEGACIÓN ====================
   final pageController = PageController();
@@ -83,6 +84,10 @@ class PatientFormController extends GetxController {
   final selectedEthnicity = Rx<PertenenciaEtnica>(PertenenciaEtnica.ninguno);
   final selectedHealthRegime = Rx<RegimenAfiliacion?>(null);
   final selectedArea = Rx<Area?>(null);
+
+  // Países seleccionados (reactivos)
+  final selectedBirthCountry = Rx<String>('Colombia');
+  final selectedResidenceCountry = Rx<String>('Colombia');
 
   // Controllers de texto - Ubicación
   final birthCountryController = TextEditingController(text: 'Colombia');
@@ -479,6 +484,7 @@ class PatientFormController extends GetxController {
     isEditMode.value = true;
     isModalMode.value = isModal;
     editingPatientId = patient.id;
+    editingPatientConsecutivo = patient.consecutivo; // ✅ Guardar consecutivo existente
 
     // Resetear FormKey para evitar conflictos
     step1FormKey.value = null;
@@ -505,8 +511,10 @@ class PatientFormController extends GetxController {
 
     // Paso 2: Datos adicionales
     birthCountryController.text = patient.birthCountry;
+    selectedBirthCountry.value = patient.birthCountry; // ✅ Sincronizar variable reactiva
     birthPlaceController.text = patient.birthPlace ?? '';
     residenceCountryController.text = patient.residenceCountry ?? 'Colombia';
+    selectedResidenceCountry.value = patient.residenceCountry ?? 'Colombia'; // ✅ Sincronizar variable reactiva
     residenceDepartmentController.text = patient.residenceDepartment ?? '';
     residenceMunicipalityController.text = patient.residenceMunicipality ?? '';
     communeController.text = patient.commune ?? '';
@@ -892,8 +900,14 @@ class PatientFormController extends GetxController {
         throw Exception('No hay enfermera logueada');
       }
 
-      // Generar consecutivo autoincremental
-      final nextConsecutivo = await _getNextConsecutivo();
+      // ✅ Generar consecutivo SOLO si es nuevo registro
+      // Si es edición, usar el existente
+      int? nextConsecutivo;
+      if (!isEditMode.value) {
+        nextConsecutivo = await _getNextConsecutivo();
+      } else {
+        nextConsecutivo = editingPatientConsecutivo; // ✅ Mantener consecutivo existente
+      }
 
       // Crear objeto Patient
       final patient = Patient(
@@ -1433,6 +1447,7 @@ class PatientFormController extends GetxController {
     isEditMode.value = false;
     isModalMode.value = false;
     editingPatientId = null;
+    editingPatientConsecutivo = null; // ✅ Limpiar consecutivo al resetear
 
     // ✅ Resetear FormKeys
     step1FormKey.value = null;

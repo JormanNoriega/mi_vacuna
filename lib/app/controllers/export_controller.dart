@@ -24,10 +24,10 @@ class ExportController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Inicializar con el último mes
+    // ✅ Inicializar con el día actual para ambas fechas
     final now = DateTime.now();
+    startDate.value = now;
     endDate.value = now;
-    startDate.value = DateTime(now.year, now.month - 1, now.day);
     
     // Escuchar cambios en las fechas
     ever(startDate, (_) => updateStatistics());

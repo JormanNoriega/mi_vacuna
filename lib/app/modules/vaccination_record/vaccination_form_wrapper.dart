@@ -40,6 +40,15 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFormState();
       _hasInitialized = true;
+      
+      // ✅ Si se abre como MODAL con datos preexistentes (edición), regenerar key
+      final controller = Get.isRegistered<PatientFormController>()
+          ? Get.find<PatientFormController>()
+          : null;
+      
+      if (widget.showPopScope && controller != null && controller.isEditMode.value) {
+        _regenerateFormKey();
+      }
     });
   }
 
@@ -62,8 +71,8 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper>
     
     if (controller == null) return;
     
-    // Si estamos en tab mode y hay datos de edición, limpiar
-    if (controller.isEditMode.value || controller.isModalMode.value) {
+    // Si estamos en tab mode y hay datos de edición, limpiar SOLO si NO está en modo edición
+    if ((controller.isEditMode.value || controller.isModalMode.value) && !controller.isEditMode.value) {
       print('🧹 Limpiando formulario - detectado estado modal/edición en tab');
       controller.clearForm();
       controller.isModalMode.value = false;
@@ -83,8 +92,8 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper>
     
     if (controller == null) return;
 
-    // Si está abierto como tab (no es modal), asegurar que el formulario esté limpio
-    if (!widget.showPopScope) {
+    // Si está abierto como tab (no es modal), asegurar que el formulario esté limpio SOLO si NO está en modo edición
+    if (!widget.showPopScope && !controller.isEditMode.value) {
       print('🔄 Inicializando formulario en modo tab - limpiando datos');
       controller.clearForm();
       controller.isModalMode.value = false;
@@ -286,7 +295,9 @@ class _VaccinationFormWrapperState extends State<VaccinationFormWrapper>
 
       // ✅ Manejar UI y navegación SOLO desde el wrapper
       if (isCurrentlyModal) {
-        // Modal: cerrar PRIMERO y luego mostrar snackbar
+        // Modal: Limpiar PRIMERO, cerrar y luego mostrar snackbar
+        controller.clearForm();
+        
         Navigator.of(context).pop(); // Usar Navigator en lugar de Get.back()
         
         // Mostrar snackbar después de cerrar

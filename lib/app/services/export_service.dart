@@ -27,22 +27,15 @@ class ExportService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    print('📊 Generando reporte de vacunación en Excel...');
-    print(
-      '📅 Rango: ${DateFormat('yyyy-MM-dd').format(startDate)} a ${DateFormat('yyyy-MM-dd').format(endDate)}',
-    );
-
     // Crear workbook
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
 
     // 1. Cargar estructura de vacunas dinámicamente
     final vaccineStructure = await _loadVaccineStructure();
-    print('📦 Estructura de ${vaccineStructure.length} vacunas cargada');
 
     // 2. Obtener datos de la BD (con estructura dinámica)
     final data = await _getVaccinationData(startDate, endDate, vaccineStructure);
-    print('📋 Total de filas de reporte: ${data.length}');
 
     // 3. Crear encabezados merged (dinámicos)
     _createMergedHeaders(sheet, vaccineStructure);
@@ -64,8 +57,6 @@ class ExportService {
     final file = File('${directory.path}/$fileName');
 
     await file.writeAsBytes(excel.encode()!);
-
-    print('✅ Archivo Excel generado: ${file.path}');
 
     return file;
   }
@@ -191,16 +182,23 @@ class ExportService {
         return intSeqA.compareTo(intSeqB);
       });
 
+    int vaccineIndex = 0;
     for (final entry in sortedVaccines) {
       final vaccineName = entry.value['name'] as String;
       final enabledFields = entry.value['enabledFields'] as List<String>;
-      final cellColorHex = categoryColors['VACUNAS'] ?? 'FFFFFFFF';
+      
+      // Alternar entre turquesa oscuro y claro para diferenciar vacunas
+      final isDarkVaccine = vaccineIndex % 2 == 0;
+      final cellColorHex = isDarkVaccine ? 'FF1ABC9C' : 'FF5FD8D1'; // Oscuro y claro
+      
       for (int i = 0; i < enabledFields.length; i++) {
         final cell = sheet.cell(CellIndex.indexByColumnRow(
           columnIndex: columnIndex + i,
           rowIndex: 0,
         ));
         if (i == 0) cell.value = vaccineName;
+        
+        // CellStyle con bordes negros
         final cellStyle = CellStyle(
           backgroundColorHex: cellColorHex,
           fontColorHex: 'FFFFFFFF',
@@ -217,6 +215,7 @@ class ExportService {
         ),
       );
       columnIndex += enabledFields.length;
+      vaccineIndex++;
     }
 
     // Fila 1: solo los nombres de los campos (sin prefijo de vacuna)
@@ -250,8 +249,12 @@ class ExportService {
       'observation': 'Observación',
       'custom_observation': 'Observación Personalizada',
     };
+    int vaccineFieldIndex = 0;
     for (final entry in sortedVaccines) {
       final enabledFields = entry.value['enabledFields'] as List<String>;
+      final isDarkVaccine = vaccineFieldIndex % 2 == 0;
+      final cellColorHex = isDarkVaccine ? 'FFB8E7E1' : 'FFDAF5F2'; // Versiones más claras del turquesa
+      
       for (final field in enabledFields) {
         final cell = sheet.cell(CellIndex.indexByColumnRow(
           columnIndex: col,
@@ -259,12 +262,13 @@ class ExportService {
         ));
         cell.value = fieldLabels[field] ?? field;
         final cellStyle = CellStyle(
-          backgroundColorHex: 'FFE7E6E6',
+          backgroundColorHex: cellColorHex,
           bold: true,
         );
         cell.cellStyle = cellStyle;
         col++;
       }
+      vaccineFieldIndex++;
     }
   }
 
@@ -518,21 +522,21 @@ class ExportService {
       ],
     );
 
-    print('🔍 Dosis aplicadas encontradas: ${results.length}');
-
     // AGRUPACIÓN: (patient_id + application_date) → detectar duplicados de misma vacuna
+    // Normalizar la fecha usando solo DATE, sin hora/timestamp
     final Map<String, List<Map<String, dynamic>>> groupedByPatientDate = {};
 
     for (final dose in results) {
       final patientId = dose['patient_id'] as String;
       final appDate = dose['application_date'] as String;
-      final key = '$patientId|$appDate';
+      // Extraer solo la fecha (YYYY-MM-DD) sin la hora/timestamp
+      // Formato ISO 8601: "2026-03-03T23:11:18.331393" → "2026-03-03"
+      final normalizedDate = appDate.split('T')[0];
+      final key = '$patientId|$normalizedDate';
 
       groupedByPatientDate.putIfAbsent(key, () => []);
       groupedByPatientDate[key]!.add(dose);
     }
-
-    print('📊 Grupos (paciente+fecha): ${groupedByPatientDate.length}');
 
     // Procesar cada grupo para generar filas
     final List<List<dynamic>> reportRows = [];
@@ -541,24 +545,30 @@ class ExportService {
       final doses = groupEntry.value;
       final firstDose = doses.first;
 
-      // Detectar si hay duplicados de la misma vacuna en este grupo
-      final vaccineCountMap = <String, int>{};
+      // Contar dosis por vacuna
+      final vaccineDoesesMap = <String, List<Map<String, dynamic>>>{};
       for (final dose in doses) {
         final vaccId = dose['vaccine_id'] as String;
-        vaccineCountMap[vaccId] = (vaccineCountMap[vaccId] ?? 0) + 1;
+        vaccineDoesesMap.putIfAbsent(vaccId, () => []);
+        vaccineDoesesMap[vaccId]!.add(dose);
       }
 
-      final hasDuplicateVaccines = vaccineCountMap.values.any((count) => count > 1);
-
-      if (hasDuplicateVaccines) {
-        // Crear una fila para CADA dosis (incluida la duplicada)
-        for (final dose in doses) {
-          final row = _buildPatientRow(firstDose, dose, vaccineStructure);
-          reportRows.add(row);
+      // Encontrar el máximo número de dosis de cualquier vacuna ese día
+      int maxDosesPerDay = 0;
+      for (final dosesList in vaccineDoesesMap.values) {
+        if (dosesList.length > maxDosesPerDay) {
+          maxDosesPerDay = dosesList.length;
         }
-      } else {
-        // Crear una SOLA fila con todas las vacunas del día
-        final row = _buildPatientRowMultipleVaccines(doses, firstDose, vaccineStructure);
+      }
+
+      // Crear N filas (donde N = maxDosesPerDay)
+      for (int doseIndex = 0; doseIndex < maxDosesPerDay; doseIndex++) {
+        final row = _buildPatientRowWithDoseIndex(
+          firstDose,
+          vaccineDoesesMap,
+          doseIndex,
+          vaccineStructure,
+        );
         reportRows.add(row);
       }
     }
@@ -566,103 +576,33 @@ class ExportService {
     return reportRows;
   }
 
-  /// Construye una fila cuando hay una sola dosis (con posibles múltiples vacunas sin duplicar)
-  List<dynamic> _buildPatientRowMultipleVaccines(
-    List<Map<String, dynamic>> doses,
-    Map<String, dynamic> patientData,
-    Map<String, Map<String, dynamic>> vaccineStructure,
-  ) {
-    final row = _getBasicPatientData(patientData);
-
-    // Crear mapa de vaccine_id → dose data para búsqueda rápida
-    final doseMap = <String, Map<String, dynamic>>{};
-    for (final dose in doses) {
-      doseMap[dose['vaccine_id'] as String] = dose;
-    }
-
-    // Ordenar vacunas por sequence y llenar sus columnas
-    final sortedVaccines = vaccineStructure.entries.toList()
-      ..sort((a, b) {
-        final seqA = a.value['sequence'];
-        final seqB = b.value['sequence'];
-        final intSeqA = seqA is int ? seqA : (seqA == null ? 0 : int.tryParse(seqA.toString()) ?? 0);
-        final intSeqB = seqB is int ? seqB : (seqB == null ? 0 : int.tryParse(seqB.toString()) ?? 0);
-        return intSeqA.compareTo(intSeqB);
-      });
-
-    for (final vaccineEntry in sortedVaccines) {
-      final vaccineId = vaccineEntry.key;
-      final vaccineConfig = vaccineEntry.value;
-      final enabledFields = vaccineConfig['enabledFields'] as List<String>;
-      final dose = doseMap[vaccineId];
-
-      for (final field in enabledFields) {
-        if (dose != null) {
-          row.add(_getVaccineFieldValue(dose, field));
-        } else {
-          row.add('');
-        }
-      }
-    }
-
-    return row;
-  }
-
-  /// Construye una fila cuando hay dosis duplicada de la misma vacuna
-  List<dynamic> _buildPatientRow(
-    Map<String, dynamic> patientData,
-    Map<String, dynamic> currentDose,
-    Map<String, Map<String, dynamic>> vaccineStructure,
-  ) {
-    final row = _getBasicPatientData(patientData);
-
-    final currentVaccineId = currentDose['vaccine_id'] as String;
-
-    // Ordenar vacunas por sequence
-    final sortedVaccines = vaccineStructure.entries.toList()
-      ..sort((a, b) {
-        final seqA = a.value['sequence'];
-        final seqB = b.value['sequence'];
-        final intSeqA = seqA is int ? seqA : (seqA == null ? 0 : int.tryParse(seqA.toString()) ?? 0);
-        final intSeqB = seqB is int ? seqB : (seqB == null ? 0 : int.tryParse(seqB.toString()) ?? 0);
-        return intSeqA.compareTo(intSeqB);
-      });
-
-    for (final vaccineEntry in sortedVaccines) {
-      final vaccineId = vaccineEntry.key;
-      final vaccineConfig = vaccineEntry.value;
-      final enabledFields = vaccineConfig['enabledFields'] as List<String>;
-
-      for (final field in enabledFields) {
-        if (vaccineId == currentVaccineId) {
-          // Solo llenar con la dosis actual
-          row.add(_getVaccineFieldValue(currentDose, field));
-        } else {
-          // Dejar vacío para otras vacunas
-          row.add('');
-        }
-      }
-    }
-
-    return row;
-  }
-
   /// Extrae datos básicos del paciente
   List<dynamic> _getBasicPatientData(Map<String, dynamic> patientData) {
     final birthDate = DateTime.parse(patientData['birth_date'].toString());
     final ageData = AgeCalculator.calculate(birthDate);
 
+    // Función auxiliar para formatear fechas a "día mes año"
+    String formatDate(String? dateStr) {
+      if (dateStr == null || dateStr.isEmpty) return '';
+      try {
+        final date = DateTime.parse(dateStr);
+        return DateFormat('d MMMM yyyy', 'es_ES').format(date);
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
     return [
       // DATOS BÁSICOS (18 campos)
       patientData['consecutivo']?.toString() ?? '',
-      patientData['attention_date']?.toString() ?? '',
+      formatDate(patientData['attention_date']?.toString()),
       patientData['id_type']?.toString() ?? '',
       patientData['id_number']?.toString() ?? '',
       patientData['first_name']?.toString() ?? '',
       patientData['second_name']?.toString() ?? '',
       patientData['last_name']?.toString() ?? '',
       patientData['second_last_name']?.toString() ?? '',
-      patientData['birth_date']?.toString() ?? '',
+      formatDate(patientData['birth_date']?.toString()),
       ageData['years'].toString(),
       ageData['months'].toString(),
       ageData['days'].toString(),
@@ -782,6 +722,50 @@ class ExportService {
         return '';
     }
   }
+
+  /// Construye una fila basada en el índice de dosis para ese día
+  /// Si una vacuna tiene múltiples dosis ese día, crea una fila por cada índice
+  List<dynamic> _buildPatientRowWithDoseIndex(
+    Map<String, dynamic> patientData,
+    Map<String, List<Map<String, dynamic>>> vaccineDoesesMap,
+    int doseIndex,
+    Map<String, Map<String, dynamic>> vaccineStructure,
+  ) {
+    final row = _getBasicPatientData(patientData);
+
+    // Ordenar vacunas por sequence
+    final sortedVaccines = vaccineStructure.entries.toList()
+      ..sort((a, b) {
+        final seqA = a.value['sequence'];
+        final seqB = b.value['sequence'];
+        final intSeqA = seqA is int ? seqA : (seqA == null ? 0 : int.tryParse(seqA.toString()) ?? 0);
+        final intSeqB = seqB is int ? seqB : (seqB == null ? 0 : int.tryParse(seqB.toString()) ?? 0);
+        return intSeqA.compareTo(intSeqB);
+      });
+
+    // Llenar columnas de vacunas según el índice de dosis
+    for (final vaccineEntry in sortedVaccines) {
+      final vaccineId = vaccineEntry.key;
+      final vaccineConfig = vaccineEntry.value;
+      final enabledFields = vaccineConfig['enabledFields'] as List<String>;
+
+      // Obtener las dosis de esta vacuna
+      final dosesList = vaccineDoesesMap[vaccineId] ?? [];
+
+      for (final field in enabledFields) {
+        if (doseIndex < dosesList.length) {
+          // Esta vacuna tiene una dosis en este índice
+          row.add(_getVaccineFieldValue(dosesList[doseIndex], field));
+        } else {
+          // No hay dosis para este índice - dejar vacío
+          row.add('');
+        }
+      }
+    }
+
+    return row;
+  }
+
 
   /// Obtiene estadísticas del reporte
   Future<Map<String, dynamic>> getReportStatistics({

@@ -45,6 +45,17 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.registerStep2FormKey(_formKey);
       controller.registerStep2ScrollController(_scrollController);
+      
+      // ✅ Sincronizar valores iniciales del país de nacimiento a la variable reactiva
+      if (controller.birthCountryController.text.isNotEmpty) {
+        controller.selectedBirthCountry.value = controller.birthCountryController.text;
+      }
+      
+      // ✅ Sincronizar valores iniciales del país de residencia a la variable reactiva
+      if (controller.residenceCountryController.text.isEmpty) {
+        controller.residenceCountryController.text = 'Colombia';
+      }
+      controller.selectedResidenceCountry.value = controller.residenceCountryController.text;
     });
 
     return Form(
@@ -262,6 +273,9 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                       label: 'País de Nacimiento',
                       placeholder: 'Seleccione un país',
                       required: true,
+                      onValueChanged: (value) {
+                        controller.selectedBirthCountry.value = value;
+                      },
                     ),
                     const SizedBox(height: 16),
 

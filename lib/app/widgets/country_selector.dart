@@ -9,6 +9,7 @@ class CountrySelector extends StatefulWidget {
   final String placeholder;
   final bool required;
   final Function(String)? onChanged;
+  final Function(String)? onValueChanged; // Callback para sincronizar variables reactivas
 
   const CountrySelector({
     super.key,
@@ -17,6 +18,7 @@ class CountrySelector extends StatefulWidget {
     this.placeholder = 'Seleccione un país',
     this.required = false,
     this.onChanged,
+    this.onValueChanged,
   });
 
   @override
@@ -165,6 +167,7 @@ class _CountrySelectorState extends State<CountrySelector> {
                   if (value != null) {
                     widget.controller.text = value;
                     widget.onChanged?.call(value);
+                    widget.onValueChanged?.call(value); // Sincronizar variable reactiva
                   }
                 },
                 dropdownSearchData: DropdownSearchData(
