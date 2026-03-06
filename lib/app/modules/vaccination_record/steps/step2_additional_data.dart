@@ -8,6 +8,7 @@ import '../../../widgets/colombia_location_selector.dart';
 import '../../../widgets/eps_selector.dart';
 import '../../../widgets/country_selector.dart';
 import '../../../theme/colors.dart';
+import '../../../utils/id_type_constants.dart';
 
 class Step2AdditionalData extends StatefulWidget {
   const Step2AdditionalData({super.key});
@@ -1480,31 +1481,28 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                               return Column(
                                 children: [
                                   // Tipo y número de documento
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
-                                        flex: 1,
-                                        child: FormFields.buildDropdownField(
-                                          label: 'Tipo de Documento',
-                                          value:
-                                              controller.selectedMotherIdType.value ??
-                                              'CC - Cédula de Ciudadanía',
-                                          items: const [
-                                            'CC - Cédula de Ciudadanía',
-                                            'CE - Cédula de Extranjería',
-                                            'PA - Pasaporte',
-                                            'RC - Registro Civil',
-                                            'TI - Tarjeta de Identidad',
-                                          ],
-                                          onChanged: (value) =>
-                                              controller.selectedMotherIdType.value =
-                                                  value,
-                                          required: isMinor,
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
+                                        child: Obx(
+                                          () => FormFields.buildDropdownField(
+                                            label: 'Tipo de Documento',
+                                            value:
+                                                controller.selectedMotherIdType.value ??
+                                                'CC - Cédula de Ciudadanía',
+                                            items: IdTypeConstants.allIdTypes,
+                                            onChanged: (value) =>
+                                                controller.selectedMotherIdType.value =
+                                                    value,
+                                            required: isMinor,
+                                          ),
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        flex: 1,
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Número de Documento',
                                           controller:
@@ -1519,9 +1517,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   const SizedBox(height: 16),
 
                                   // Nombres
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Primer Nombre',
                                           controller:
@@ -1530,8 +1531,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: isMinor,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Segundo Nombre',
                                           controller:
@@ -1545,9 +1546,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   const SizedBox(height: 16),
 
                                   // Apellidos
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Primer Apellido',
                                           controller:
@@ -1556,8 +1560,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: isMinor,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Segundo Apellido',
                                           controller:
@@ -1580,9 +1584,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   ),
                                   const SizedBox(height: 16),
 
-                                          Row(
+                                          Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Teléfono Fijo',
                                           controller:
@@ -1592,8 +1599,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: false,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Celular',
                                           controller:
@@ -1845,33 +1852,30 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                               return Column(
                                 children: [
                                   // Tipo y número de documento
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
-                                        flex: 1,
-                                        child: FormFields.buildDropdownField(
-                                          label: 'Tipo de Documento',
-                                          value:
-                                              controller
-                                                  .selectedCaregiverIdType
-                                                  .value ??
-                                              'CC - Cédula de Ciudadanía',
-                                          items: const [
-                                            'CC - Cédula de Ciudadanía',
-                                            'CE - Cédula de Extranjería',
-                                            'PA - Pasaporte',
-                                            'RC - Registro Civil',
-                                            'TI - Tarjeta de Identidad',
-                                          ],
-                                          onChanged: (value) =>
-                                              controller.selectedCaregiverIdType.value =
-                                                  value,
-                                          required: isMinor,
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
+                                        child: Obx(
+                                          () => FormFields.buildDropdownField(
+                                            label: 'Tipo de Documento',
+                                            value:
+                                                controller
+                                                    .selectedCaregiverIdType
+                                                    .value ??
+                                                'CC - Cédula de Ciudadanía',
+                                            items: IdTypeConstants.allIdTypes,
+                                            onChanged: (value) =>
+                                                controller.selectedCaregiverIdType.value =
+                                                    value,
+                                            required: isMinor,
+                                          ),
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        flex: 1,
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Número de Documento',
                                           controller:
@@ -1886,9 +1890,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   const SizedBox(height: 16),
 
                                   // Nombres
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Primer Nombre',
                                           controller:
@@ -1897,8 +1904,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: isMinor,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Segundo Nombre',
                                           controller:
@@ -1912,9 +1919,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   const SizedBox(height: 16),
 
                                   // Apellidos
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Primer Apellido',
                                           controller:
@@ -1923,8 +1933,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: isMinor,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Segundo Apellido',
                                           controller: controller
@@ -1957,9 +1967,12 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                   ),
                                   const SizedBox(height: 16),
 
-                                  Row(
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Teléfono Fijo',
                                           controller:
@@ -1969,8 +1982,8 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                                           required: false,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 80) / 2 : MediaQuery.of(context).size.width - 80,
                                         child: FormFields.buildTextField(
                                           label: 'Celular',
                                           controller:

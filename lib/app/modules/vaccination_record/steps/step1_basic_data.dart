@@ -6,6 +6,7 @@ import '../../../controllers/patient_form_controller.dart';
 import '../../../widgets/form_fields.dart';
 import '../../../widgets/custom_snackbar.dart';
 import '../../../theme/colors.dart';
+import '../../../utils/id_type_constants.dart';
 import '../vaccination_form_wrapper.dart';
 
 class Step1BasicData extends StatefulWidget {
@@ -103,21 +104,7 @@ class _Step1BasicDataState extends State<Step1BasicData>
                       () => FormFields.buildDropdownField(
                         label: 'Tipo de Documento',
                         value: controller.selectedIdType.value,
-                        items: const [
-                          'CN - Certificado de Nacido Vivo',
-                          'RC - Registro Civil',
-                          'TI - Tarjeta de Identidad',
-                          'CC - Cédula de Ciudadanía',
-                          'AS - Adulto sin Identificación',
-                          'MS - Menor sin Identificación',
-                          'CE - Cédula de Extranjería',
-                          'PA - Pasaporte',
-                          'CD - Carné Diplomático',
-                          'SC - Salvoconducto',
-                          'PE - Permiso Especial de Permanencia',
-                          'PPT - Permiso por Protección Temporal',
-                          'DE - Documento Extranjero',
-                        ],
+                        items: IdTypeConstants.allIdTypes,
                         onChanged: (value) =>
                             controller.selectedIdType.value = value!,
                         required: true,

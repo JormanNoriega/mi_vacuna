@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import '../data/database_helper.dart';
 import 'package:intl/intl.dart';
 import '../utils/age_calculator.dart';
+import '../utils/id_type_constants.dart';
 
 /// Servicio para exportar datos de vacunación a formato Excel
 class ExportService {
@@ -131,7 +132,7 @@ class ExportService {
     Sheet sheet,
     Map<String, Map<String, dynamic>> vaccineStructure,
   ) {
-    // 1. Categorías fijas antes de vacunas
+    // 1. Categorías fijas antes de vacunas (sin DATOS ENFERMERA - irá al final)
     final categories = [
       MapEntry('DATOS BÁSICOS', 18),
       MapEntry('DATOS COMPLEMENTARIOS', 22),
@@ -140,7 +141,6 @@ class ExportService {
       MapEntry('HISTÓRICO DE ANTECEDENTES', 4),
       MapEntry('DATOS DE LA MADRE', 12),
       MapEntry('DATOS DEL CUIDADOR', 10),
-      MapEntry('DATOS ENFERMERA', 5),
     ];
 
     int columnIndex = 0;
@@ -184,7 +184,7 @@ class ExportService {
 
     int vaccineIndex = 0;
     for (final entry in sortedVaccines) {
-      final vaccineName = entry.value['name'] as String;
+      final vaccineName = (entry.value['name'] as String).toUpperCase();
       final enabledFields = entry.value['enabledFields'] as List<String>;
       
       // Alternar entre turquesa oscuro y claro para diferenciar vacunas
@@ -218,6 +218,31 @@ class ExportService {
       vaccineIndex++;
     }
 
+    // 3. Encabezado para DATOS ENFERMERA (al final, después de todas las vacunas)
+    final nurseCategoryColorHex = categoryColors['DATOS ENFERMERA'] ?? 'FF3498DB';
+    const nurseFieldCount = 5;
+    for (int i = 0; i < nurseFieldCount; i++) {
+      final cell = sheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: columnIndex + i,
+        rowIndex: 0,
+      ));
+      if (i == 0) cell.value = 'DATOS ENFERMERA';
+      final cellStyle = CellStyle(
+        backgroundColorHex: nurseCategoryColorHex,
+        fontColorHex: 'FFFFFFFF',
+        bold: true,
+      );
+      cell.cellStyle = cellStyle;
+    }
+    sheet.merge(
+      CellIndex.indexByColumnRow(columnIndex: columnIndex, rowIndex: 0),
+      CellIndex.indexByColumnRow(
+        columnIndex: columnIndex + nurseFieldCount - 1,
+        rowIndex: 0,
+      ),
+    );
+    columnIndex += nurseFieldCount;
+
     // Fila 1: solo los nombres de los campos (sin prefijo de vacuna)
     final fixedFields = _getFixedFieldHeaders();
     int col = 0;
@@ -236,18 +261,18 @@ class ExportService {
     }
     // Campos de vacunas (solo nombre del campo)
     final Map<String, String> fieldLabels = {
-      'dose': 'Dosis',
-      'application_date': 'Fecha Aplicación',
-      'lot_number': 'Lote',
-      'laboratory': 'Laboratorio',
-      'syringe': 'Jeringa',
-      'syringe_lot': 'Lote Jeringa',
-      'diluent_lot': 'Diluyente',
-      'dropper': 'Gotero',
-      'pneumococcal_type': 'Tipo Neumococo',
-      'vial_count': 'Cantidad Frascos',
-      'observation': 'Observación',
-      'custom_observation': 'Observación Personalizada',
+      'dose': 'DOSIS',
+      'application_date': 'FECHA APLICACIÓN',
+      'lot_number': 'LOTE',
+      'laboratory': 'LABORATORIO',
+      'syringe': 'JERINGA',
+      'syringe_lot': 'LOTE JERINGA',
+      'diluent_lot': 'DILUYENTE',
+      'dropper': 'GOTERO',
+      'pneumococcal_type': 'TIPO NEUMOCOCO',
+      'vial_count': 'CANTIDAD FRASCOS',
+      'observation': 'OBSERVACIÓN',
+      'custom_observation': 'OBSERVACIÓN PERSONALIZADA',
     };
     int vaccineFieldIndex = 0;
     for (final entry in sortedVaccines) {
@@ -269,6 +294,29 @@ class ExportService {
         col++;
       }
       vaccineFieldIndex++;
+    }
+
+    // Encabezados de DATOS ENFERMERA (al final)
+    final nurseFieldLabels = [
+      'NOMBRE ENFERMERA',
+      'DOCUMENTO ENFERMERA',
+      'CORREO ELECTRÓNICO ENFERMERA',
+      'TELÉFONO ENFERMERA',
+      'INSTITUCIÓN ENFERMERA',
+    ];
+    final nurseCellColorHex = 'FFDAF5F2'; // Azul claro
+    for (final label in nurseFieldLabels) {
+      final cell = sheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: col,
+        rowIndex: 1,
+      ));
+      cell.value = label;
+      final cellStyle = CellStyle(
+        backgroundColorHex: nurseCellColorHex,
+        bold: true,
+      );
+      cell.cellStyle = cellStyle;
+      col++;
     }
   }
 
@@ -297,104 +345,96 @@ class ExportService {
 
   /// Lista de campos (encabezados de segunda fila) - DINÁMICO
 
-
   List<String> _getFixedFieldHeaders() {
     return [
       // DATOS BÁSICOS (18 campos)
-      'Consecutivo',
-      'Fecha de atención',
-      'Tipo de identificación',
-      'Número de identificación',
-      'Primer nombre',
-      'Segundo nombre',
-      'Primer apellido',
-      'Segundo apellido',
-      'Fecha de nacimiento',
+      'CONSECUTIVO',
+      'FECHA DE ATENCIÓN',
+      'TIPO DE IDENTIFICACIÓN',
+      'NÚMERO DE IDENTIFICACIÓN',
+      'PRIMER NOMBRE',
+      'SEGUNDO NOMBRE',
+      'PRIMER APELLIDO',
+      'SEGUNDO APELLIDO',
+      'FECHA DE NACIMIENTO',
       'AÑOS',
       'MESES',
       'DÍAS',
-      'Total meses',
-      'Esquema completo',
-      'Sexo',
-      'Género',
-      'Orientación sexual',
-      'Edad gestacional (semanas)',
+      'TOTAL MESES',
+      'ESQUEMA COMPLETO',
+      'SEXO',
+      'GÉNERO',
+      'ORIENTACIÓN SEXUAL',
+      'EDAD GESTACIONAL (SEMANAS)',
 
       // DATOS COMPLEMENTARIOS (22 campos)
-      'País de nacimiento',
-      'Estatus Migratorio',
-      'Lugar de atención del parto',
-      'Régimen de afiliación',
-      'Aseguradora',
-      'Pertenencia étnica',
-      'Desplazado',
-      'Discapacitado',
-      'Fallecido',
-      'Víctima del conflicto armado',
-      'Estudia actualmente',
-      'País de residencia',
-      'Departamento de residencia',
-      'Municipio de residencia',
-      'Comuna/Localidad',
-      'Área',
-      'Dirección con nomenclatura',
-      'Teléfono fijo',
-      'Celular',
-      'Email',
-      '¿Autoriza llamadas telefónicas?',
-      '¿Autoriza envío de correo?',
+      'PAÍS DE NACIMIENTO',
+      'ESTATUS MIGRATORIO',
+      'LUGAR DE ATENCIÓN DEL PARTO',
+      'RÉGIMEN DE AFILIACIÓN',
+      'ASEGURADORA',
+      'PERTENENCIA ÉTNICA',
+      'DESPLAZADO',
+      'DISCAPACITADO',
+      'FALLECIDO',
+      'VÍCTIMA DEL CONFLICTO ARMADO',
+      'ESTUDIA ACTUALMENTE',
+      'PAÍS DE RESIDENCIA',
+      'DEPARTAMENTO DE RESIDENCIA',
+      'MUNICIPIO DE RESIDENCIA',
+      'COMUNA/LOCALIDAD',
+      'ÁREA',
+      'DIRECCIÓN CON NOMENCLATURA',
+      'TELÉFONO FIJO',
+      'CELULAR',
+      'EMAIL',
+      '¿AUTORIZA LLAMADAS TELEFÓNICAS?',
+      '¿AUTORIZA ENVÍO DE CORREO?',
 
       // ANTECEDENTES MÉDICOS (4 campos)
-      '¿Sufre o ha sufrido algún evento o enfermedad que contraindique la vacunación?',
-      'Cuál contraindicación',
-      '¿Ha presentado reacción moderada o severa a biológicos anteriores?',
-      'Cuál reacción',
+      '¿SUFRE O HA SUFRIDO ALGÚN EVENTO O ENFERMEDAD QUE CONTRAINDIQUE LA VACUNACIÓN?',
+      'CUÁL CONTRAINDICACIÓN',
+      '¿HA PRESENTADO REACCIÓN MODERADA O SEVERA A BIOLÓGICOS ANTERIORES?',
+      'CUÁL REACCIÓN',
 
       // CONDICIÓN USUARIA (5 campos)
-      'Condición de la usuaria',
-      'Fecha de última menstruación',
-      'Semanas de gestación',
-      'Fecha probable de parto',
-      'Cantidad de embarazos previos',
+      'CONDICIÓN DE LA USUARIA',
+      'FECHA DE ÚLTIMA MENSTRUACIÓN',
+      'SEMANAS DE GESTACIÓN',
+      'FECHA PROBABLE DE PARTO',
+      'CANTIDAD DE EMBARAZOS PREVIOS',
 
       // HISTÓRICO DE ANTECEDENTES (4 campos)
-      'Fecha de registro del antecedente',
-      'Tipo',
-      'Descripción',
-      'Observaciones especiales',
+      'FECHA DE REGISTRO DEL ANTECEDENTE',
+      'TIPO',
+      'DESCRIPCIÓN',
+      'OBSERVACIONES ESPECIALES',
 
       // DATOS DE LA MADRE (12 campos)
-      'Tipo de identificación madre',
-      'Número de identificación madre',
-      'Primer nombre madre',
-      'Segundo nombre madre',
-      'Primer apellido madre',
-      'Segundo apellido madre',
-      'Correo electrónico madre',
-      'Teléfono fijo madre',
-      'Celular madre',
-      'Régimen de afiliación madre',
-      'Pertenencia étnica madre',
-      'Desplazado madre',
+      'TIPO DE IDENTIFICACIÓN MADRE',
+      'NÚMERO DE IDENTIFICACIÓN MADRE',
+      'PRIMER NOMBRE MADRE',
+      'SEGUNDO NOMBRE MADRE',
+      'PRIMER APELLIDO MADRE',
+      'SEGUNDO APELLIDO MADRE',
+      'CORREO ELECTRÓNICO MADRE',
+      'TELÉFONO FIJO MADRE',
+      'CELULAR MADRE',
+      'RÉGIMEN DE AFILIACIÓN MADRE',
+      'PERTENENCIA ÉTNICA MADRE',
+      'DESPLAZADO MADRE',
 
       // DATOS DEL CUIDADOR (10 campos)
-      'Tipo de identificación cuidador',
-      'Número de identificación cuidador',
-      'Primer nombre cuidador',
-      'Segundo nombre cuidador',
-      'Primer apellido cuidador',
-      'Segundo apellido cuidador',
-      'Parentesco',
-      'Correo electrónico cuidador',
-      'Teléfono fijo cuidador',
-      'Celular cuidador',
-
-      // DATOS ENFERMERA (5 campos)
-      'Nombre Enfermera',
-      'Documento Enfermera',
-      'Correo electrónico Enfermera',
-      'Teléfono Enfermera',
-      'Institución Enfermera',
+      'TIPO DE IDENTIFICACIÓN CUIDADOR',
+      'NÚMERO DE IDENTIFICACIÓN CUIDADOR',
+      'PRIMER NOMBRE CUIDADOR',
+      'SEGUNDO NOMBRE CUIDADOR',
+      'PRIMER APELLIDO CUIDADOR',
+      'SEGUNDO APELLIDO CUIDADOR',
+      'PARENTESCO',
+      'CORREO ELECTRÓNICO CUIDADOR',
+      'TELÉFONO FIJO CUIDADOR',
+      'CELULAR CUIDADOR',
     ];
   }
 
@@ -538,14 +578,14 @@ class ExportService {
       groupedByPatientDate[key]!.add(dose);
     }
 
-    // Procesar cada grupo para generar filas
+    // Procesar cada grupo para generar MÚLTIPLES FILAS si hay múltiples dosis
     final List<List<dynamic>> reportRows = [];
 
     for (final groupEntry in groupedByPatientDate.entries) {
       final doses = groupEntry.value;
       final firstDose = doses.first;
 
-      // Contar dosis por vacuna
+      // Contar dosis por vacuna y encontrar el máximo
       final vaccineDoesesMap = <String, List<Map<String, dynamic>>>{};
       for (final dose in doses) {
         final vaccId = dose['vaccine_id'] as String;
@@ -553,21 +593,21 @@ class ExportService {
         vaccineDoesesMap[vaccId]!.add(dose);
       }
 
-      // Encontrar el máximo número de dosis de cualquier vacuna ese día
-      int maxDosesPerDay = 0;
+      // Encontrar el máximo número de dosis en cualquier vacuna
+      int maxDosesCount = 0;
       for (final dosesList in vaccineDoesesMap.values) {
-        if (dosesList.length > maxDosesPerDay) {
-          maxDosesPerDay = dosesList.length;
+        if (dosesList.length > maxDosesCount) {
+          maxDosesCount = dosesList.length;
         }
       }
 
-      // Crear N filas (donde N = maxDosesPerDay)
-      for (int doseIndex = 0; doseIndex < maxDosesPerDay; doseIndex++) {
+      // Generar múltiples filas (una por cada dosis)
+      for (int doseIndex = 0; doseIndex < maxDosesCount; doseIndex++) {
         final row = _buildPatientRowWithDoseIndex(
           firstDose,
           vaccineDoesesMap,
-          doseIndex,
           vaccineStructure,
+          doseIndex,
         );
         reportRows.add(row);
       }
@@ -581,12 +621,12 @@ class ExportService {
     final birthDate = DateTime.parse(patientData['birth_date'].toString());
     final ageData = AgeCalculator.calculate(birthDate);
 
-    // Función auxiliar para formatear fechas a "día mes año"
+    // Función auxiliar para formatear fechas en formato dd/MM/yyyy
     String formatDate(String? dateStr) {
       if (dateStr == null || dateStr.isEmpty) return '';
       try {
         final date = DateTime.parse(dateStr);
-        return DateFormat('d MMMM yyyy', 'es_ES').format(date);
+        return DateFormat('dd/MM/yyyy').format(date);
       } catch (e) {
         return dateStr;
       }
@@ -596,35 +636,35 @@ class ExportService {
       // DATOS BÁSICOS (18 campos)
       patientData['consecutivo']?.toString() ?? '',
       formatDate(patientData['attention_date']?.toString()),
-      patientData['id_type']?.toString() ?? '',
+      IdTypeConstants.toAbbreviation(patientData['id_type']?.toString()),
       patientData['id_number']?.toString() ?? '',
-      patientData['first_name']?.toString() ?? '',
-      patientData['second_name']?.toString() ?? '',
-      patientData['last_name']?.toString() ?? '',
-      patientData['second_last_name']?.toString() ?? '',
+      (patientData['first_name']?.toString() ?? '').toUpperCase(),
+      (patientData['second_name']?.toString() ?? '').toUpperCase(),
+      (patientData['last_name']?.toString() ?? '').toUpperCase(),
+      (patientData['second_last_name']?.toString() ?? '').toUpperCase(),
       formatDate(patientData['birth_date']?.toString()),
       ageData['years'].toString(),
       ageData['months'].toString(),
       ageData['days'].toString(),
       ageData['totalMonths'].toString(),
-      patientData['complete_scheme'] == 1 ? 'Sí' : 'No',
-      patientData['sex']?.toString() ?? '',
-      patientData['gender']?.toString() ?? '',
-      patientData['sexual_orientation']?.toString() ?? '',
+      patientData['complete_scheme'] == 1 ? 'SÍ' : 'NO',
+      (patientData['sex']?.toString() ?? '').toUpperCase(),
+      (patientData['gender']?.toString() ?? '').toUpperCase(),
+      (patientData['sexual_orientation']?.toString() ?? '').toUpperCase(),
       patientData['gestational_age']?.toString() ?? '',
 
       // DATOS COMPLEMENTARIOS (22 campos)
-      patientData['birth_country']?.toString() ?? '',
-      patientData['migration_status']?.toString() ?? '',
-      patientData['birth_place']?.toString() ?? '',
-      patientData['affiliation_regime']?.toString() ?? '',
-      patientData['insurer']?.toString() ?? '',
-      patientData['ethnicity']?.toString() ?? '',
-      patientData['displaced'] == 1 ? 'Sí' : 'No',
-      patientData['disabled'] == 1 ? 'Sí' : 'No',
-      patientData['deceased'] == 1 ? 'Sí' : 'No',
-      patientData['armed_conflict_victim'] == 1 ? 'Sí' : 'No',
-      patientData['currently_studying'] == 1 ? 'Sí' : 'No',
+      (patientData['birth_country']?.toString() ?? '').toUpperCase(),
+      (patientData['migration_status']?.toString() ?? '').toUpperCase(),
+      (patientData['birth_place']?.toString() ?? '').toUpperCase(),
+      (patientData['affiliation_regime']?.toString() ?? '').toUpperCase(),
+      (patientData['insurer']?.toString() ?? '').toUpperCase(),
+      (patientData['ethnicity']?.toString() ?? '').toUpperCase(),
+      patientData['displaced'] == 1 ? 'SÍ' : 'NO',
+      patientData['disabled'] == 1 ? 'SÍ' : 'NO',
+      patientData['deceased'] == 1 ? 'SÍ' : 'NO',
+      patientData['armed_conflict_victim'] == 1 ? 'SÍ' : 'NO',
+      patientData['currently_studying'] == 1 ? 'SÍ' : 'NO',
       patientData['residence_country']?.toString() ?? '',
       patientData['residence_department']?.toString() ?? '',
       patientData['residence_municipality']?.toString() ?? '',
@@ -634,60 +674,53 @@ class ExportService {
       patientData['landline']?.toString() ?? '',
       patientData['cellphone']?.toString() ?? '',
       patientData['email']?.toString() ?? '',
-      patientData['authorize_calls'] == 1 ? 'Sí' : 'No',
-      patientData['authorize_email'] == 1 ? 'Sí' : 'No',
+      patientData['authorize_calls'] == 1 ? 'SÍ' : 'NO',
+      patientData['authorize_email'] == 1 ? 'SÍ' : 'NO',
 
       // ANTECEDENTES MÉDICOS (4 campos)
-      patientData['has_contraindication'] == 1 ? 'Sí' : 'No',
-      patientData['contraindication_details']?.toString() ?? '',
-      patientData['has_previous_reaction'] == 1 ? 'Sí' : 'No',
-      patientData['reaction_details']?.toString() ?? '',
+      patientData['has_contraindication'] == 1 ? 'SÍ' : 'NO',
+      (patientData['contraindication_details']?.toString() ?? '').toUpperCase(),
+      patientData['has_previous_reaction'] == 1 ? 'SÍ' : 'NO',
+      (patientData['reaction_details']?.toString() ?? '').toUpperCase(),
 
       // CONDICIÓN USUARIA (5 campos)
-      patientData['user_condition']?.toString() ?? '',
-      patientData['last_menstrual_date']?.toString() ?? '',
+      (patientData['user_condition']?.toString() ?? '').toUpperCase(),
+      formatDate(patientData['last_menstrual_date']?.toString()),
       patientData['gestation_weeks']?.toString() ?? '',
-      patientData['probable_delivery_date']?.toString() ?? '',
+      formatDate(patientData['probable_delivery_date']?.toString()),
       patientData['previous_pregnancies']?.toString() ?? '',
 
       // HISTÓRICO DE ANTECEDENTES (4 campos)
-      patientData['history_record_date']?.toString() ?? '',
-      patientData['history_type']?.toString() ?? '',
-      patientData['history_description']?.toString() ?? '',
-      patientData['special_observations']?.toString() ?? '',
+      formatDate(patientData['history_record_date']?.toString()),
+      (patientData['history_type']?.toString() ?? '').toUpperCase(),
+      (patientData['history_description']?.toString() ?? '').toUpperCase(),
+      (patientData['special_observations']?.toString() ?? '').toUpperCase(),
 
       // DATOS DE LA MADRE (12 campos)
-      patientData['mother_id_type']?.toString() ?? '',
+      IdTypeConstants.toAbbreviation(patientData['mother_id_type']?.toString()),
       patientData['mother_id_number']?.toString() ?? '',
-      patientData['mother_first_name']?.toString() ?? '',
-      patientData['mother_second_name']?.toString() ?? '',
-      patientData['mother_last_name']?.toString() ?? '',
-      patientData['mother_second_last_name']?.toString() ?? '',
+      (patientData['mother_first_name']?.toString() ?? '').toUpperCase(),
+      (patientData['mother_second_name']?.toString() ?? '').toUpperCase(),
+      (patientData['mother_last_name']?.toString() ?? '').toUpperCase(),
+      (patientData['mother_second_last_name']?.toString() ?? '').toUpperCase(),
       patientData['mother_email']?.toString() ?? '',
       patientData['mother_landline']?.toString() ?? '',
       patientData['mother_cellphone']?.toString() ?? '',
-      patientData['mother_affiliation_regime']?.toString() ?? '',
-      patientData['mother_ethnicity']?.toString() ?? '',
-      patientData['mother_displaced'] == 1 ? 'Sí' : 'No',
+      (patientData['mother_affiliation_regime']?.toString() ?? '').toUpperCase(),
+      (patientData['mother_ethnicity']?.toString() ?? '').toUpperCase(),
+      patientData['mother_displaced'] == 1 ? 'SÍ' : 'NO',
 
       // DATOS DEL CUIDADOR (10 campos)
-      patientData['caregiver_id_type']?.toString() ?? '',
+      IdTypeConstants.toAbbreviation(patientData['caregiver_id_type']?.toString()),
       patientData['caregiver_id_number']?.toString() ?? '',
-      patientData['caregiver_first_name']?.toString() ?? '',
-      patientData['caregiver_second_name']?.toString() ?? '',
-      patientData['caregiver_last_name']?.toString() ?? '',
-      patientData['caregiver_second_last_name']?.toString() ?? '',
-      patientData['caregiver_relationship']?.toString() ?? '',
+      (patientData['caregiver_first_name']?.toString() ?? '').toUpperCase(),
+      (patientData['caregiver_second_name']?.toString() ?? '').toUpperCase(),
+      (patientData['caregiver_last_name']?.toString() ?? '').toUpperCase(),
+      (patientData['caregiver_second_last_name']?.toString() ?? '').toUpperCase(),
+      (patientData['caregiver_relationship']?.toString() ?? '').toUpperCase(),
       patientData['caregiver_email']?.toString() ?? '',
       patientData['caregiver_landline']?.toString() ?? '',
       patientData['caregiver_cellphone']?.toString() ?? '',
-
-      // DATOS ENFERMERA (5 campos)
-      patientData['nurse_name']?.toString() ?? '',
-      patientData['nurse_document']?.toString() ?? '',
-      patientData['nurse_email']?.toString() ?? '',
-      patientData['nurse_phone']?.toString() ?? '',
-      patientData['nurse_institution']?.toString() ?? '',
     ];
   }
 
@@ -697,39 +730,47 @@ class ExportService {
       case 'dose':
         return dose['selected_dose']?.toString() ?? '';
       case 'application_date':
-        return dose['application_date']?.toString() ?? '';
+        final appDate = dose['application_date']?.toString() ?? '';
+        if (appDate.isEmpty) return '';
+        try {
+          final date = DateTime.parse(appDate);
+          return DateFormat('dd/MM/yyyy').format(date);
+        } catch (e) {
+          return appDate;
+        }
       case 'lot_number':
         return dose['lot_number']?.toString() ?? '';
       case 'laboratory':
-        return dose['selected_laboratory']?.toString() ?? '';
+        return (dose['selected_laboratory']?.toString() ?? '').toUpperCase();
       case 'syringe':
-        return dose['selected_syringe']?.toString() ?? '';
+        return (dose['selected_syringe']?.toString() ?? '').toUpperCase();
       case 'syringe_lot':
         return dose['syringe_lot']?.toString() ?? '';
       case 'diluent_lot':
         return dose['diluent_lot']?.toString() ?? '';
       case 'dropper':
-        return dose['selected_dropper']?.toString() ?? '';
+        return (dose['selected_dropper']?.toString() ?? '').toUpperCase();
       case 'pneumococcal_type':
-        return dose['selected_pneumococcal_type']?.toString() ?? '';
+        return (dose['selected_pneumococcal_type']?.toString() ?? '').toUpperCase();
       case 'vial_count':
         return dose['vial_count']?.toString() ?? '';
       case 'observation':
-        return dose['selected_observation']?.toString() ?? '';
+        return (dose['selected_observation']?.toString() ?? '').toUpperCase();
       case 'custom_observation':
-        return dose['custom_observation']?.toString() ?? '';
+        return (dose['custom_observation']?.toString() ?? '').toUpperCase();
       default:
         return '';
     }
   }
 
-  /// Construye una fila basada en el índice de dosis para ese día
-  /// Si una vacuna tiene múltiples dosis ese día, crea una fila por cada índice
+  /// Construye una fila para UN ÍNDICE DE DOSIS específico
+  /// Si la vacuna no tiene dosis en ese índice, deja los campos en blanco
+  /// Esto distribuye múltiples dosis de la misma vacuna en filas diferentes
   List<dynamic> _buildPatientRowWithDoseIndex(
     Map<String, dynamic> patientData,
     Map<String, List<Map<String, dynamic>>> vaccineDoesesMap,
-    int doseIndex,
     Map<String, Map<String, dynamic>> vaccineStructure,
+    int doseIndex,
   ) {
     final row = _getBasicPatientData(patientData);
 
@@ -743,7 +784,7 @@ class ExportService {
         return intSeqA.compareTo(intSeqB);
       });
 
-    // Llenar columnas de vacunas según el índice de dosis
+    // Llenar columnas de vacunas: solo la dosis en doseIndex (o blanco si no existe)
     for (final vaccineEntry in sortedVaccines) {
       final vaccineId = vaccineEntry.key;
       final vaccineConfig = vaccineEntry.value;
@@ -752,20 +793,29 @@ class ExportService {
       // Obtener las dosis de esta vacuna
       final dosesList = vaccineDoesesMap[vaccineId] ?? [];
 
+      // Para cada campo habilitado en esta vacuna
       for (final field in enabledFields) {
+        // Si existe la dosis en este índice, obtener su valor
         if (doseIndex < dosesList.length) {
-          // Esta vacuna tiene una dosis en este índice
-          row.add(_getVaccineFieldValue(dosesList[doseIndex], field));
+          final dose = dosesList[doseIndex];
+          final value = _getVaccineFieldValue(dose, field);
+          row.add(value.toString());
         } else {
-          // No hay dosis para este índice - dejar vacío
+          // Si no hay más dosis para esta vacuna en este índice, dejar en blanco
           row.add('');
         }
       }
     }
 
+    // Agregar datos de la enfermera
+    row.add((patientData['nurse_name']?.toString() ?? '').toUpperCase());
+    row.add(patientData['nurse_document']?.toString() ?? '');
+    row.add(patientData['nurse_email']?.toString() ?? '');
+    row.add(patientData['nurse_phone']?.toString() ?? '');
+    row.add((patientData['nurse_institution']?.toString() ?? '').toUpperCase());
+
     return row;
   }
-
 
   /// Obtiene estadísticas del reporte
   Future<Map<String, dynamic>> getReportStatistics({
