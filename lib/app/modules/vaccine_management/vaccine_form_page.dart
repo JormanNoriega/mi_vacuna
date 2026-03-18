@@ -6,6 +6,7 @@ import '../../models/vaccine_config_option.dart';
 import '../../services/vaccine_service.dart';
 import '../../data/database_helper.dart';
 import '../../widgets/form_fields.dart';
+import '../../widgets/custom_snackbar.dart';
 import '../../theme/colors.dart';
 
 class VaccineFormPage extends StatefulWidget {
@@ -44,6 +45,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
   // Opciones de configuración
   final Map<ConfigFieldType, List<VaccineConfigOption>> _configOptions = {};
   bool _isLoading = false;
+  bool _isSaving = false;
   String? _vaccineId;
 
   @override
@@ -115,7 +117,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
         _configOptions[fieldType] = options;
       }
     } catch (e) {
-      Get.snackbar('Error', 'No se pudieron cargar las opciones: $e');
+      CustomSnackbar.showError('No se pudieron cargar las opciones: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -143,17 +145,31 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            child: TextButton.icon(
-              onPressed: _saveVaccine,
-              icon: const Icon(Icons.save, color: primaryColor),
-              label: const Text(
-                'GUARDAR',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 40,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                        ),
+                      ),
+                    ),
+                  )
+                : TextButton.icon(
+                    onPressed: _saveVaccine,
+                    icon: const Icon(Icons.save, color: primaryColor),
+                    label: const Text(
+                      'GUARDAR',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -618,10 +634,16 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
   }
 
   Future<void> _saveVaccine() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      CustomSnackbar.showError('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    setState(() => _isSaving = true);
 
     try {
       final db = await DatabaseHelper.instance.database;
+      print('📝 Iniciando guardado de vacuna...');
 
       final vaccine = Vaccine(
         id: _vaccineId,
@@ -650,9 +672,11 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
       );
 
       if (_vaccineId == null) {
-        // Crear nueva - generar UUID
+        // ===== CREAR NUEVA VACUNA =====
+        print('✨ Creando nueva vacuna: ${vaccine.name}');
         const uuid = Uuid();
         _vaccineId = uuid.v4();
+        
         final vaccineWithId = Vaccine(
           id: _vaccineId,
           name: vaccine.name,
@@ -674,35 +698,42 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
           createdAt: vaccine.createdAt,
           updatedAt: vaccine.updatedAt,
         );
-        await db.insert('vaccines', vaccineWithId.toMap());
-        Get.snackbar(
-          'Éxito',
-          'Vacuna creada correctamente',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
 
-        // Cambiar a modo edición para poder agregar opciones
-        setState(() {});
+        final result = await db.insert('vaccines', vaccineWithId.toMap());
+        print('✅ Vacuna creada con ID: $_vaccineId (resultado: $result)');
+
+        CustomSnackbar.showSuccess('Vacuna creada correctamente');
       } else {
-        // Actualizar existente
-        await db.update(
+        // ===== ACTUALIZAR VACUNA EXISTENTE =====
+        print('📝 Actualizando vacuna: $_vaccineId');
+        
+        final result = await db.update(
           'vaccines',
           vaccine.toMap(),
           where: 'id = ?',
           whereArgs: [_vaccineId],
         );
-        Get.snackbar(
-          'Éxito',
-          'Vacuna actualizada correctamente',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+        
+        print('✅ Vacuna actualizada (filas afectadas: $result)');
+
+        if (result == 0) {
+          throw Exception('No se encontró la vacuna con ID: $_vaccineId');
+        }
+
+        CustomSnackbar.showSuccess('Vacuna actualizada correctamente');
       }
 
+      // Esperar a que se vea el snackbar antes de navegar
+      await Future.delayed(const Duration(seconds: 2));
       Get.back(result: true);
+      
     } catch (e) {
-      Get.snackbar('Error', 'No se pudo guardar: $e');
+      print('❌ Error al guardar vacuna: $e');
+      print('Stack trace: ${StackTrace.current}');
+      
+      CustomSnackbar.showError('No se pudo guardar la vacuna: ${e.toString()}');
+    } finally {
+      setState(() => _isSaving = false);
     }
   }
 
@@ -779,13 +810,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
             ),
             onPressed: () async {
               if (nameController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'Ingresa el nombre',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showError('Ingresa el nombre');
                 return;
               }
 
@@ -806,21 +831,9 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
                 await db.insert('vaccine_config_options', option.toMap());
                 await _loadConfigOptions();
                 Get.back();
-                Get.snackbar(
-                  'Éxito',
-                  'Opción agregada correctamente',
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showSuccess('Opción agregada correctamente');
               } catch (e) {
-                Get.snackbar(
-                  'Error',
-                  'No se pudo agregar: $e',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showError('No se pudo agregar: ${e.toString()}');
               }
             },
             child: const Text(
@@ -909,13 +922,7 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
             ),
             onPressed: () async {
               if (nameController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'Ingresa el nombre',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showError('Ingresa el nombre');
                 return;
               }
 
@@ -934,21 +941,9 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
                 );
                 await _loadConfigOptions();
                 Get.back();
-                Get.snackbar(
-                  'Éxito',
-                  'Opción actualizada correctamente',
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showSuccess('Opción actualizada correctamente');
               } catch (e) {
-                Get.snackbar(
-                  'Error',
-                  'No se pudo actualizar: $e',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+                CustomSnackbar.showError('No se pudo actualizar: ${e.toString()}');
               }
             },
             child: const Text(
@@ -989,14 +984,9 @@ class _VaccineFormPageState extends State<VaccineFormPage> {
           whereArgs: [optionId],
         );
         await _loadConfigOptions();
-        Get.snackbar(
-          'Éxito',
-          'Opción eliminada',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+        CustomSnackbar.showSuccess('Opción eliminada');
       } catch (e) {
-        Get.snackbar('Error', 'No se pudo eliminar: $e');
+        CustomSnackbar.showError('No se pudo eliminar: ${e.toString()}');
       }
     }
   }

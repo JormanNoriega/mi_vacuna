@@ -514,7 +514,7 @@ class VaccineSeeder {
       'has_syringe': 0,
       'has_syringe_lot': 0,
       'has_diluent': 0,
-      'has_dropper': 1,
+      'has_dropper': 0,
       'has_pneumococcal_type': 0,
       'has_vial_count': 0,
       'has_observation': 0,
@@ -522,14 +522,11 @@ class VaccineSeeder {
       'created_at': DateTime.now().toIso8601String(),
     });
 
-    // Dosis
+    // Solo Dosis y Lote
     await _insertOptions(db, vaccineId, 'dose', [
       'Primera dosis',
       'Segunda dosis',
     ]);
-
-    // Gotero
-    await _insertOptions(db, vaccineId, 'dropper', ['Desechado']);
   }
 
   // ==================== NEUMOCOCO ====================
@@ -1015,7 +1012,8 @@ class VaccineSeeder {
       'created_at': DateTime.now().toIso8601String(),
     });
 
-    // Solo requiere lote y número de frascos (no tiene opciones dropdown)
+    // Dosis única por defecto
+    await _insertOptions(db, vaccineId, 'dose', ['Única']);
   }
 
   // ==================== HEPATITIS B INMUNOGLOBULINA ====================
@@ -1052,6 +1050,9 @@ class VaccineSeeder {
       'Jeringa_Desechable_23G1_Pulg_Convencional',
     ]);
 
+    // Dosis única por defecto
+    await _insertOptions(db, vaccineId, 'dose', ['Única']);
+
     // Observaciones
     await _insertOptions(db, vaccineId, 'observation', [
       'ANTES DE 12 HORAS',
@@ -1085,6 +1086,9 @@ class VaccineSeeder {
       'is_active': 1,
       'created_at': DateTime.now().toIso8601String(),
     });
+
+    // Dosis única por defecto
+    await _insertOptions(db, vaccineId, 'dose', ['Única']);
 
     // Jeringas (todas las disponibles)
     await _insertOptions(db, vaccineId, 'syringe', [
@@ -1125,6 +1129,9 @@ class VaccineSeeder {
       'is_active': 1,
       'created_at': DateTime.now().toIso8601String(),
     });
+
+    // Dosis única por defecto
+    await _insertOptions(db, vaccineId, 'dose', ['Única']);
 
     // Jeringas (todas las disponibles)
     await _insertOptions(db, vaccineId, 'syringe', [

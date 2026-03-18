@@ -33,6 +33,14 @@ enum Area { urbana, rural }
 
 enum CondicionUsuaria { mujerEdadFertil, gestante, mujerMayor50, noAplica }
 
+enum TipoCarnet {
+  carneVacunacionInfantil,
+  carneVacunacionAdultos,
+  carneVacunacionInternacional,
+  tarjetasUnificadasVacunacionAdultos,
+  tarjetasUnificadasVacunacionNinos,
+}
+
 class Patient {
   // Identificador UUID
   String? id; // Cambiado de int? a String? para UUID
@@ -138,6 +146,11 @@ class Patient {
   String? caregiverCellphone;
 
   // ============================================
+  // ESQUEMA DE VACUNACION
+  // ============================================
+  TipoCarnet? typeCarnetVaccination;
+
+  // ============================================
   // METADATOS
   // ============================================
   DateTime createdAt;
@@ -217,6 +230,7 @@ class Patient {
     this.caregiverEmail,
     this.caregiverLandline,
     this.caregiverCellphone,
+    this.typeCarnetVaccination,
     DateTime? createdAt,
     this.updatedAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -310,6 +324,8 @@ class Patient {
       'caregiver_email': caregiverEmail,
       'caregiver_landline': caregiverLandline,
       'caregiver_cellphone': caregiverCellphone,
+      // Esquema de vacunación
+      'type_carnet_vaccination': typeCarnetVaccination?.name,
       // Metadatos
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -420,6 +436,11 @@ class Patient {
       caregiverEmail: map['caregiver_email'],
       caregiverLandline: map['caregiver_landline'],
       caregiverCellphone: map['caregiver_cellphone'],
+      typeCarnetVaccination: map['type_carnet_vaccination'] != null
+          ? TipoCarnet.values.firstWhere(
+              (e) => e.name == map['type_carnet_vaccination'],
+            )
+          : null,
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: map['updated_at'] != null
           ? DateTime.parse(map['updated_at'])

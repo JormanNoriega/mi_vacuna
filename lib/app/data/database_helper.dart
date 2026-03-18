@@ -251,6 +251,9 @@ class DatabaseHelper {
         caregiver_landline TEXT,
         caregiver_cellphone TEXT,
         
+        -- ESQUEMA DE VACUNACIÓN
+        type_carnet_vaccination TEXT,
+        
         -- METADATOS
         created_at TEXT NOT NULL,
         updated_at TEXT,

@@ -39,7 +39,7 @@ class _EPSSelectorState extends State<EPSSelector> {
     'Compensar EPS',
     'EPM EPS',
     'Fondo de Pasivo Social de Ferrocarriles Nacionales de Colombia',
-    'Cajacopi Atlántico EPS',
+    'PROTEGER EPS S.A.S.',
     'Capresoca EPS',
     'Comfachocó EPS',
     'Comfaoriente EPS',

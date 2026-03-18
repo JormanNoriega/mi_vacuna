@@ -19,6 +19,7 @@ class ExportService {
     'HISTÓRICO DE ANTECEDENTES': 'FF92D050', // Verde claro
     'DATOS DE LA MADRE': 'FFE74C3C', // Rojo
     'DATOS DEL CUIDADOR': 'FF9B59B6', // Púrpura
+    'ESQUEMA DE VACUNACIÓN': 'FF44546A', // Gris azulado
     'DATOS ENFERMERA': 'FF3498DB', // Azul claro
     'VACUNAS': 'FF1ABC9C', // Turquesa
   };
@@ -74,10 +75,10 @@ class ExportService {
       orderBy: 'vaccine_sequence ASC',
     );
 
-    // Los 12 campos que el usuario quiere mostrar
+    // Los 10 campos que el usuario quiere mostrar
     const vaccineFields = [
       'dose',
-      'application_date',
+      'vial_count',
       'lot_number',
       'laboratory',
       'syringe',
@@ -85,18 +86,24 @@ class ExportService {
       'diluent_lot',
       'dropper',
       'pneumococcal_type',
-      'vial_count',
       'observation',
-      'custom_observation',
     ];
 
     for (final vaccine in vaccines) {
       final vaccineId = vaccine['id'] as String;
+      final vaccineCode = vaccine['code'] as String;
+
+      // Vacunas sin dosis (solo se aplican)
+      final noDoseVaccines = {
+        'antirrabico_suero',
+        'hepatitis_b_inmunoglobulina',
+        'inmunoglobulina_antitetanica',
+        'antitoxina_tetanica',
+      };
 
       // Mapeo de campos BD a flags has_*
       final fieldMapping = {
-        'dose': true, // siempre mostrar dosis
-        'application_date': true, // siempre mostrar fecha
+        'dose': !noDoseVaccines.contains(vaccineCode),
         'lot_number': vaccine['has_lot'] == 1,
         'laboratory': vaccine['has_laboratory'] == 1,
         'syringe': vaccine['has_syringe'] == 1,
@@ -106,7 +113,6 @@ class ExportService {
         'pneumococcal_type': vaccine['has_pneumococcal_type'] == 1,
         'vial_count': vaccine['has_vial_count'] == 1,
         'observation': vaccine['has_observation'] == 1,
-        'custom_observation': true, // siempre mostrar observación personalizada
       };
 
       // Contar campos habilitados
@@ -141,6 +147,7 @@ class ExportService {
       MapEntry('HISTÓRICO DE ANTECEDENTES', 4),
       MapEntry('DATOS DE LA MADRE', 12),
       MapEntry('DATOS DEL CUIDADOR', 10),
+      MapEntry('ESQUEMA DE VACUNACIÓN', 1),
     ];
 
     int columnIndex = 0;
@@ -262,7 +269,6 @@ class ExportService {
     // Campos de vacunas (solo nombre del campo)
     final Map<String, String> fieldLabels = {
       'dose': 'DOSIS',
-      'application_date': 'FECHA APLICACIÓN',
       'lot_number': 'LOTE',
       'laboratory': 'LABORATORIO',
       'syringe': 'JERINGA',
@@ -272,7 +278,6 @@ class ExportService {
       'pneumococcal_type': 'TIPO NEUMOCOCO',
       'vial_count': 'CANTIDAD FRASCOS',
       'observation': 'OBSERVACIÓN',
-      'custom_observation': 'OBSERVACIÓN PERSONALIZADA',
     };
     int vaccineFieldIndex = 0;
     for (final entry in sortedVaccines) {
@@ -435,6 +440,9 @@ class ExportService {
       'CORREO ELECTRÓNICO CUIDADOR',
       'TELÉFONO FIJO CUIDADOR',
       'CELULAR CUIDADOR',
+
+      // ESQUEMA DE VACUNACIÓN (1 campo)
+      'TIPO DE CARNET DE VACUNACIÓN',
     ];
   }
 
@@ -537,6 +545,7 @@ class ExportService {
         p.caregiver_email,
         p.caregiver_landline,
         p.caregiver_cellphone,
+        p.type_carnet_vaccination,
         
         v.id as vaccine_id_db,
         v.name as vaccine_name,
@@ -586,16 +595,16 @@ class ExportService {
       final firstDose = doses.first;
 
       // Contar dosis por vacuna y encontrar el máximo
-      final vaccineDoesesMap = <String, List<Map<String, dynamic>>>{};
+      final vaccineDosesMap = <String, List<Map<String, dynamic>>>{};
       for (final dose in doses) {
         final vaccId = dose['vaccine_id'] as String;
-        vaccineDoesesMap.putIfAbsent(vaccId, () => []);
-        vaccineDoesesMap[vaccId]!.add(dose);
+        vaccineDosesMap.putIfAbsent(vaccId, () => []);
+        vaccineDosesMap[vaccId]!.add(dose);
       }
 
       // Encontrar el máximo número de dosis en cualquier vacuna
       int maxDosesCount = 0;
-      for (final dosesList in vaccineDoesesMap.values) {
+      for (final dosesList in vaccineDosesMap.values) {
         if (dosesList.length > maxDosesCount) {
           maxDosesCount = dosesList.length;
         }
@@ -605,7 +614,7 @@ class ExportService {
       for (int doseIndex = 0; doseIndex < maxDosesCount; doseIndex++) {
         final row = _buildPatientRowWithDoseIndex(
           firstDose,
-          vaccineDoesesMap,
+          vaccineDosesMap,
           vaccineStructure,
           doseIndex,
         );
@@ -721,7 +730,25 @@ class ExportService {
       patientData['caregiver_email']?.toString() ?? '',
       patientData['caregiver_landline']?.toString() ?? '',
       patientData['caregiver_cellphone']?.toString() ?? '',
+
+      // ESQUEMA DE VACUNACIÓN (1 campo)
+      _getCarnetTypeDisplay(patientData['type_carnet_vaccination']?.toString()),
     ];
+  }
+
+  /// Convierte el tipo de carnet de vacunación del formato interno al formato legible
+  String _getCarnetTypeDisplay(String? carnetType) {
+    if (carnetType == null || carnetType.isEmpty) return '';
+    
+    final displayMap = {
+      'carneVacunacionInfantil': 'CARNÉ DE VACUNACIÓN INFANTIL',
+      'carneVacunacionAdultos': 'CARNÉ/CERTIFICADO DE VACUNACIÓN DE ADULTOS',
+      'carneVacunacionInternacional': 'CARNÉ/CERTIFICADO INTERNACIONAL DE VACUNACIÓN',
+      'tarjetasUnificadasVacunacionAdultos': 'TARJETAS UNIFICADAS DE VACUNACIÓN - TUV ADULTOS',
+      'tarjetasUnificadasVacunacionNinos': 'TARJETAS UNIFICADAS DE VACUNACIÓN - TUV NIÑOS',
+    };
+    
+    return displayMap[carnetType] ?? carnetType.toUpperCase();
   }
 
   /// Extrae el valor de un campo específico de una dosis de vacuna
@@ -729,15 +756,6 @@ class ExportService {
     switch (field) {
       case 'dose':
         return dose['selected_dose']?.toString() ?? '';
-      case 'application_date':
-        final appDate = dose['application_date']?.toString() ?? '';
-        if (appDate.isEmpty) return '';
-        try {
-          final date = DateTime.parse(appDate);
-          return DateFormat('dd/MM/yyyy').format(date);
-        } catch (e) {
-          return appDate;
-        }
       case 'lot_number':
         return dose['lot_number']?.toString() ?? '';
       case 'laboratory':
@@ -756,8 +774,6 @@ class ExportService {
         return dose['vial_count']?.toString() ?? '';
       case 'observation':
         return (dose['selected_observation']?.toString() ?? '').toUpperCase();
-      case 'custom_observation':
-        return (dose['custom_observation']?.toString() ?? '').toUpperCase();
       default:
         return '';
     }
@@ -768,7 +784,7 @@ class ExportService {
   /// Esto distribuye múltiples dosis de la misma vacuna en filas diferentes
   List<dynamic> _buildPatientRowWithDoseIndex(
     Map<String, dynamic> patientData,
-    Map<String, List<Map<String, dynamic>>> vaccineDoesesMap,
+    Map<String, List<Map<String, dynamic>>> vaccineDosesMap,
     Map<String, Map<String, dynamic>> vaccineStructure,
     int doseIndex,
   ) {
@@ -791,7 +807,7 @@ class ExportService {
       final enabledFields = vaccineConfig['enabledFields'] as List<String>;
 
       // Obtener las dosis de esta vacuna
-      final dosesList = vaccineDoesesMap[vaccineId] ?? [];
+      final dosesList = vaccineDosesMap[vaccineId] ?? [];
 
       // Para cada campo habilitado en esta vacuna
       for (final field in enabledFields) {
@@ -807,12 +823,30 @@ class ExportService {
       }
     }
 
-    // Agregar datos de la enfermera
-    row.add((patientData['nurse_name']?.toString() ?? '').toUpperCase());
-    row.add(patientData['nurse_document']?.toString() ?? '');
-    row.add(patientData['nurse_email']?.toString() ?? '');
-    row.add(patientData['nurse_phone']?.toString() ?? '');
-    row.add((patientData['nurse_institution']?.toString() ?? '').toUpperCase());
+    // Agregar datos de la enfermera (de la primera dosis en este índice)
+    Map<String, dynamic>? dosesForNurse;
+    for (final vaccineEntry in sortedVaccines) {
+      final vaccineId = vaccineEntry.key;
+      final dosesList = vaccineDosesMap[vaccineId] ?? [];
+      if (doseIndex < dosesList.length) {
+        dosesForNurse = dosesList[doseIndex];
+        break;
+      }
+    }
+
+    if (dosesForNurse != null) {
+      row.add((dosesForNurse['nurse_name']?.toString() ?? '').toUpperCase());
+      row.add(dosesForNurse['nurse_document']?.toString() ?? '');
+      row.add(dosesForNurse['nurse_email']?.toString() ?? '');
+      row.add(dosesForNurse['nurse_phone']?.toString() ?? '');
+      row.add((dosesForNurse['nurse_institution']?.toString() ?? '').toUpperCase());
+    } else {
+      row.add('');
+      row.add('');
+      row.add('');
+      row.add('');
+      row.add('');
+    }
 
     return row;
   }

@@ -85,6 +85,9 @@ class PatientFormController extends GetxController {
   final selectedHealthRegime = Rx<RegimenAfiliacion?>(null);
   final selectedArea = Rx<Area?>(null);
 
+  // Tipo de carnet de vacunación (reactivo)
+  final selectedCarnetType = Rx<TipoCarnet?>(null);
+
   // Países seleccionados (reactivos)
   final selectedBirthCountry = Rx<String>('Colombia');
   final selectedResidenceCountry = Rx<String>('Colombia');
@@ -92,6 +95,7 @@ class PatientFormController extends GetxController {
   // Controllers de texto - Ubicación
   final birthCountryController = TextEditingController(text: 'Colombia');
   final birthPlaceController = TextEditingController();
+  final gestationalAgeController = TextEditingController();
   final residenceCountryController = TextEditingController(text: 'Colombia');
   final residenceDepartmentController = TextEditingController();
   final residenceMunicipalityController = TextEditingController();
@@ -118,7 +122,6 @@ class PatientFormController extends GetxController {
 
   // Controllers de texto - Salud
   final insurerController = TextEditingController();
-  final gestationalAgeController = TextEditingController();
 
   // Flags booleanos
   final displaced = false.obs;
@@ -129,7 +132,7 @@ class PatientFormController extends GetxController {
 
   // ==================== DATOS DE LA MADRE ====================
   final showMotherData = false.obs; // Flag para mostrar/ocultar sección madre
-  final selectedMotherIdType = Rx<String?>(null);
+  final selectedMotherIdType = Rx<String?>('CC - Cédula de Ciudadanía');
   final motherIdNumberController = TextEditingController();
   final motherFirstNameController = TextEditingController();
   final motherSecondNameController = TextEditingController();
@@ -146,7 +149,7 @@ class PatientFormController extends GetxController {
   // ==================== DATOS DEL CUIDADOR ====================
   final showCaregiverData =
       false.obs; // Flag para mostrar/ocultar sección cuidador
-  final selectedCaregiverIdType = Rx<String?>(null);
+  final selectedCaregiverIdType = Rx<String?>('CC - Cédula de Ciudadanía');
   final caregiverIdNumberController = TextEditingController();
   final caregiverFirstNameController = TextEditingController();
   final caregiverSecondNameController = TextEditingController();
@@ -335,6 +338,7 @@ class PatientFormController extends GetxController {
     // Ubicación
     birthCountryController.dispose();
     birthPlaceController.dispose();
+    gestationalAgeController.dispose();
     residenceCountryController.dispose();
     residenceDepartmentController.dispose();
     residenceMunicipalityController.dispose();
@@ -348,7 +352,6 @@ class PatientFormController extends GetxController {
 
     // Salud
     insurerController.dispose();
-    gestationalAgeController.dispose();
 
     // Madre
     motherIdNumberController.dispose();
@@ -513,6 +516,8 @@ class PatientFormController extends GetxController {
     birthCountryController.text = patient.birthCountry;
     selectedBirthCountry.value = patient.birthCountry; // ✅ Sincronizar variable reactiva
     birthPlaceController.text = patient.birthPlace ?? '';
+    gestationalAgeController.text = patient.gestationalAge?.toString() ?? '';
+    selectedCarnetType.value = patient.typeCarnetVaccination;
     residenceCountryController.text = patient.residenceCountry ?? 'Colombia';
     selectedResidenceCountry.value = patient.residenceCountry ?? 'Colombia'; // ✅ Sincronizar variable reactiva
     residenceDepartmentController.text = patient.residenceDepartment ?? '';
@@ -534,7 +539,6 @@ class PatientFormController extends GetxController {
     selectedHealthRegime.value = patient.affiliationRegime;
     selectedArea.value = patient.area;
     insurerController.text = patient.insurer ?? '';
-    gestationalAgeController.text = patient.gestationalAge?.toString() ?? '';
 
     displaced.value = patient.displaced;
     disabled.value = patient.disabled;
@@ -977,6 +981,7 @@ class PatientFormController extends GetxController {
         gestationalAge: gestationalAgeController.text.trim().isEmpty
             ? null
             : int.tryParse(gestationalAgeController.text.trim()),
+        typeCarnetVaccination: selectedCarnetType.value,
 
         // Flags
         displaced: displaced.value,
@@ -1202,6 +1207,7 @@ class PatientFormController extends GetxController {
           caregiverCellphone: patient.caregiverCellphone,
           createdAt: patient.createdAt,
           updatedAt: DateTime.now(),
+          typeCarnetVaccination: selectedCarnetType.value,
         );
         await _patientService.updatePatient(updatedPatient);
         patientId = editingPatientId!; // Ya es String (UUID)
@@ -1375,6 +1381,7 @@ class PatientFormController extends GetxController {
     // Salud
     insurerController.clear();
     gestationalAgeController.clear();
+    selectedCarnetType.value = null;
 
     // Flags
     displaced.value = false;
@@ -1385,7 +1392,7 @@ class PatientFormController extends GetxController {
 
     // Madre - Resetear completamente
     showMotherData.value = false;
-    selectedMotherIdType.value = null;
+    selectedMotherIdType.value = 'CC - Cédula de Ciudadanía';
     motherIdNumberController.clear();
     motherFirstNameController.clear();
     motherSecondNameController.clear();
@@ -1402,11 +1409,10 @@ class PatientFormController extends GetxController {
     motherIdError.value = null;
     motherFirstNameError.value = null;
     motherLastNameError.value = null;
-    motherDisplaced.value = null;
 
     // Cuidador - Resetear completamente
     showCaregiverData.value = false;
-    selectedCaregiverIdType.value = null;
+    selectedCaregiverIdType.value = 'CC - Cédula de Ciudadanía';
     caregiverIdNumberController.clear();
     caregiverFirstNameController.clear();
     caregiverSecondNameController.clear();

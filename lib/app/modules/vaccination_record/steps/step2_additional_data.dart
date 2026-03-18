@@ -238,6 +238,56 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                       },
                       required: false,
                     ),
+                    const SizedBox(height: 16),
+
+                    // Lugar de Nacimiento
+                    FormFields.buildTextField(
+                      label: 'Lugar de Nacimiento',
+                      controller: controller.birthPlaceController,
+                      placeholder: 'Ej: Hospital Central de Bogotá',
+                      required: false,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Semanas de Gestación al Nacer
+                    FormFields.buildTextField(
+                      label: 'Semanas de Gestación al Nacer',
+                      controller: controller.gestationalAgeController,
+                      placeholder: 'Ej: 38, 39, 40',
+                      keyboardType: TextInputType.number,
+                      required: false,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tipo de Carnet de Vacunación
+                    FormFields.buildDropdownField(
+                      label: 'Tipo de Carnet de Vacunación',
+                      value: _getCarnetTypeDisplay(controller.selectedCarnetType.value?.name),
+                      items: const [
+                        'Carné de Vacunación Infantil',
+                        'Carné/Certificado de Vacunación de Adultos',
+                        'Carné/Certificado Internacional de Vacunación',
+                        'Tarjetas Unificadas de Vacunación - TUV Adultos',
+                        'Tarjetas Unificadas de Vacunación - TUV Niños',
+                      ],
+                      onChanged: (value) {
+                        final enumMap = {
+                          'Carné de Vacunación Infantil': 'carneVacunacionInfantil',
+                          'Carné/Certificado de Vacunación de Adultos': 'carneVacunacionAdultos',
+                          'Carné/Certificado Internacional de Vacunación': 'carneVacunacionInternacional',
+                          'Tarjetas Unificadas de Vacunación - TUV Adultos': 'tarjetasUnificadasVacunacionAdultos',
+                          'Tarjetas Unificadas de Vacunación - TUV Niños': 'tarjetasUnificadasVacunacionNinos',
+                        };
+                        final enumValue = enumMap[value];
+                        if (enumValue == null) {
+                          controller.selectedCarnetType.value = null;
+                        } else {
+                          controller.selectedCarnetType.value = TipoCarnet.values
+                              .firstWhere((e) => e.name == enumValue);
+                        }
+                      },
+                      required: false,
+                    ),
                   ],
                 ),
               ),
@@ -1183,37 +1233,39 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                             ),
                             const SizedBox(height: 16),
                             // Fecha de última menstruación
-                            FormFields.buildDatePickerField(
-                              label: 'Fecha de Última Menstruación *',
-                              value: controller.lastMenstrualDate.value,
-                              icon: Icons.calendar_today,
-                              onTap: () async {
-                                final date = await showDatePicker(
-                                  context: Get.context!,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime.now().subtract(
-                                    const Duration(days: 280),
-                                  ),
-                                  lastDate: DateTime.now(),
-                                  locale: const Locale('es'),
-                                );
-                                if (date != null) {
-                                  controller.lastMenstrualDate.value = date;
+                            Obx(
+                              () => FormFields.buildDatePickerField(
+                                label: 'Fecha de Última Menstruación *',
+                                value: controller.lastMenstrualDate.value,
+                                icon: Icons.calendar_today,
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: Get.context!,
+                                    initialDate: controller.lastMenstrualDate.value ?? DateTime.now(),
+                                    firstDate: DateTime.now().subtract(
+                                      const Duration(days: 280),
+                                    ),
+                                    lastDate: DateTime.now(),
+                                    locale: const Locale('es'),
+                                  );
+                                  if (date != null) {
+                                    controller.lastMenstrualDate.value = date;
 
-                                  // Calcular automáticamente semanas de gestación
-                                  final int daysDiff = DateTime.now()
-                                      .difference(date)
-                                      .inDays;
-                                  final int weeks = daysDiff ~/ 7;
-                                  final int remainingDays = daysDiff % 7;
-                                  controller.gestationWeeksController.text =
-                                      '$weeks semanas${remainingDays > 0 ? ' y $remainingDays días' : ''}';
+                                    // Calcular automáticamente semanas de gestación
+                                    final int daysDiff = DateTime.now()
+                                        .difference(date)
+                                        .inDays;
+                                    final int weeks = daysDiff ~/ 7;
+                                    final int remainingDays = daysDiff % 7;
+                                    controller.gestationWeeksController.text =
+                                        '$weeks semanas${remainingDays > 0 ? ' y $remainingDays días' : ''}';
 
-                                  // Calcular fecha probable de parto (280 días después)
-                                  controller.probableDeliveryDate.value = date
-                                      .add(const Duration(days: 280));
-                                }
-                              },
+                                    // Calcular fecha probable de parto (280 días después)
+                                    controller.probableDeliveryDate.value = date
+                                        .add(const Duration(days: 280));
+                                  }
+                                },
+                              ),
                             ),
                             const SizedBox(height: 16),
 
@@ -1288,21 +1340,6 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
                     },
                     activeThumbColor: primaryColor,
                   ),
-                ),
-                Obx(
-                  () => controller.hasGivenBirth.value
-                      ? Column(
-                          children: [
-                            const SizedBox(height: 16),
-                            FormFields.buildTextField(
-                              label: 'Lugar de Atención del Parto',
-                              controller: controller.birthPlaceController,
-                              placeholder: 'Ej: Hospital San Vicente',
-                              required: false,
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
                 ),
 
                 // ===== SUBSECCIÓN: CONDICIONES ESPECIALES =====
@@ -2166,6 +2203,21 @@ class _Step2AdditionalDataState extends State<Step2AdditionalData>
       'raizal': 'Raizal',
       'palenquero': 'Palenquero',
       'negroAfrocolombiano': 'Negro Afrocolombiano',
+    };
+    
+    return displayMap[enumName] ?? enumName;
+  }
+
+  // Helper para convertir nombre de tipo de carnet enum a display value
+  String _getCarnetTypeDisplay(String? enumName) {
+    if (enumName == null) return 'Seleccione una opción';
+    
+    final displayMap = {
+      'carneVacunacionInfantil': 'Carné de Vacunación Infantil',
+      'carneVacunacionAdultos': 'Carné/Certificado de Vacunación de Adultos',
+      'carneVacunacionInternacional': 'Carné/Certificado Internacional de Vacunación',
+      'tarjetasUnificadasVacunacionAdultos': 'Tarjetas Unificadas de Vacunación - TUV Adultos',
+      'tarjetasUnificadasVacunacionNinos': 'Tarjetas Unificadas de Vacunación - TUV Niños',
     };
     
     return displayMap[enumName] ?? enumName;
